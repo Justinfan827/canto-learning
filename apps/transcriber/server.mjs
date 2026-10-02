@@ -113,17 +113,34 @@ async function audioFor(videoId, progress) {
   return wav
 }
 
-/** One job per video + engine; later requests replay what's done and follow along. */
+/** Length of a 16 kHz mono 16-bit wav, from its size. */
+const wavDurationMs = (wav) => Math.round(((fs.statSync(wav).size - 44) / 32000) * 1000)
+
+/** Cuts [startMs, endMs) out of a wav so a pass can start mid-video. */
+async function cut(wav, startMs, endMs, out) {
+  const range = [...(startMs ? ["-ss", String(startMs / 1000)] : []), ...(endMs != null ? ["-t", String((endMs - startMs) / 1000)] : [])]
+  await exec(which("ffmpeg"), ["-y", "-i", wav, ...range, "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", out])
+  return out
+}
+
+/** Starts mid-video only when there's a meaningful amount before and after the playhead. */
+const MIN_SPLIT_MS = 5000
+
+/**
+ * One job per video + engine; later requests replay what's done and follow along.
+ * A job asked to start at `fromMs` transcribes from there to the end first, then fills in
+ * the start, so the lines you're about to hear arrive first. Lines are not in time order.
+ */
 const jobs = new Map()
 
-function startJob(videoId, engineId) {
+function startJob(videoId, engineId, fromMs) {
   const key = `${videoId}.${engineId}`
   const cached = path.join(OUT, `${key}.json`)
-  const job = { lines: [], done: false, error: null, stage: "Starting", listeners: new Set() }
+  const job = { lines: [], done: false, error: null, progress: { type: "progress", stage: "Starting" }, listeners: new Set() }
   const emit = (ev) => job.listeners.forEach((l) => l(ev))
-  const progress = (stage) => {
-    job.stage = stage
-    emit({ type: "progress", stage })
+  const progress = (stage, extra = {}) => {
+    job.progress = { type: "progress", stage, ...extra }
+    emit(job.progress)
   }
   const onLine = (l) => {
     const line = { idx: job.lines.length, ...l }
@@ -138,16 +155,26 @@ function startJob(videoId, engineId) {
     }
     const engine = ENGINES[engineId]
     const wav = await audioFor(videoId, progress)
-    progress(`Transcribing with ${engine.label}`)
+    const durationMs = wavDurationMs(wav)
+    const from = fromMs >= MIN_SPLIT_MS && fromMs < durationMs - MIN_SPLIT_MS ? Math.floor(fromMs / 1000) * 1000 : 0
+    const passes = from ? [[from, null], [0, from]] : [[0, null]]
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pna-"))
     try {
-      const r = engine.run(wav, onLine, dir)
-      await exec(r.cmd, r.args, r.parse)
-      r.done?.()
+      for (const [i, [start, end]] of passes.entries()) {
+        progress(`Transcribing with ${engine.label}`, { pass: i + 1, fromMs: from, durationMs })
+        const passDir = path.join(dir, `pass${i}`)
+        fs.mkdirSync(passDir)
+        const input = start || end != null ? await cut(wav, start, end, path.join(passDir, "part.wav")) : wav
+        // Timestamps come back relative to the cut; shift them to the video's time.
+        const r = engine.run(input, (l) => onLine({ ...l, startMs: l.startMs + start, endMs: l.endMs + start }), passDir)
+        await exec(r.cmd, r.args, r.parse)
+        r.done?.()
+      }
     } finally {
       fs.rmSync(dir, { recursive: true, force: true })
     }
-    fs.writeFileSync(cached, JSON.stringify(job.lines.map(({ startMs, endMs, text }) => ({ startMs, endMs, text }))))
+    const sorted = job.lines.map(({ startMs, endMs, text }) => ({ startMs, endMs, text })).sort((a, b) => a.startMs - b.startMs)
+    fs.writeFileSync(cached, JSON.stringify(sorted))
   })().then(
     () => {
       job.done = true
@@ -189,8 +216,9 @@ const server = http.createServer(async (req, res) => {
 
     res.writeHead(200, { "content-type": "application/x-ndjson", "cache-control": "no-store" })
     const write = (ev) => res.write(JSON.stringify(ev) + "\n")
-    const job = jobs.get(`${videoId}.${engineId}`) ?? startJob(videoId, engineId)
-    write({ type: "progress", stage: job.stage })
+    const fromMs = Number(url.searchParams.get("from")) || 0
+    const job = jobs.get(`${videoId}.${engineId}`) ?? startJob(videoId, engineId, fromMs)
+    write(job.progress)
     for (const line of job.lines) write({ type: "line", line })
     if (job.done) {
       write(job.error ? { type: "error", message: job.error } : { type: "done" })
