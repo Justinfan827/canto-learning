@@ -79,9 +79,13 @@ for (const e of entries(canto)) {
   const g = gloss(e.defs)
   add(e.trad, [e.jp, g.gloss, g.formal, 1])
 }
+const noReading = []
 for (const e of entries(cedict)) {
   const jp = jpFor.get(`${e.trad}|${e.pinyin}`)
-  if (!jp) continue
+  if (!jp) {
+    noReading.push(e)
+    continue
+  }
   const g = gloss(e.defs)
   add(e.trad, [jp, g.gloss, "", 0])
 }
@@ -96,6 +100,20 @@ for (const [k, list] of Object.entries(dict)) {
     if (syl.length !== chars.length) continue
     chars.forEach((c, i) => charReading.set(`${c}|${syl[i]}`, (charReading.get(`${c}|${syl[i]}`) ?? 0) + 1))
   }
+}
+
+// Words with no Cantonese reading on file (女神, newer CC-CEDICT entries) get one built from each
+// character's most common reading, so they still split and show a meaning.
+const charJp = (c) => {
+  const list = dict[c]
+  if (!list) return null
+  return [...list].sort((a, b) => (charReading.get(`${c}|${b[0]}`) ?? 0) - (charReading.get(`${c}|${a[0]}`) ?? 0))[0][0]
+}
+for (const e of noReading) {
+  if (dict[e.trad] || [...e.trad].length < 2) continue
+  const syl = [...e.trad].map(charJp)
+  if (syl.some((x) => !x)) continue
+  add(e.trad, [syl.join(" "), gloss(e.defs).gloss, "", 0])
 }
 
 for (const [k, list] of Object.entries(dict)) {

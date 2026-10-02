@@ -14,27 +14,74 @@ export function entriesFor(word: string, dict: Dict): DictEntry[] | undefined {
 const MAX_WORD = 8
 const HAN = /\p{Script=Han}/u
 
-/** Splits a caption into dictionary words by greedy longest match; non-Chinese runs stay whole and punctuation is dropped. */
+/**
+ * Splits a caption into dictionary words; non-Chinese runs stay whole and punctuation is dropped.
+ * Chinese runs use bidirectional longest match: forward and backward passes, choosing between them
+ * wherever they disagree (也不知道 → 也 / 不知道, not 也不 / 知道).
+ */
 export function segment(text: string, dict: Dict): string[] {
   const chars = [...text]
   const out: string[] = []
   let i = 0
   while (i < chars.length) {
-    const c = chars[i]
-    if (!HAN.test(c)) {
-      let j = i
-      while (j < chars.length && !HAN.test(chars[j])) j++
+    const han = HAN.test(chars[i])
+    let j = i
+    while (j < chars.length && HAN.test(chars[j]) === han) j++
+    if (han) out.push(...splitHan(chars.slice(i, j), dict))
+    else {
       const run = chars.slice(i, j).join("").trim()
       if (/[\p{L}\p{N}]/u.test(run)) out.push(...run.split(/[^\p{L}\p{N}'-]+/u).filter(Boolean))
-      i = j
-      continue
     }
-    let len = Math.min(MAX_WORD, chars.length - i)
-    while (len > 1 && !dict[chars.slice(i, i + len).join("")]) len--
-    out.push(chars.slice(i, i + len).join(""))
-    i += len
+    i = j
   }
   return out
+}
+
+function splitHan(chars: string[], dict: Dict): string[] {
+  const has = (a: number, b: number) => !!dict[chars.slice(a, b).join("")]
+  // Word lengths from a forward and a backward longest-match pass.
+  const fwd: number[] = []
+  for (let i = 0; i < chars.length; ) {
+    let len = Math.min(MAX_WORD, chars.length - i)
+    while (len > 1 && !has(i, i + len)) len--
+    fwd.push(len)
+    i += len
+  }
+  const bwd: number[] = []
+  for (let j = chars.length; j > 0; ) {
+    let len = Math.min(MAX_WORD, j)
+    while (len > 1 && !has(j - len, j)) len--
+    bwd.unshift(len)
+    j -= len
+  }
+  // Where the passes disagree, choose per stretch between shared cut points.
+  const out: string[] = []
+  let fi = 0
+  let bi = 0
+  let pos = 0
+  while (fi < fwd.length) {
+    const f: number[] = [fwd[fi++]]
+    const b: number[] = [bwd[bi++]]
+    let fEnd = pos + f[0]
+    let bEnd = pos + b[0]
+    while (fEnd !== bEnd) {
+      if (fEnd < bEnd) fEnd += f[f.push(fwd[fi++]) - 1]
+      else bEnd += b[b.push(bwd[bi++]) - 1]
+    }
+    for (const len of better(f, b)) {
+      out.push(chars.slice(pos, pos + len).join(""))
+      pos += len
+    }
+  }
+  return out
+}
+
+/** Fewer words, then the longer longest word, then fewer single characters, else the backward split. */
+function better(f: number[], b: number[]) {
+  if (f.length !== b.length) return f.length < b.length ? f : b
+  if (Math.max(...f) !== Math.max(...b)) return Math.max(...f) > Math.max(...b) ? f : b
+  const singles = (ls: number[]) => ls.filter((l) => l === 1).length
+  return singles(f) < singles(b) ? f : b
 }
 
 export function lookup(word: string, dict: Dict): LineWord {
