@@ -11,3 +11,4 @@ apps/extension/e2e/screenshots/
 *.tsbuildinfo
 apps/extension/assets/dict.dat
 apps/extension/.cache
+apps/extension/e2e/*.png
