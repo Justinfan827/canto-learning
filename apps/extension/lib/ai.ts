@@ -27,13 +27,14 @@ export const ConvertedSchema = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["idx", "source_register", "formal", "colloquial", "colloquial_inferred"],
+        required: ["idx", "source_register", "formal", "colloquial", "colloquial_inferred", "english"],
         properties: {
           idx: { type: "integer" },
           source_register: { type: "string", enum: ["formal", "colloquial"] },
           formal: { type: "string" },
           colloquial: { type: "string" },
-          colloquial_inferred: { type: "boolean" }
+          colloquial_inferred: { type: "boolean" },
+          english: { type: "string" }
         }
       }
     }
@@ -46,13 +47,14 @@ For each target line:
 - formal: the line in 書面語.
 - colloquial: the line as a Cantonese speaker would most likely have said it.
 - colloquial_inferred: true when the source was formal, since the spoken words are then a guess.
+- english: a short, natural English translation of the line.
 Change only what the register requires; keep names, numbers and English as they are. If a caption has an obvious sound-alike typo, keep it in both versions; don't fix it here.
 ${HK}`
 
 export type Numbered = { idx: number; text: string }
 
 export type ConvertArgs = { title: string; targets: Numbered[]; neighbours: Numbered[] }
-type ConvertedOut = { lines: { idx: number; source_register: "formal" | "colloquial"; formal: string; colloquial: string; colloquial_inferred: boolean }[] }
+type ConvertedOut = { lines: { idx: number; source_register: "formal" | "colloquial"; formal: string; colloquial: string; colloquial_inferred: boolean; english?: string }[] }
 
 export function convertUser(args: ConvertArgs) {
   const fmt = (ls: Numbered[]) => ls.map((l) => `${l.idx}: ${l.text}`).join("\n")
@@ -68,7 +70,8 @@ export function mapConverted(out: ConvertedOut | null | undefined, args: Convert
       sourceRegister: l.source_register,
       textFormal: l.formal,
       textColloquial: l.colloquial,
-      colloquialInferred: l.source_register === "formal" || l.colloquial_inferred
+      colloquialInferred: l.source_register === "formal" || l.colloquial_inferred,
+      textEnglish: l.english?.trim() || null
     }))
 }
 

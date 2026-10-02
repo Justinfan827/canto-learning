@@ -30,7 +30,7 @@ export interface Store {
   putVideo(video: VideoInfo, lines: CaptionLine[], captionKind: CaptionKind): Promise<{ needsConversion: number[] }>
   getVideo(videoId: string): Promise<{ video: VideoInfo; lines: StoredLine[] } | null>
   getLines(videoId: string, idxs: number[]): Promise<StoredLine[]>
-  saveConversions(videoId: string, lines: Pick<ConvertedLine, "idx" | "sourceRegister" | "textFormal" | "textColloquial" | "colloquialInferred">[]): Promise<void>
+  saveConversions(videoId: string, lines: Pick<ConvertedLine, "idx" | "sourceRegister" | "textFormal" | "textColloquial" | "colloquialInferred" | "textEnglish">[]): Promise<void>
   saveLineWords(videoId: string, idx: number, words: LineWord[]): Promise<void>
 
   saveQuestion(q: QuestionRecord): Promise<void>

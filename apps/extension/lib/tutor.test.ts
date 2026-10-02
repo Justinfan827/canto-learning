@@ -29,7 +29,7 @@ function fakeAi(calls: string[]): TutorAi {
   }
 }
 
-it("converts with neighbours, caches explanations, streams answers and logs words", async () => {
+it("converts with neighbours, streams answers and offers taught words without saving them", async () => {
   const calls: string[] = []
   const store = createLocalStore("tutor")
   const tutor = createTutor(store, fakeAi(calls), dict)
@@ -42,18 +42,21 @@ it("converts with neighbours, caches explanations, streams answers and logs word
   expect((await tutor.explain("這麼古怪")).map((w) => [w.text, w.jyutping])).toEqual([["這麼", "ze2 mo1"], ["古怪", "gu2 gwaai3"]])
 
   let answer = ""
-  const logged = new Promise((resolve) => {
+  const taught = new Promise<any>((resolve) => {
     ;(async () => {
       for await (const c of tutor.ask({ video, lineIdx: 2, atMs: 4500, question: "what's 咁?", context: lines.slice(0, 3), history: [] }, resolve)) answer += c
     })()
   })
-  expect(await logged).toMatchObject({ words: [{ colloquial: "咁" }] })
+  const result = await taught
+  expect(result).toMatchObject({ words: [{ colloquial: "咁" }] })
   expect(answer).toBe("咁 (gam3) means so.")
   expect(calls).toEqual([
     "convert 2 ctx 0,1,3",
     "ask what's 咁? 大家好|他沒有看到|咁古怪",
     "extract 咁 (gam3) means so."
   ])
+  expect(await store.listWords()).toEqual([]) // nothing saved until the user taps Save
+  await tutor.saveTaught(result.words[0], { videoId: video.id, lineIdx: 2 })
   const [word] = await store.listWords()
   expect((await store.getWord(word.id))?.encounters[0]).toMatchObject({ lineIdx: 2, startMs: 4000 })
 })

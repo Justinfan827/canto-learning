@@ -1,4 +1,14 @@
-import { splitLine, type CaptionKind, type CaptionLine, type ConvertedLine, type Dict, type LineWord, type Store, type TaughtWord, type VideoInfo } from "@pna/shared"
+import {
+  splitLine,
+  type CaptionKind,
+  type CaptionLine,
+  type ConvertedLine,
+  type Dict,
+  type LineWord,
+  type Store,
+  type TaughtWord,
+  type VideoInfo
+} from "@pna/shared"
 
 import type { AskContext, ChatTurn } from "./ai"
 import * as claude from "./ai"
@@ -7,9 +17,11 @@ import { isConfigured, type Settings } from "./settings"
 
 /** The AI calls the tutor needs; swapped for fakes in tests. */
 export interface TutorAi {
-  convertLines(args: { title: string; targets: { idx: number; text: string }[]; neighbours: { idx: number; text: string }[] }): Promise<
-    Pick<ConvertedLine, "idx" | "sourceRegister" | "textFormal" | "textColloquial" | "colloquialInferred">[]
-  >
+  convertLines(args: {
+    title: string
+    targets: { idx: number; text: string }[]
+    neighbours: { idx: number; text: string }[]
+  }): Promise<Pick<ConvertedLine, "idx" | "sourceRegister" | "textFormal" | "textColloquial" | "colloquialInferred" | "textEnglish">[]>
   streamAnswer(args: { ctx: AskContext; question: string; history: ChatTurn[] }): AsyncIterable<string>
   extractWords(args: { question: string; answer: string; knownWords: string[] }): Promise<TaughtWord[]>
 }
@@ -81,12 +93,24 @@ export function createTutor(store: Store, ai: TutorAi | null, getDict: () => Pro
       return store.logTaughtWord({ colloquial, formal: w.formal, jyutping: w.jyutping, meaning: w.meaning, notes: null }, at)
     },
 
+    /** Saves a word an answer taught, when the user taps its Save chip. */
+    saveTaught(w: TaughtWord, at: { videoId: string; lineIdx: number | null }) {
+      return store.logTaughtWord(w, at)
+    },
+
     /**
-     * Streams the answer. When it finishes, the question is saved and the words
-     * it taught are logged; `onLogged` reports them (or the error) afterwards.
+     * Streams the answer. When it finishes, the question is saved and the words it taught
+     * are picked out; `onTaught` reports them (or the error) so the panel can offer to save them.
      */
-    async *ask(args: AskArgs, onLogged?: (result: { words: TaughtWord[] } | { error: unknown }) => void): AsyncGenerator<string> {
-      const stored = new Map((await store.getLines(args.video.id, args.context.map((l) => l.idx))).map((l) => [l.idx, l]))
+    async *ask(args: AskArgs, onTaught?: (result: { words: TaughtWord[] } | { error: unknown }) => void): AsyncGenerator<string> {
+      const stored = new Map(
+        (
+          await store.getLines(
+            args.video.id,
+            args.context.map((l) => l.idx)
+          )
+        ).map((l) => [l.idx, l])
+      )
       const knownWords = await store.knownWords()
       const ctx: AskContext = {
         title: args.video.title,
@@ -102,12 +126,10 @@ export function createTutor(store: Store, ai: TutorAi | null, getDict: () => Pro
       }
       ;(async () => {
         await store.saveQuestion({ videoId: args.video.id, lineIdx: args.lineIdx, atMs: args.atMs, question: args.question, answer })
-        const words = answer ? await ai.extractWords({ question: args.question, answer, knownWords }) : []
-        for (const w of words) await store.logTaughtWord(w, { videoId: args.video.id, lineIdx: args.lineIdx })
-        return words
+        return answer ? await ai.extractWords({ question: args.question, answer, knownWords }) : []
       })().then(
-        (words) => onLogged?.({ words }),
-        (error) => onLogged?.({ error })
+        (words) => onTaught?.({ words }),
+        (error) => onTaught?.({ error })
       )
     }
   }

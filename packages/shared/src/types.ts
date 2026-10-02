@@ -16,6 +16,8 @@ export interface ConvertedLine extends CaptionLine {
   textColloquial: string | null
   /** True when the 口語 text was guessed from a formal caption. */
   colloquialInferred: boolean
+  /** A short English translation, when a model converted the line. */
+  textEnglish?: string | null
 }
 
 export interface VideoInfo {
