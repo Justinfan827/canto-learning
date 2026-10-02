@@ -38,3 +38,26 @@ export function transcriptCoverage(lines: CaptionLine[], job: { fromMs: number; 
 export function sortLines(lines: CaptionLine[]): CaptionLine[] {
   return [...lines].sort((a, b) => a.startMs - b.startMs).map((l, idx) => ({ ...l, idx }))
 }
+
+/**
+ * Lines from a second transcript of the same audio, matched to `lines` by time: each other line
+ * goes to the line it overlaps most. Used to pair SenseVoice's spoken Cantonese with Whisper's
+ * written Chinese.
+ */
+export function alignByTime(lines: CaptionLine[], other: CaptionLine[]): Map<number, string> {
+  const out = new Map<number, string>()
+  if (!lines.length) return out
+  for (const o of other) {
+    let best = -1
+    let bestOverlap = 0
+    for (const l of lines) {
+      const overlap = Math.min(l.endMs, o.endMs) - Math.max(l.startMs, o.startMs)
+      if (overlap > bestOverlap) {
+        bestOverlap = overlap
+        best = l.idx
+      }
+    }
+    if (best >= 0) out.set(best, (out.get(best) ?? "") + o.text)
+  }
+  return out
+}

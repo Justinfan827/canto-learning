@@ -23,6 +23,10 @@ export type TranscriberStatus =
   | { kind: "done"; engine: string }
   | { kind: "error"; message: string }
 
+/** Engines that write spoken Cantonese, and the ones whose written-Chinese output pairs with them. */
+const SPOKEN_ENGINES = ["sensevoice"]
+const WRITTEN_ENGINES = ["whisper-cpp-turbo", "whisper-turbo"]
+
 /** How long to wait for a caption track before deciding there is none. */
 const SETTLE_MS = 1500
 const RECHECK_MS = 8000
@@ -35,6 +39,8 @@ const FLUSH_MS = 300
 export function useTranscriber(player: PlayerState, engineSetting: string, setLocalCaptions: (videoId: string, lines: CaptionLine[]) => void) {
   const [status, setStatus] = useState<TranscriberStatus>({ kind: "off" })
   const [attempt, setAttempt] = useState(0)
+  /** A second, written-Chinese transcript of the same audio, for the 書面語 view. */
+  const [written, setWritten] = useState<CaptionLine[] | null>(null)
   const videoId = player.video?.id ?? null
   const needed = !!videoId && !pickTrack(player.tracks) && player.captionSource !== "track" && player.captionSource !== "screen"
   const timeRef = useRef(player.timeMs)
@@ -43,6 +49,7 @@ export function useTranscriber(player: PlayerState, engineSetting: string, setLo
   sendRef.current = setLocalCaptions
 
   useEffect(() => {
+    setWritten(null)
     if (!needed || !videoId) {
       setStatus({ kind: "off" })
       return
@@ -87,6 +94,22 @@ export function useTranscriber(player: PlayerState, engineSetting: string, setLo
         clearTimeout(flushTimer)
         flush()
         setStatus({ kind: "done", engine: engine.label })
+        // SenseVoice writes what was said; Whisper writes it as standard Chinese. Run Whisper
+        // afterwards, quietly, so the 書面語 view works without a tutor model.
+        const writer = SPOKEN_ENGINES.includes(engine.id) ? engines.find((e) => WRITTEN_ENGINES.includes(e.id) && !e.unavailable) : null
+        if (writer) {
+          const out: CaptionLine[] = []
+          try {
+            for await (const ev of transcribe(videoId, writer.id, timeRef.current, ctl.signal)) {
+              if (ev.type === "line") out.push(ev.line)
+              else if (ev.type === "done") setWritten(sortLines(out))
+              else if (ev.type === "error") break
+            }
+          } catch (e) {
+            // The spoken transcript is what matters; without the written one the switch just stays off.
+            if (!ctl.signal.aborted) console.warn("Written transcript failed", e)
+          }
+        }
       } catch (e) {
         if (!ctl.signal.aborted) setStatus({ kind: "error", message: e instanceof Error ? e.message : String(e) })
       }
@@ -99,5 +122,5 @@ export function useTranscriber(player: PlayerState, engineSetting: string, setLo
     }
   }, [needed, videoId, engineSetting, attempt])
 
-  return { status, retry: () => setAttempt((n) => n + 1) }
+  return { status, written, retry: () => setAttempt((n) => n + 1) }
 }

@@ -1,7 +1,7 @@
 import { expect, it } from "vitest"
 
 import { senses, type Dict } from "./dict"
-import { rubyPairs, sortLines, trackLabel, transcriptCoverage } from "./reading"
+import { alignByTime, rubyPairs, sortLines, trackLabel, transcriptCoverage } from "./reading"
 
 it("pairs characters with syllables, or keeps the word whole when counts differ", () => {
   expect(rubyPairs("好正", "hou2 zeng3")).toEqual([
@@ -51,4 +51,14 @@ it("lists senses for the word sheet", () => {
   ])
   expect(senses("正", dict).map((s) => s.gloss)).toEqual(["upright", "exactly"])
   expect(senses("無", dict)).toEqual([])
+})
+
+it("pairs a second transcript's lines with the lines they overlap most", () => {
+  const l = (idx: number, startMs: number, endMs: number, text: string) => ({ idx, startMs, endMs, text })
+  const spoken = [l(0, 0, 3000, "我而家咧"), l(1, 3000, 7000, "係坐咗喺入邊")]
+  const written = [l(0, 100, 2800, "我現在呢"), l(1, 2900, 5000, "是坐在"), l(2, 5000, 7200, "裡面"), l(3, 9000, 9500, "好")]
+  expect([...alignByTime(spoken, written)]).toEqual([
+    [0, "我現在呢"],
+    [1, "是坐在裡面"]
+  ])
 })

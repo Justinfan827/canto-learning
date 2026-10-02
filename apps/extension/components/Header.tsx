@@ -76,7 +76,18 @@ export function Header(props: {
 }
 
 /** The Aa menu: each option says what it changes. */
-export function DisplayMenu({ s, hasAi, onChange }: { s: Settings; hasAi: boolean; onChange: (p: Partial<Settings>) => void }) {
+export function DisplayMenu({
+  s,
+  hasAi,
+  canFormal,
+  onChange
+}: {
+  s: Settings
+  hasAi: boolean
+  /** True when 書面語 is available: from the tutor, or from a second local transcript. */
+  canFormal: boolean
+  onChange: (p: Partial<Settings>) => void
+}) {
   const needsTutor = <small className="needs">Needs an AI tutor</small>
   return (
     <div className="pop" role="dialog" aria-label="Display options">
@@ -86,14 +97,14 @@ export function DisplayMenu({ s, hasAi, onChange }: { s: Settings; hasAi: boolea
         </div>
         <Toggle on={s.showJyutping} onChange={(v) => onChange({ showJyutping: v })} label="Jyutping" />
       </label>
-      <div className={"row" + (hasAi ? "" : " off")}>
+      <div className={"row" + (canFormal ? "" : " off")}>
         <div>
           Chinese<small>As spoken, or as written in Chinese</small>
-          {!hasAi && needsTutor}
+          {!canFormal && needsTutor}
         </div>
         <Seg
-          value={s.register}
-          disabled={!hasAi}
+          value={canFormal ? s.register : "colloquial"}
+          disabled={!canFormal}
           options={[
             ["colloquial", "口語"],
             ["formal", "書面語"]

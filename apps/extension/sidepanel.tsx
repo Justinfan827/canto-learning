@@ -1,4 +1,4 @@
-import { lineAt, lookup, pickTrack, regroup, senses, trackLabel, transcriptCoverage, type LineWord, type TaughtWord } from "@pna/shared"
+import { alignByTime, lineAt, lookup, pickTrack, regroup, senses, trackLabel, transcriptCoverage, type LineWord, type TaughtWord } from "@pna/shared"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { DisplayMenu, Header, type Pill } from "~components/Header"
@@ -60,7 +60,10 @@ function SidePanel() {
   const stopListening = useRef<(() => void) | null>(null)
 
   const hasAi = !!tutor?.hasAi
-  const register = hasAi ? (settings?.register ?? "colloquial") : "colloquial"
+  // Written Chinese for each line from a second local transcript, when there is one.
+  const written = useMemo(() => (tr.written ? alignByTime(state.lines, tr.written) : null), [state.lines, tr.written])
+  const canFormal = hasAi || !!written
+  const register = canFormal ? (settings?.register ?? "colloquial") : "colloquial"
   const current = lineAt(state.lines, state.timeMs)
 
   // Each line in the chosen register, split into dictionary words. Stable between time updates.
@@ -69,7 +72,7 @@ function SidePanel() {
       state.lines.map((l) => {
         const c = t.converted[l.idx]
         const conv = c && c.text === l.text ? c : undefined
-        const text = (register === "formal" ? conv?.textFormal : conv?.textColloquial) || l.text
+        const text = (register === "formal" ? conv?.textFormal || written?.get(l.idx) : conv?.textColloquial) || l.text
         return {
           idx: l.idx,
           startMs: l.startMs,
@@ -81,7 +84,7 @@ function SidePanel() {
           inferred: register === "colloquial" && !!conv?.colloquialInferred && text !== l.text
         }
       }),
-    [state.lines, t.converted, register, split, groupings.map, dict]
+    [state.lines, t.converted, register, split, groupings.map, dict, written]
   )
 
   const pausedView = state.paused || loopIdx != null
@@ -235,7 +238,7 @@ function SidePanel() {
       onMenu={setMenuOpen}
       onSaved={() => setView("saved")}
       onMore={() => openSetup()}
-      menu={<DisplayMenu s={settings} hasAi={hasAi} onChange={(p) => saveSettings(p)} />}
+      menu={<DisplayMenu s={settings} hasAi={hasAi} canFormal={canFormal} onChange={(p) => saveSettings(p)} />}
     />
   )
 
