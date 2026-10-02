@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk"
 import { useEffect, useState } from "react"
 
+import { checkOpenAi, DEFAULT_FREE_MODEL, OPENROUTER_URL, ProviderError } from "~lib/openaiCompat"
 import { loadSettings, saveSettings, type Settings } from "~lib/settings"
 import { hasCantoneseVoice, speak } from "~lib/speech"
 
@@ -44,13 +45,14 @@ function Setup() {
     await saveSettings(s)
     setTest("Checking…")
     try {
-      await new Anthropic({ apiKey: s.apiKey, dangerouslyAllowBrowser: true }).models.list({ limit: 1 })
+      if (s.provider === "claude") await new Anthropic({ apiKey: s.apiKey, dangerouslyAllowBrowser: true }).models.list({ limit: 1 })
+      else await checkOpenAi({ baseUrl: s.openaiBaseUrl, apiKey: s.openaiKey, model: s.openaiModel })
       setTest("Connected. Open a YouTube video and click the extension icon.")
     } catch (e) {
       setTest(
-        e instanceof Anthropic.AuthenticationError
-          ? "Saved, but Claude rejected this key."
-          : `Saved, but the key check failed: ${e instanceof Error ? e.message : e}`
+        e instanceof Anthropic.AuthenticationError || (e instanceof ProviderError && e.status === 401)
+          ? "Saved, but this key was rejected."
+          : `Saved, but the check failed: ${e instanceof Error ? e.message : e}`
       )
     }
   }
@@ -72,15 +74,41 @@ function Setup() {
         </>
       )}
 
-      <h2>2. Claude API key</h2>
-      <p className="muted">
-        Create one in the Claude Console. It's stored only in this browser profile and sent only to Claude. Your words and history are saved locally
-        in this browser too.
-      </p>
-      <label>
-        API key
-        <input type="password" value={s.apiKey} placeholder="sk-ant-..." onChange={(e) => setS({ ...s, apiKey: e.target.value.trim() })} />
+      <h2>2. Model</h2>
+      <p className="muted">Keys are stored only in this browser profile. Your words and history are saved locally in this browser too.</p>
+      <label className="row">
+        <input type="radio" checked={s.provider === "openai"} onChange={() => setS({ ...s, provider: "openai" })} />
+        Free model through OpenRouter (or any OpenAI-compatible server)
       </label>
+      <label className="row">
+        <input type="radio" checked={s.provider === "claude"} onChange={() => setS({ ...s, provider: "claude" })} />
+        Claude (paid, best at Cantonese)
+      </label>
+      {s.provider === "openai" ? (
+        <>
+          <p className="muted">
+            Make a free key at openrouter.ai/keys. Free models are rate limited. For a local server, set the URL to e.g. http://localhost:11434/v1 (Ollama)
+            and leave the key empty.
+          </p>
+          <label>
+            Server URL
+            <input value={s.openaiBaseUrl} placeholder={OPENROUTER_URL} onChange={(e) => setS({ ...s, openaiBaseUrl: e.target.value.trim() })} />
+          </label>
+          <label>
+            Model
+            <input value={s.openaiModel} placeholder={DEFAULT_FREE_MODEL} onChange={(e) => setS({ ...s, openaiModel: e.target.value.trim() })} />
+          </label>
+          <label>
+            API key
+            <input type="password" value={s.openaiKey} placeholder="sk-or-..." onChange={(e) => setS({ ...s, openaiKey: e.target.value.trim() })} />
+          </label>
+        </>
+      ) : (
+        <label>
+          Claude API key
+          <input type="password" value={s.apiKey} placeholder="sk-ant-..." onChange={(e) => setS({ ...s, apiKey: e.target.value.trim() })} />
+        </label>
+      )}
       <label className="row">
         <input type="checkbox" checked={s.speakAnswers} onChange={(e) => setS({ ...s, speakAnswers: e.target.checked })} />
         Read answers aloud

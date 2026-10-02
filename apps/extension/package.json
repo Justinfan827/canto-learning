@@ -37,7 +37,10 @@
     ],
     "host_permissions": [
       "https://www.youtube.com/*",
-      "https://api.anthropic.com/*"
+      "https://api.anthropic.com/*",
+      "https://openrouter.ai/*",
+      "http://localhost/*",
+      "http://127.0.0.1/*"
     ],
     "side_panel": {
       "default_path": "sidepanel.html"

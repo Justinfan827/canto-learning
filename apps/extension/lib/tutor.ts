@@ -2,6 +2,8 @@ import type { CaptionKind, CaptionLine, ConvertedLine, LineWord, Store, TaughtWo
 
 import type { AskContext, ChatTurn } from "./ai"
 import * as claude from "./ai"
+import { openAiCompat } from "./openaiCompat"
+import type { Settings } from "./settings"
 
 /** The AI calls the tutor needs; swapped for fakes in tests. */
 export interface TutorAi {
@@ -21,6 +23,11 @@ export function claudeAi(apiKey: string): TutorAi {
     streamAnswer: (a) => claude.streamAnswer(c, a),
     extractWords: (a) => claude.extractWords(c, a)
   }
+}
+
+/** The AI for the provider chosen in settings. */
+export function aiFor(s: Settings): TutorAi {
+  return s.provider === "claude" ? claudeAi(s.apiKey) : openAiCompat({ baseUrl: s.openaiBaseUrl, apiKey: s.openaiKey, model: s.openaiModel })
 }
 
 export const CONVERT_BATCH = 40

@@ -17,7 +17,7 @@ const HK = "Use Traditional characters as used in Hong Kong. Give Jyutping with 
 
 // ---- Convert caption lines between registers ----
 
-const ConvertedSchema = {
+export const ConvertedSchema = {
   type: "object",
   additionalProperties: false,
   required: ["lines"],
@@ -40,7 +40,7 @@ const ConvertedSchema = {
   }
 } as const
 
-const CONVERT_SYSTEM = `You convert Hong Kong video captions between written Chinese (書面語) and spoken Cantonese (口語).
+export const CONVERT_SYSTEM = `You convert Hong Kong video captions between written Chinese (書面語) and spoken Cantonese (口語).
 For each target line:
 - source_register: "formal" if the caption is written Chinese (他, 沒有, 這麼, 的), "colloquial" if it is already spoken Cantonese (佢, 冇, 咁, 嘅).
 - formal: the line in 書面語.
@@ -49,24 +49,19 @@ For each target line:
 Change only what the register requires; keep names, numbers and English as they are. If a caption has an obvious sound-alike typo, keep it in both versions; don't fix it here.
 ${HK}`
 
-type Numbered = { idx: number; text: string }
+export type Numbered = { idx: number; text: string }
 
-export async function convertLines(ai: Anthropic, args: { title: string; targets: Numbered[]; neighbours: Numbered[] }) {
+export type ConvertArgs = { title: string; targets: Numbered[]; neighbours: Numbered[] }
+type ConvertedOut = { lines: { idx: number; source_register: "formal" | "colloquial"; formal: string; colloquial: string; colloquial_inferred: boolean }[] }
+
+export function convertUser(args: ConvertArgs) {
   const fmt = (ls: Numbered[]) => ls.map((l) => `${l.idx}: ${l.text}`).join("\n")
-  const res = await ai.messages.parse({
-    model: BULK_MODEL,
-    max_tokens: 16000,
-    system: CONVERT_SYSTEM,
-    messages: [
-      {
-        role: "user",
-        content: `Video: ${args.title}\n\nSurrounding lines for context (don't convert):\n${fmt(args.neighbours) || "(none)"}\n\nConvert these lines:\n${fmt(args.targets)}`
-      }
-    ],
-    output_config: { format: jsonSchemaOutputFormat(ConvertedSchema) }
-  })
+  return `Video: ${args.title}\n\nSurrounding lines for context (don't convert):\n${fmt(args.neighbours) || "(none)"}\n\nConvert these lines:\n${fmt(args.targets)}`
+}
+
+export function mapConverted(out: ConvertedOut | null | undefined, args: ConvertArgs) {
   const want = new Set(args.targets.map((t) => t.idx))
-  return (res.parsed_output?.lines ?? [])
+  return (out?.lines ?? [])
     .filter((l) => want.has(l.idx))
     .map((l) => ({
       idx: l.idx,
@@ -77,9 +72,20 @@ export async function convertLines(ai: Anthropic, args: { title: string; targets
     }))
 }
 
+export async function convertLines(ai: Anthropic, args: ConvertArgs) {
+  const res = await ai.messages.parse({
+    model: BULK_MODEL,
+    max_tokens: 16000,
+    system: CONVERT_SYSTEM,
+    messages: [{ role: "user", content: convertUser(args) }],
+    output_config: { format: jsonSchemaOutputFormat(ConvertedSchema) }
+  })
+  return mapConverted(res.parsed_output, args)
+}
+
 // ---- Split a line into words ----
 
-const WordsSchema = {
+export const WordsSchema = {
   type: "object",
   additionalProperties: false,
   required: ["words"],
@@ -103,20 +109,28 @@ const WordsSchema = {
   }
 } as const
 
-export async function explainLine(ai: Anthropic, args: { title: string; before: string[]; line: string }): Promise<LineWord[]> {
+export const EXPLAIN_SYSTEM = `Split a Cantonese video caption into words for a learner. Group characters into natural words (咁古怪 → 咁 / 古怪). Cover every word in order; skip punctuation. Flag likely caption errors from sound-alike characters (荊天洞地 → 驚天動地). ${HK}`
+
+export type ExplainArgs = { title: string; before: string[]; line: string }
+type WordsOut = { words: { text: string; jyutping: string; meaning: string; formal: string | null; colloquial: string | null; likely_error: string | null }[] }
+
+export function explainUser(args: ExplainArgs) {
+  return `Video: ${args.title}\nPrevious lines:\n${args.before.join("\n") || "(none)"}\n\nLine to split:\n${args.line}`
+}
+
+export async function explainLine(ai: Anthropic, args: ExplainArgs): Promise<LineWord[]> {
   const res = await ai.messages.parse({
     model: BULK_MODEL,
     max_tokens: 4000,
-    system: `Split a Cantonese video caption into words for a learner. Group characters into natural words (咁古怪 → 咁 / 古怪). Cover every word in order; skip punctuation. Flag likely caption errors from sound-alike characters (荊天洞地 → 驚天動地). ${HK}`,
-    messages: [
-      {
-        role: "user",
-        content: `Video: ${args.title}\nPrevious lines:\n${args.before.join("\n") || "(none)"}\n\nLine to split:\n${args.line}`
-      }
-    ],
+    system: EXPLAIN_SYSTEM,
+    messages: [{ role: "user", content: explainUser(args) }],
     output_config: { format: jsonSchemaOutputFormat(WordsSchema) }
   })
-  return (res.parsed_output?.words ?? []).map((w) => ({
+  return mapWords(res.parsed_output)
+}
+
+export function mapWords(out: WordsOut | null | undefined): LineWord[] {
+  return (out?.words ?? []).map((w) => ({
     text: w.text,
     jyutping: w.jyutping,
     meaning: w.meaning,
@@ -164,12 +178,17 @@ ${lines || "(no captions)"}
 export type ChatTurn = { role: "user" | "assistant"; content: string }
 
 /** Streams answer text; resolves to the full answer. */
-export async function* streamAnswer(ai: Anthropic, args: { ctx: AskContext; question: string; history: ChatTurn[] }): AsyncGenerator<string> {
-  const messages: Anthropic.Beta.BetaMessageParam[] = [
-    ...args.history.slice(-10),
-    { role: "user", content: `${askContextBlock(args.ctx)}\n\n${args.question}` }
-  ]
+export type AnswerArgs = { ctx: AskContext; question: string; history: ChatTurn[] }
+
+/** Recent history plus the question with its moment, starting on a user turn. */
+export function answerMessages(args: AnswerArgs): ChatTurn[] {
+  const messages: ChatTurn[] = [...args.history.slice(-10), { role: "user", content: `${askContextBlock(args.ctx)}\n\n${args.question}` }]
   while (messages.length && messages[0].role !== "user") messages.shift()
+  return messages
+}
+
+export async function* streamAnswer(ai: Anthropic, args: AnswerArgs): AsyncGenerator<string> {
+  const messages = answerMessages(args)
   const stream = ai.beta.messages.stream({
     model: ANSWER_MODEL,
     max_tokens: 4000,
@@ -192,7 +211,7 @@ export async function* streamAnswer(ai: Anthropic, args: { ctx: AskContext; ques
 
 // ---- Pull out the words an answer taught ----
 
-const TaughtSchema = {
+export const TaughtSchema = {
   type: "object",
   additionalProperties: false,
   required: ["words"],
@@ -215,17 +234,20 @@ const TaughtSchema = {
   }
 } as const
 
-export async function extractWords(ai: Anthropic, args: { question: string; answer: string; knownWords: string[] }): Promise<TaughtWord[]> {
+export const EXTRACT_SYSTEM = `From a tutoring exchange, list the Cantonese words or set phrases the learner asked about or was taught. Include only words the answer actually explained, not every word it mentioned in passing. Skip words in the known list. Return an empty list if nothing was taught. ${HK}`
+
+export type ExtractArgs = { question: string; answer: string; knownWords: string[] }
+
+export function extractUser(args: ExtractArgs) {
+  return `Known words: ${args.knownWords.join("、") || "none"}\n\nQuestion: ${args.question}\n\nAnswer:\n${args.answer}`
+}
+
+export async function extractWords(ai: Anthropic, args: ExtractArgs): Promise<TaughtWord[]> {
   const res = await ai.messages.parse({
     model: BULK_MODEL,
     max_tokens: 4000,
-    system: `From a tutoring exchange, list the Cantonese words or set phrases the learner asked about or was taught. Include only words the answer actually explained, not every word it mentioned in passing. Skip words in the known list. Return an empty list if nothing was taught. ${HK}`,
-    messages: [
-      {
-        role: "user",
-        content: `Known words: ${args.knownWords.join("、") || "none"}\n\nQuestion: ${args.question}\n\nAnswer:\n${args.answer}`
-      }
-    ],
+    system: EXTRACT_SYSTEM,
+    messages: [{ role: "user", content: extractUser(args) }],
     output_config: { format: jsonSchemaOutputFormat(TaughtSchema) }
   })
   return res.parsed_output?.words ?? []

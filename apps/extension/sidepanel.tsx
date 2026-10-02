@@ -5,10 +5,10 @@ import { FocusCard } from "~components/FocusCard"
 import { formatTime, LineText, type RegisterView } from "~components/Line"
 import { Markdown } from "~components/Markdown"
 import { createLocalStore } from "~lib/localStore"
-import { loadSettings, type Settings } from "~lib/settings"
+import { isConfigured, loadSettings, type Settings } from "~lib/settings"
 import { listen, speak, speechSupported, type ListenLang } from "~lib/speech"
 import { usePlayer } from "~lib/usePlayer"
-import { claudeAi, createTutor } from "~lib/tutor"
+import { aiFor, createTutor } from "~lib/tutor"
 import { useTutor } from "~lib/useTutor"
 
 import "./style.css"
@@ -24,7 +24,7 @@ function SidePanel() {
     chrome.storage.onChanged.addListener(onChange)
     return () => chrome.storage.onChanged.removeListener(onChange)
   }, [])
-  const tutor = useMemo(() => (settings?.apiKey ? createTutor(store, claudeAi(settings.apiKey)) : null), [settings?.apiKey])
+  const tutor = useMemo(() => (settings && isConfigured(settings) ? createTutor(store, aiFor(settings)) : null), [settings])
 
   const { state, seek } = usePlayer()
   const t = useTutor(tutor, state)
@@ -224,7 +224,7 @@ function Empty({ text }: { text: string }) {
 function Setup() {
   return (
     <div className="empty">
-      <p>Add your Claude API key to get started.</p>
+      <p>Choose a model and add a key to get started.</p>
       <button className="primary" onClick={() => chrome.tabs.create({ url: chrome.runtime.getURL("tabs/setup.html") })}>
         Open setup
       </button>

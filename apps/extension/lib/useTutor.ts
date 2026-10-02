@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk"
 import type { CaptionLine, ConvertedLine, LineWord } from "@pna/shared"
 import { useCallback, useEffect, useRef, useState } from "react"
 
+import { ProviderError } from "./openaiCompat"
 import { CONVERT_BATCH, type Tutor } from "./tutor"
 import type { PlayerState } from "./usePlayer"
 
@@ -18,6 +19,12 @@ function describe(e: unknown) {
   if (e instanceof Anthropic.AuthenticationError) return "Your Claude API key was rejected. Check it in settings."
   if (e instanceof Anthropic.RateLimitError) return "Claude is rate limiting requests. Try again in a moment."
   if (e instanceof Anthropic.APIConnectionError) return "Couldn't reach Claude. Check your connection."
+  if (e instanceof ProviderError) {
+    if (e.status === 401) return "Your API key was rejected. Check it in settings."
+    if (e.status === 429) return "The model is rate limiting requests (free models have low limits). Try again in a moment, or pick another model in settings."
+    if (e.status === 0) return `${e.message}. Check your connection or server.`
+    return `Model error: ${e.message}`
+  }
   return e instanceof Error ? e.message : String(e)
 }
 
