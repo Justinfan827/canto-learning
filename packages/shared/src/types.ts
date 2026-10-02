@@ -79,10 +79,13 @@ export interface AskRequest {
   history?: { role: "user" | "assistant"; content: string }[]
 }
 
+/** Where caption lines came from: YouTube's caption file, on-screen captions, or local speech-to-text. */
+export type CaptionSource = "track" | "screen" | "local"
+
 /** Messages between content scripts, background and side panel. */
 export type PanelMessage =
   | { type: "video"; video: VideoInfo; tracks: CaptionTrack[] }
-  | { type: "captions"; videoId: string; lines: CaptionLine[]; kind: CaptionKind; source: "track" | "screen" }
+  | { type: "captions"; videoId: string; lines: CaptionLine[]; kind: CaptionKind; source: CaptionSource }
   | { type: "screen-line"; videoId: string; line: CaptionLine }
   | { type: "player"; videoId: string; state: "play" | "pause" | "seek" | "time"; timeMs: number }
 

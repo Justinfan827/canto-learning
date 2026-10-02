@@ -11,6 +11,8 @@ export interface Settings {
   openaiKey: string
   openaiModel: string
   speakAnswers: boolean
+  /** Local speech model for videos without captions. */
+  transcribeEngine: string
 }
 
 const DEFAULTS: Settings = {
@@ -19,7 +21,8 @@ const DEFAULTS: Settings = {
   openaiBaseUrl: OPENROUTER_URL,
   openaiKey: "",
   openaiModel: DEFAULT_FREE_MODEL,
-  speakAnswers: false
+  speakAnswers: false,
+  transcribeEngine: "whisper-cpp-turbo"
 }
 
 export async function loadSettings(): Promise<Settings> {

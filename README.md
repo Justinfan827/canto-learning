@@ -22,6 +22,18 @@ In Chrome, open `chrome://extensions`, turn on Developer mode, and **Load unpack
 
 Open a YouTube video with Cantonese or Chinese captions and click the toolbar icon to open the side panel.
 
+## Videos without captions
+
+A small local helper transcribes the audio on your computer. Start it with `pnpm transcriber` (port 8787); the side panel then shows a **Transcribe** button and an engine picker on videos with no captions. It downloads the audio with `yt-dlp`, converts it with `ffmpeg`, and streams lines back as the model produces them. Results are cached in `~/.cache/canto-learning`.
+
+| Engine | Needs | Notes |
+|---|---|---|
+| Whisper large-v3-turbo (whisper.cpp) | `brew install whisper-cpp` and `ggml-large-v3-turbo.bin` (found in OpenSuperWhisper's model folder, or set `WHISPER_CPP_MODEL`) | Fastest on Apple Silicon; Cantonese (`yue`) |
+| Whisper turbo / medium (openai-whisper) | `whisper` CLI | Turbo downloads 1.5 GB on first use; medium has no separate Cantonese option |
+| Parakeet TDT 0.6B v3 (MLX) | `parakeet-mlx` | English and European languages only, for comparison |
+
+Whisper tends to write Cantonese speech as formal written Chinese; with a model set up, the 口語 view shows the inferred spoken form.
+
 ## How it works
 
 | Piece | File | Job |
@@ -33,6 +45,7 @@ Open a YouTube video with Cantonese or Chinese captions and click the toolbar ic
 | Dictionary | `packages/shared/src/dict.ts`, `apps/extension/scripts/build-dict.mjs` | Longest-match word splitting and lookups over CC-Canto + CC-CEDICT with Cantonese readings, built into `assets/dict.dat` |
 | Claude calls | `apps/extension/lib/ai.ts` | Prompts and schemas; Haiku 4.5 for conversion and word extraction (structured outputs), Sonnet 5.5 for streamed answers |
 | Other models | `apps/extension/lib/openaiCompat.ts` | The same prompts over any OpenAI-compatible endpoint (OpenRouter, Ollama, LM Studio) |
+| Transcriber | `apps/transcriber/server.mjs`, `apps/extension/components/Transcribe.tsx` | Local speech-to-text for videos without captions; lines go to the bridge as `local` captions |
 | Local database | `apps/extension/lib/localStore.ts` | IndexedDB: videos, caption lines, words, encounters, questions, reviews |
 | Shared | `packages/shared` | Types, caption parsing, the `Store` interface, spaced-repetition scheduling, register diff |
 

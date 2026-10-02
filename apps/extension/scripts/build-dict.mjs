@@ -85,8 +85,22 @@ for (const e of entries(cedict)) {
   const g = gloss(e.defs)
   add(e.trad, [jp, g.gloss, "", 0])
 }
+// How often each character takes each reading inside longer words, to put a character's
+// everyday reading first (食 sik6, not the literary ji6).
+const charReading = new Map()
 for (const [k, list] of Object.entries(dict)) {
-  list.sort((a, b) => b[3] - a[3])
+  const chars = [...k]
+  if (chars.length < 2) continue
+  for (const [jp] of list) {
+    const syl = jp.split(" ")
+    if (syl.length !== chars.length) continue
+    chars.forEach((c, i) => charReading.set(`${c}|${syl[i]}`, (charReading.get(`${c}|${syl[i]}`) ?? 0) + 1))
+  }
+}
+
+for (const [k, list] of Object.entries(dict)) {
+  const usage = (e) => ([...k].length === 1 ? charReading.get(`${k}|${e[0]}`) ?? 0 : 0)
+  list.sort((a, b) => usage(b) - usage(a) || b[3] - a[3])
   list.length = Math.min(list.length, 3)
   for (const x of list) if (x[1].length > 140) x[1] = x[1].slice(0, 140).replace(/;[^;]*$/, "")
   dict[k] = list

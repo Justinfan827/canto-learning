@@ -6,6 +6,7 @@
     "dev:ext": "pnpm --filter extension dev",
     "build:ext": "pnpm --filter extension build",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "transcriber": "node apps/transcriber/server.mjs"
   }
 }

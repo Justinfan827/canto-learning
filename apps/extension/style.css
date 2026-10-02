@@ -91,3 +91,15 @@ header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border
 .setup label.row { display: flex; gap: 8px; align-items: center; }
 .setup h2 { font-size: 16px; margin-top: 28px; }
 .logged { font-size: 12px; color: var(--muted); }
+
+.transcribe select {
+  width: 100%;
+  margin: 4px 0;
+}
+.pad pre {
+  font-size: 12px;
+  padding: 6px 8px;
+  background: var(--chip, rgba(127, 127, 127, 0.15));
+  border-radius: 6px;
+  user-select: all;
+}

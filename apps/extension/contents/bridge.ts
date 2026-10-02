@@ -3,7 +3,7 @@
  * files from the page hook, falls back to on-screen captions, and forwards
  * everything to the side panel. Also handles commands from the panel.
  */
-import { parseJson3, pickTrack, type CaptionKind, type CaptionLine, type CaptionTrack, type PanelMessage, type VideoInfo } from "@pna/shared"
+import { parseJson3, pickTrack, type CaptionKind, type CaptionLine, type CaptionSource, type CaptionTrack, type PanelMessage, type VideoInfo } from "@pna/shared"
 import type { PlasmoCSConfig } from "plasmo"
 
 export const config: PlasmoCSConfig = {
@@ -15,7 +15,7 @@ const SCREEN_FALLBACK_MS = 5000
 
 let video: VideoInfo | null = null
 let tracks: CaptionTrack[] = []
-let captions: { lines: CaptionLine[]; kind: CaptionKind; source: "track" | "screen" } | null = null
+let captions: { lines: CaptionLine[]; kind: CaptionKind; source: CaptionSource } | null = null
 let fallbackTimer: number | undefined
 let screenObserver: MutationObserver | null = null
 
@@ -134,6 +134,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
       break
     case "pause":
       v?.pause()
+      break
+    case "local-captions":
+      // Lines transcribed on this computer, for videos without a caption file.
+      if (!video || msg.videoId !== video.id) break
+      stopScreenFallback()
+      captions = { lines: msg.lines, kind: "auto", source: "local" }
+      send({ type: "captions", videoId: video.id, ...captions })
       break
   }
 })

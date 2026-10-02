@@ -4,9 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { FocusCard } from "~components/FocusCard"
 import { formatTime, LineText, type RegisterView } from "~components/Line"
 import { Markdown } from "~components/Markdown"
+import { Transcribe } from "~components/Transcribe"
 import { createLocalStore } from "~lib/localStore"
 import { loadDict } from "~lib/dict"
-import { loadSettings, type Settings } from "~lib/settings"
+import { loadSettings, saveSettings, type Settings } from "~lib/settings"
 import { listen, speak, speechSupported, type ListenLang } from "~lib/speech"
 import { usePlayer } from "~lib/usePlayer"
 import { aiFor, createTutor } from "~lib/tutor"
@@ -27,7 +28,7 @@ function SidePanel() {
   }, [])
   const tutor = useMemo(() => (settings ? createTutor(store, aiFor(settings), loadDict) : null), [settings])
 
-  const { state, seek } = usePlayer()
+  const { state, seek, setLocalCaptions } = usePlayer()
   const t = useTutor(tutor, state)
   const [view, setView] = useState<RegisterView>("colloquial")
   const [focusIdx, setFocusIdx] = useState<number | null>(null)
@@ -80,7 +81,7 @@ function SidePanel() {
     if (state.paused && !wasPaused.current && current >= 0) {
       setFocusIdx(current)
       t.explain(current)
-      if (state.captionSource === "screen") t.convertAround(current).catch(() => {})
+      if (state.captionSource !== "track") t.convertAround(current).catch(() => {})
       startListening()
     } else if (!state.paused && wasPaused.current) {
       setFocusIdx(null)
@@ -134,15 +135,19 @@ function SidePanel() {
         </div>
       )}
 
+      {state.tracks.length === 0 && state.captionSource !== "track" && (
+        <Transcribe
+          videoId={state.video.id}
+          engine={settings.transcribeEngine}
+          onEngine={(id) => saveSettings({ transcribeEngine: id })}
+          onLines={(lines) => setLocalCaptions(state.video!.id, lines)}
+        />
+      )}
+
       <ol className="transcript" ref={listRef}>
-        {state.lines.length === 0 && (
-          <li className="muted pad">
-            {state.captionSource === "screen"
-              ? "No caption file found. Reading captions from the screen as they appear."
-              : state.tracks.length
-                ? "Loading captions…"
-                : "This video has no caption track. You can still type questions."}
-          </li>
+        {state.lines.length === 0 && state.tracks.length > 0 && <li className="muted pad">Loading captions…</li>}
+        {state.lines.length === 0 && state.captionSource === "screen" && (
+          <li className="muted pad">No caption file found. Reading captions from the screen as they appear.</li>
         )}
         {state.lines.map((l) => (
           <li

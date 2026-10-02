@@ -1,4 +1,4 @@
-import type { CaptionKind, CaptionLine, CaptionTrack, PanelMessage, VideoInfo } from "@pna/shared"
+import type { CaptionKind, CaptionLine, CaptionSource, CaptionTrack, PanelMessage, VideoInfo } from "@pna/shared"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 export interface PlayerState {
@@ -7,7 +7,7 @@ export interface PlayerState {
   tracks: CaptionTrack[]
   lines: CaptionLine[]
   captionKind: CaptionKind | null
-  captionSource: "track" | "screen" | null
+  captionSource: CaptionSource | null
   paused: boolean
   timeMs: number
 }
@@ -111,6 +111,7 @@ export function usePlayer() {
     state,
     seek: (timeMs: number) => command({ type: "seek", timeMs }),
     play: () => command({ type: "play" }),
-    pause: () => command({ type: "pause" })
+    pause: () => command({ type: "pause" }),
+    setLocalCaptions: (videoId: string, lines: CaptionLine[]) => command({ type: "local-captions", videoId, lines })
   }
 }
