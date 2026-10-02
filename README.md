@@ -31,11 +31,18 @@ Transcription runs in a small local helper. Start it with `pnpm transcriber` (po
 
 | Engine | Needs | Notes |
 |---|---|---|
+| SenseVoice Small (sherpa-onnx) | `uv`, plus the model and VAD in `~/.cache/canto-learning/models` (see below) | Writes spoken Cantonese (佢哋, 嘅, 咗); about 60× real time on an M2 |
 | Whisper large-v3-turbo (whisper.cpp) | `brew install whisper-cpp` and `ggml-large-v3-turbo.bin` (found in OpenSuperWhisper's model folder, or set `WHISPER_CPP_MODEL`) | Fastest on Apple Silicon; Cantonese (`yue`) |
 | Whisper turbo / medium (openai-whisper) | `whisper` CLI | Turbo downloads 1.5 GB on first use; medium has no separate Cantonese option |
 | Parakeet TDT 0.6B v3 (MLX) | `parakeet-mlx` | English and European languages only, for comparison |
 
-Whisper tends to write Cantonese speech as formal written Chinese; with a model set up, the 口語 view shows the inferred spoken form.
+Whisper tends to write Cantonese speech as formal written Chinese, so Auto prefers SenseVoice. To install SenseVoice's model (about 240 MB):
+
+```sh
+mkdir -p ~/.cache/canto-learning/models && cd ~/.cache/canto-learning/models
+curl -L https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2 | tar xj
+curl -LO https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx
+```
 
 ## How it works
 

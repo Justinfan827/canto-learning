@@ -12,7 +12,7 @@ export interface Engine {
 }
 
 /** Best first. Parakeet has no Chinese, so Auto never picks it. */
-const AUTO_ORDER = ["whisper-cpp-turbo", "whisper-turbo", "whisper-medium"]
+const AUTO_ORDER = ["sensevoice", "whisper-cpp-turbo", "whisper-turbo", "whisper-medium"]
 
 export async function listEngines(): Promise<Engine[] | null> {
   try {

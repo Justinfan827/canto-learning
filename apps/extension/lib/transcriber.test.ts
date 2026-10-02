@@ -6,6 +6,7 @@ const e = (id: string, unavailable: string | null = null): Engine => ({ id, labe
 
 it("Auto picks the best installed Cantonese engine", () => {
   expect(pickEngine([e("parakeet-v3"), e("whisper-turbo"), e("whisper-cpp-turbo", "not installed")], "auto")?.id).toBe("whisper-turbo")
+  expect(pickEngine([e("whisper-cpp-turbo"), e("sensevoice")], "auto")?.id).toBe("sensevoice")
   expect(pickEngine([e("parakeet-v3")], "auto")).toBeNull()
 })
 

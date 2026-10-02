@@ -25,6 +25,13 @@ const GGML_TURBO = firstExisting(
   path.join(os.homedir(), ".cache/whisper.cpp/ggml-large-v3-turbo.bin")
 )
 
+const SENSEVOICE_DIR = firstExisting(
+  process.env.SENSEVOICE_MODEL_DIR,
+  path.join(CACHE, "models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17")
+)
+const SILERO_VAD = firstExisting(path.join(CACHE, "models/silero_vad.onnx"))
+const SENSEVOICE_PY = path.join(path.dirname(new URL(import.meta.url).pathname), "engines/sensevoice.py")
+
 /** "[00:01:02.500 --> 00:01:04.000]  text" (whisper.cpp) or "[01:02.500 --> 01:04.000] text" (openai-whisper). */
 const TS_LINE = /^\[((?:\d+:)?\d+:\d+\.\d+) --> ((?:\d+:)?\d+:\d+\.\d+)\]\s*(.*)$/
 const toMs = (ts) => Math.round(ts.split(":").reduce((acc, p) => acc * 60 + Number(p), 0) * 1000)
@@ -44,6 +51,21 @@ function parseTimestampLines(onLine) {
 
 /** Each engine turns a 16 kHz mono wav into timed lines, calling onLine as they're ready. */
 const ENGINES = {
+  sensevoice: {
+    label: "SenseVoice Small (sherpa-onnx)",
+    languages: "Cantonese, Mandarin, English, Japanese, Korean; writes spoken Cantonese (佢哋, 嘅, 唔)",
+    available: () =>
+      !which("uv")
+        ? "uv isn't installed"
+        : !SENSEVOICE_DIR || !SILERO_VAD
+          ? "model not downloaded (see apps/transcriber/README)"
+          : null,
+    run: (wav, onLine) => ({
+      cmd: which("uv"),
+      args: ["run", "-q", "--with", "sherpa-onnx", "--with", "numpy", "--with", "opencc", "python", SENSEVOICE_PY, SENSEVOICE_DIR, SILERO_VAD, wav, "yue"],
+      parse: parseTimestampLines(onLine)
+    })
+  },
   "whisper-cpp-turbo": {
     label: "Whisper large-v3-turbo (whisper.cpp)",
     languages: "Cantonese, Mandarin, English and ~100 more",
