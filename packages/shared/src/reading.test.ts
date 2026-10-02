@@ -1,7 +1,7 @@
 import { expect, it } from "vitest"
 
 import { senses, type Dict } from "./dict"
-import { rubyPairs, sortLines, trackLabel, transcriptCoverage, wordIndexAt } from "./reading"
+import { rubyPairs, sortLines, trackLabel, transcriptCoverage } from "./reading"
 
 it("pairs characters with syllables, or keeps the word whole when counts differ", () => {
   expect(rubyPairs("好正", "hou2 zeng3")).toEqual([
@@ -10,15 +10,6 @@ it("pairs characters with syllables, or keeps the word whole when counts differ"
   ])
   expect(rubyPairs("OK", "")).toEqual([["OK", ""]])
   expect(rubyPairs("三十幾年", "saam1 sap6")).toEqual([["三十幾年", "saam1 sap6"]])
-})
-
-it("estimates the spoken word from the line's progress", () => {
-  const words = ["佢哋", "嘅", "菠蘿油"] // 6 characters over 6 s
-  expect(wordIndexAt(words, 0, 6000, -1)).toBe(-1)
-  expect(wordIndexAt(words, 0, 6000, 500)).toBe(0)
-  expect(wordIndexAt(words, 0, 6000, 2500)).toBe(1)
-  expect(wordIndexAt(words, 0, 6000, 3000)).toBe(2)
-  expect(wordIndexAt(words, 0, 6000, 9000)).toBe(2)
 })
 
 it("labels caption tracks", () => {

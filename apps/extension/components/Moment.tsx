@@ -90,7 +90,8 @@ export function WordSheet(props: {
   const head = word.colloquial ?? word.text
   const formal = word.formal ?? senses.find((s) => s.formal)?.formal ?? null
   const sheet = useRef<HTMLDivElement>(null)
-  useEffect(() => sheet.current?.focus(), [word])
+  // preventScroll: focusing would otherwise scroll the view behind the sheet.
+  useEffect(() => sheet.current?.focus({ preventScroll: true }), [word])
   return (
     <>
       <div className="scrim" onClick={props.onClose} />

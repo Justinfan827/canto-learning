@@ -297,7 +297,6 @@ function SidePanel() {
         <Lyrics
           lines={lines}
           current={current}
-          timeMs={state.timeMs}
           showJyutping={settings.showJyutping}
           showEnglish={showEnglish}
           onSeek={onSeek}

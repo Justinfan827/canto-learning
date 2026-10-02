@@ -117,7 +117,6 @@ button.pill:hover { color: var(--fg); }
 .ln:hover { color: var(--fg); }
 .ln.now { color: var(--fg); font-size: var(--now); font-weight: 500; }
 .ln .w { margin-right: 0.18em; }
-.ln .w.cur { color: var(--jade); }
 .ln .en { display: block; font: 13px/1.4 var(--f-ui); color: var(--muted); margin-top: 4px; }
 ruby { ruby-position: over; ruby-align: center; margin: 0 0.04em; }
 rt { font: 400 9.5px/1 var(--f-ui); color: var(--muted); letter-spacing: 0; padding-bottom: 2px; }
@@ -165,9 +164,9 @@ rt { font: 400 9.5px/1 var(--f-ui); color: var(--muted); letter-spacing: 0; padd
 .act.done .i { color: var(--amber); }
 
 /* word sheet */
-.scrim { position: absolute; inset: 0; background: linear-gradient(transparent 30%, rgba(10, 16, 13, 0.12)); z-index: 3; }
-.sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; background: var(--bg); border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; box-shadow: 0 -12px 30px -14px rgba(10, 16, 13, 0.28); padding: 8px 16px 16px; display: grid; gap: 10px; max-height: 70vh; overflow-y: auto; animation: rise 0.18s ease-out; outline: none; }
-@keyframes rise { from { transform: translateY(24px); opacity: 0; } }
+.scrim { position: absolute; inset: 0; background: linear-gradient(transparent 30%, rgba(10, 16, 13, 0.12)); z-index: 3; animation: fade 0.12s ease-out; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; background: var(--bg); border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; box-shadow: 0 -12px 30px -14px rgba(10, 16, 13, 0.28); padding: 8px 16px 16px; display: grid; gap: 10px; max-height: 70vh; overflow-y: auto; animation: fade 0.12s ease-out; outline: none; }
+@keyframes fade { from { opacity: 0; } }
 .grab { width: 34px; height: 4px; border-radius: 4px; background: var(--line); margin: 0 auto 4px; }
 .dhead { display: flex; align-items: flex-end; gap: 8px; }
 .dhead .hz { font: 500 34px/1 var(--f-zh); }

@@ -152,8 +152,8 @@ console.log("pill:", await panel.locator(".bar .pill").innerText(), "| opened on
 
 // Read-along: the current line has Jyutping and a highlighted word.
 await yt.evaluate(async () => { const v = document.querySelector("video"); if (v.readyState < 1) await new Promise(r => v.addEventListener("loadedmetadata", r, { once: true })); v.currentTime = 4.6; await v.play() })
-await panel.waitForSelector(".ln.now[data-idx='2'] .w.cur", { timeout: 5000 })
-console.log("lines:", await panel.locator(".lyrics .ln").count(), "| now line:", await text(".ln.now"), "| ruby:", await panel.locator(".ln.now rt").allInnerTexts(), "| current word:", await text(".ln.now .w.cur"))
+await panel.waitForSelector(".ln.now[data-idx='2']", { timeout: 5000 })
+console.log("lines:", await panel.locator(".lyrics .ln").count(), "| now line:", await text(".ln.now"), "| ruby:", await panel.locator(".ln.now rt").allInnerTexts(), "| word highlights:", await panel.locator(".ln .w.cur").count())
 await panel.screenshot({ path: SHOTS + "1-watching.png" })
 
 // No model set up: pausing opens the card; dictionary lookups and saving still work.

@@ -8,24 +8,6 @@ export function rubyPairs(word: string, jyutping: string): [text: string, readin
   return [[word, jyutping]]
 }
 
-/**
- * Estimates which word is being spoken: captions have no word timings,
- * so the line's duration is shared out by character count.
- */
-export function wordIndexAt(words: string[], startMs: number, endMs: number, timeMs: number): number {
-  if (!words.length) return -1
-  if (timeMs < startMs) return -1
-  const span = Math.max(1, endMs - startMs)
-  const total = words.reduce((n, w) => n + [...w].length, 0)
-  const at = Math.min(0.999, (timeMs - startMs) / span) * total
-  let n = 0
-  for (let i = 0; i < words.length; i++) {
-    n += [...words[i]].length
-    if (at < n) return i
-  }
-  return words.length - 1
-}
-
 const CANTONESE = /^(yue|zh-HK|zh-Hant-HK)(-|$)/
 
 /** The label for the caption-source pill, e.g. "YouTube captions · 粵語". */
