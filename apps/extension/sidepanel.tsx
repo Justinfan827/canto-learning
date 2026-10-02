@@ -139,6 +139,7 @@ function SidePanel() {
         <Transcribe
           videoId={state.video.id}
           engine={settings.transcribeEngine}
+          hasLines={state.captionSource === "local" && state.lines.length > 0}
           onEngine={(id) => saveSettings({ transcribeEngine: id })}
           onLines={(lines) => setLocalCaptions(state.video!.id, lines)}
         />

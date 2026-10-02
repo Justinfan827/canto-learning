@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { listEngines, transcribe, type Engine } from "~lib/transcriber"
 
 /** For videos without captions: pick a local speech model and transcribe the audio on this computer. */
-export function Transcribe(props: { videoId: string; engine: string; onEngine: (id: string) => void; onLines: (lines: CaptionLine[]) => void }) {
+export function Transcribe(props: { videoId: string; engine: string; hasLines: boolean; onEngine: (id: string) => void; onLines: (lines: CaptionLine[]) => void }) {
   const [engines, setEngines] = useState<Engine[] | null | "loading">("loading")
   const [stage, setStage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -56,6 +56,22 @@ export function Transcribe(props: { videoId: string; engine: string; onEngine: (
     )
 
   const chosen = engines.find((e) => e.id === props.engine) ?? engines.find((e) => !e.unavailable)
+  if (props.hasLines && !stage && !error)
+    return (
+      <div className="transcribe-done muted">
+        Transcribed locally.{" "}
+        <select value={chosen?.id} onChange={(e) => props.onEngine(e.target.value)}>
+          {engines.map((e) => (
+            <option key={e.id} value={e.id} disabled={!!e.unavailable}>
+              {e.label}
+            </option>
+          ))}
+        </select>{" "}
+        <button className="link" onClick={start}>
+          Run again
+        </button>
+      </div>
+    )
   return (
     <div className="pad transcribe">
       <p>No captions here. Transcribe the audio with a local model:</p>
