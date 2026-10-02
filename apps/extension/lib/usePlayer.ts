@@ -91,8 +91,10 @@ export function usePlayer() {
     }
     chrome.runtime.onMessage.addListener(onMsg)
     const onActivated = () => sync()
-    const onUpdated = (id: number, info: chrome.tabs.TabChangeInfo) => {
-      if (id === tabRef.current && info.status === "complete") sync()
+    // Also re-check when any tab finishes loading or changes URL: the panel may have opened
+    // on another page before this tab went to YouTube, so tabRef can still be empty.
+    const onUpdated = (_id: number, info: chrome.tabs.TabChangeInfo) => {
+      if (info.status === "complete" || info.url) sync()
     }
     chrome.tabs.onActivated.addListener(onActivated)
     chrome.tabs.onUpdated.addListener(onUpdated)
