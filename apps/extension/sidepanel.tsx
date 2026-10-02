@@ -1,4 +1,4 @@
-import { lineAt, pickTrack, senses, trackLabel, transcriptCoverage, type LineWord, type TaughtWord } from "@pna/shared"
+import { lineAt, lookup, pickTrack, regroup, senses, trackLabel, transcriptCoverage, type LineWord, type TaughtWord } from "@pna/shared"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { DisplayMenu, Header, type Pill } from "~components/Header"
@@ -13,6 +13,7 @@ import { aiKey, loadSettings, saveSettings, type Settings } from "~lib/settings"
 import { listen, speak, speechSupported } from "~lib/speech"
 import { aiFor, createTutor } from "~lib/tutor"
 import { useDict } from "~lib/useDict"
+import { useGroupings } from "~lib/useGroupings"
 import { usePlayer, type PlayerState } from "~lib/usePlayer"
 import { useSaved, type SavedWord } from "~lib/useSaved"
 import { useTranscriber, type TranscriberStatus } from "~lib/useTranscriber"
@@ -43,6 +44,7 @@ function SidePanel() {
   const { state, seek, play, pause, setLocalCaptions } = usePlayer()
   const t = useTutor(tutor, state)
   const { dict, split } = useDict()
+  const groupings = useGroupings()
   const saved = useSaved(store)
   const tr = useTranscriber(state, settings?.transcribeEngine ?? "auto", setLocalCaptions)
 
@@ -62,7 +64,7 @@ function SidePanel() {
   const current = lineAt(state.lines, state.timeMs)
 
   // Each line in the chosen register, split into dictionary words. Stable between time updates.
-  const lines = useMemo<(LyricLine & { inferred: boolean; text: string })[]>(
+  const lines = useMemo<(LyricLine & { inferred: boolean; text: string; regrouped: boolean })[]>(
     () =>
       state.lines.map((l) => {
         const c = t.converted[l.idx]
@@ -73,12 +75,13 @@ function SidePanel() {
           startMs: l.startMs,
           endMs: l.endMs,
           text,
-          words: split(text),
+          words: groupings.map[text] && dict ? groupings.map[text].map((w) => lookup(w, dict)) : split(text),
+          regrouped: !!groupings.map[text],
           english: conv?.textEnglish ?? null,
           inferred: register === "colloquial" && !!conv?.colloquialInferred && text !== l.text
         }
       }),
-    [state.lines, t.converted, register, split]
+    [state.lines, t.converted, register, split, groupings.map, dict]
   )
 
   const pausedView = state.paused || loopIdx != null
@@ -269,6 +272,22 @@ function SidePanel() {
             selected={selWord}
             looping={loopIdx === focusLine.idx}
             onWord={(i) => setSelWord(selWord === i ? null : i)}
+            regrouped={focusLine.regrouped}
+            onRegroup={(a, b) => {
+              const next = regroup(
+                focusLine.words.map((w) => w.text),
+                a,
+                b
+              )
+              groupings.set(focusLine.text, next)
+              // Open the new word: the one starting at the drag's first character.
+              let at = 0
+              setSelWord(next.findIndex((w) => (at += [...w].length) > Math.min(a, b)))
+            }}
+            onResetGrouping={() => {
+              groupings.clear(focusLine.text)
+              setSelWord(null)
+            }}
             onHear={(slow) => speak(focusLine.text, { slow })}
             onLoop={() => {
               if (loopIdx === focusLine.idx) {

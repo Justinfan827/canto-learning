@@ -20,11 +20,33 @@ export function MomentCard(props: {
   selected: number | null
   looping: boolean
   onWord: (i: number) => void
+  /** True when the user has fixed this line's word grouping. */
+  regrouped: boolean
+  /** Make characters [a, b) of the line one word. */
+  onRegroup: (a: number, b: number) => void
+  onResetGrouping: () => void
   onHear: (slow: boolean) => void
   onLoop: () => void
   onExplain: (() => void) | null
 }) {
   const { words, saved, selected } = props
+  // Character offset where each word starts, for drag-to-regroup.
+  const starts: number[] = []
+  words.reduce((n, w) => (starts.push(n), n + [...w.text].length), 0)
+  const [drag, setDrag] = useState<{ from: number; to: number } | null>(null)
+
+  /** The character under the pointer: the word under it, then how far across that word. */
+  const charAt = (x: number, y: number): number | null => {
+    const el = document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-wi]")
+    if (!el) return null
+    const wi = Number(el.dataset.wi)
+    const len = [...words[wi].text].length
+    const r = el.getBoundingClientRect()
+    return starts[wi] + Math.min(len - 1, Math.max(0, Math.floor(((x - r.left) / r.width) * len)))
+  }
+  const range = drag ? [Math.min(drag.from, drag.to), Math.max(drag.from, drag.to) + 1] : null
+  const dragged = range ? [...words.map((w) => w.text).join("")].slice(range[0], range[1]).join("") : ""
+
   return (
     <section className="moment" aria-label="Paused line">
       <div className="top">
@@ -35,14 +57,50 @@ export function MomentCard(props: {
         <span className="grow" />
         {props.inferred && <span title="The caption was written Chinese; the spoken words are a guess">Spoken form inferred</span>}
       </div>
-      <div className="big" lang="yue-Hant">
+      <div
+        className="big"
+        lang="yue-Hant"
+        onPointerDown={(e) => {
+          const c = charAt(e.clientX, e.clientY)
+          if (c == null) return
+          e.currentTarget.setPointerCapture(e.pointerId)
+          setDrag({ from: c, to: c })
+        }}
+        onPointerMove={(e) => {
+          if (!drag) return
+          const c = charAt(e.clientX, e.clientY)
+          if (c != null && c !== drag.to) setDrag({ ...drag, to: c })
+        }}
+        onPointerUp={() => {
+          if (!drag || !range) return
+          setDrag(null)
+          const wi = starts.findIndex((s, i) => s === range[0] && s + [...words[i].text].length === range[1])
+          // A tap, or a drag over exactly one word, opens it; anything else regroups.
+          if (drag.from === drag.to) {
+            const i = starts.findLastIndex((s) => s <= drag.from)
+            props.onWord(i)
+          } else if (wi >= 0) props.onWord(wi)
+          else props.onRegroup(range[0], range[1])
+        }}
+        onPointerCancel={() => setDrag(null)}
+      >
         {words.map((w, i) =>
           isWord(w) ? (
             <button
               key={i}
-              className={"chip-w " + (selected === i ? "sel" : saved.has(w.colloquial ?? w.text) ? "saved" : "tap")}
+              data-wi={i}
+              className={
+                "chip-w " +
+                (range && starts[i] < range[1] && starts[i] + [...w.text].length > range[0]
+                  ? "drag"
+                  : selected === i
+                    ? "sel"
+                    : saved.has(w.colloquial ?? w.text)
+                      ? "saved"
+                      : "tap")
+              }
               aria-pressed={selected === i}
-              onClick={() => props.onWord(i)}
+              onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), props.onWord(i))}
             >
               <Ruby text={w.text} jyutping={w.jyutping} show={props.showJyutping} />
             </button>
@@ -51,6 +109,20 @@ export function MomentCard(props: {
           )
         )}
       </div>
+      {drag && dragged.length > 1 ? (
+        <div className="regroup-hint">
+          Group as <b lang="yue-Hant">{dragged}</b>
+        </div>
+      ) : props.regrouped ? (
+        <div className="regroup-hint">
+          You regrouped this line.{" "}
+          <button className="link" onClick={props.onResetGrouping}>
+            Undo
+          </button>
+        </div>
+      ) : (
+        <div className="regroup-hint muted-hint">Drag across characters to group them differently.</div>
+      )}
       {props.english && <div className="en">{props.english}</div>}
       <div className="acts">
         <button className="act" onClick={() => props.onHear(false)}>

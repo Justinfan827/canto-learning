@@ -1,6 +1,6 @@
 import { expect, it } from "vitest"
 
-import { lookup, segment, type Dict } from "./dict"
+import { lookup, regroup, segment, type Dict } from "./dict"
 
 const dict: Dict = {
   佢: [["keoi5", "he; she; it", "他", 1]],
@@ -27,4 +27,12 @@ it("looks up words, following Simplified aliases and marking register pairs", ()
   expect(lookup("冇", dict)).toMatchObject({ jyutping: "mou5", meaning: "to not have", colloquial: "冇", formal: "沒有" })
   expect(lookup("这样", dict)).toMatchObject({ jyutping: "ze5 joeng6", formal: null })
   expect(lookup("佢冇", dict)).toMatchObject({ jyutping: "keoi5 mou5", meaning: "" })
+})
+
+it("regroups a line by character range", () => {
+  const words = ["也不", "知道", "為什麼"]
+  expect(regroup(words, 1, 4)).toEqual(["也", "不知道", "為什麼"]) // merge across a boundary
+  expect(regroup(words, 4, 5)).toEqual(["也不", "知道", "為", "什麼"]) // split a word
+  expect(regroup(words, 0, 7)).toEqual(["也不知道為什麼"])
+  expect(regroup(words, 2, 2)).toEqual(words)
 })

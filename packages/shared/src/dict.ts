@@ -126,3 +126,22 @@ export function senses(word: string, dict: Dict, max = 4): Sense[] {
   }
   return out.slice(0, max)
 }
+
+/**
+ * Regroups a split line so characters [a, b) of the joined words become one word. Words that only
+ * partly overlap the range keep their outside characters as separate words.
+ */
+export function regroup(words: string[], a: number, b: number): string[] {
+  const chars = [...words.join("")]
+  const lo = Math.max(0, Math.min(a, b))
+  const hi = Math.min(chars.length, Math.max(a, b))
+  if (hi <= lo) return words
+  const cuts = new Set<number>([0, chars.length, lo, hi])
+  let at = 0
+  for (const w of words) {
+    if (at <= lo || at >= hi) cuts.add(at)
+    at += [...w].length
+  }
+  const sorted = [...cuts].filter((c) => c <= lo || c >= hi).sort((x, y) => x - y)
+  return sorted.slice(1).map((c, i) => chars.slice(sorted[i], c).join(""))
+}

@@ -173,6 +173,27 @@ await panel.waitForSelector(".sheet", { state: "detached" })
 console.log("saved badge:", await panel.locator(".ib .n").innerText(), "| saved underline:", await panel.locator(".moment .chip-w.saved").allInnerTexts())
 await panel.screenshot({ path: SHOTS + "2-paused-no-tutor.png" })
 
+// Drag across both words to regroup them, then undo.
+{
+  const chips = panel.locator(".moment .chip-w")
+  const first = await chips.first().boundingBox()
+  const last = await chips.last().boundingBox()
+  await panel.mouse.move(first.x + 4, first.y + first.height / 2)
+  await panel.mouse.down()
+  await panel.mouse.move(last.x + last.width - 4, last.y + last.height / 2, { steps: 6 })
+  console.log("drag hint:", await panel.locator(".regroup-hint").innerText())
+  await panel.mouse.up()
+  await panel.waitForFunction(() => document.querySelectorAll(".moment .chip-w").length === 1, null, { timeout: 5000 })
+  await panel.waitForSelector(".sheet")
+  console.log("regrouped words:", await chips.allInnerTexts(), "| sheet:", (await panel.locator(".sheet .dhead").innerText()).replace(/\n/g, " "))
+  await panel.keyboard.press("Escape")
+  const stored = await panel.evaluate(() => chrome.storage.local.get("groupings"))
+  console.log("stored grouping:", JSON.stringify(stored.groupings))
+  await panel.click(".regroup-hint .link")
+  await panel.waitForFunction(() => document.querySelectorAll(".moment .chip-w").length === 2)
+  console.log("after undo:", await chips.allInnerTexts())
+}
+
 // Turn on Claude in settings.
 const setup = await ctx.newPage()
 await setup.goto(`chrome-extension://${extId}/tabs/setup.html`)
