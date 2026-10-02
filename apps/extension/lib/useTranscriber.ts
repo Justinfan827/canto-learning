@@ -83,6 +83,7 @@ export function useTranscriber(player: PlayerState, engineSetting: string, setLo
           else if (ev.type === "done") finished = true
         }
         if (!finished) throw new Error("The transcriber stopped before finishing.")
+        if (!lines.length) throw new Error(`${engine.label} returned no lines for this video. Try another model in settings.`)
         clearTimeout(flushTimer)
         flush()
         setStatus({ kind: "done", engine: engine.label })

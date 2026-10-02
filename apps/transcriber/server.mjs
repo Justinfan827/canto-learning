@@ -149,8 +149,9 @@ function startJob(videoId, engineId, fromMs) {
   }
   jobs.set(key, job)
   ;(async () => {
-    if (fs.existsSync(cached)) {
-      JSON.parse(fs.readFileSync(cached, "utf8")).forEach((l) => onLine(l))
+    const hit = fs.existsSync(cached) ? JSON.parse(fs.readFileSync(cached, "utf8")) : []
+    if (hit.length) {
+      hit.forEach((l) => onLine(l))
       return
     }
     const engine = ENGINES[engineId]
@@ -173,6 +174,9 @@ function startJob(videoId, engineId, fromMs) {
     } finally {
       fs.rmSync(dir, { recursive: true, force: true })
     }
+    // An empty result usually means the model can't hear this language (Parakeet on Cantonese);
+    // report it rather than caching nothing.
+    if (!job.lines.length) throw new Error(`${engine.label} heard no speech it could transcribe. It may not support this language.`)
     const sorted = job.lines.map(({ startMs, endMs, text }) => ({ startMs, endMs, text })).sort((a, b) => a.startMs - b.startMs)
     fs.writeFileSync(cached, JSON.stringify(sorted))
   })().then(
