@@ -5,7 +5,8 @@ import { FocusCard } from "~components/FocusCard"
 import { formatTime, LineText, type RegisterView } from "~components/Line"
 import { Markdown } from "~components/Markdown"
 import { createLocalStore } from "~lib/localStore"
-import { isConfigured, loadSettings, type Settings } from "~lib/settings"
+import { loadDict } from "~lib/dict"
+import { loadSettings, type Settings } from "~lib/settings"
 import { listen, speak, speechSupported, type ListenLang } from "~lib/speech"
 import { usePlayer } from "~lib/usePlayer"
 import { aiFor, createTutor } from "~lib/tutor"
@@ -24,7 +25,7 @@ function SidePanel() {
     chrome.storage.onChanged.addListener(onChange)
     return () => chrome.storage.onChanged.removeListener(onChange)
   }, [])
-  const tutor = useMemo(() => (settings && isConfigured(settings) ? createTutor(store, aiFor(settings)) : null), [settings])
+  const tutor = useMemo(() => (settings ? createTutor(store, aiFor(settings), loadDict) : null), [settings])
 
   const { state, seek } = usePlayer()
   const t = useTutor(tutor, state)
@@ -100,7 +101,7 @@ function SidePanel() {
   useEffect(() => chatEnd.current?.scrollIntoView({ block: "end" }), [t.chat])
 
   if (!settings) return null
-  if (!tutor) return <Setup />
+  if (!tutor) return null
   if (!state.tabId) return <Empty text="Open a YouTube video in this window to start." />
   if (!state.video) return <Empty text="Waiting for the video… if this doesn't change, reload the YouTube tab." />
 
@@ -112,14 +113,16 @@ function SidePanel() {
         <div className="title" title={state.video.title}>
           {state.video.title}
         </div>
-        <div className="switch" role="group" aria-label="Register">
-          <button className={view === "colloquial" ? "on" : ""} onClick={() => setView("colloquial")}>
-            口語
-          </button>
-          <button className={view === "formal" ? "on" : ""} onClick={() => setView("formal")}>
-            書面語
-          </button>
-        </div>
+        {tutor.hasAi && (
+          <div className="switch" role="group" aria-label="Register">
+            <button className={view === "colloquial" ? "on" : ""} onClick={() => setView("colloquial")}>
+              口語
+            </button>
+            <button className={view === "formal" ? "on" : ""} onClick={() => setView("formal")}>
+              書面語
+            </button>
+          </div>
+        )}
         <button className="icon" title="Settings" onClick={() => chrome.tabs.create({ url: chrome.runtime.getURL("tabs/setup.html") })}>
           ⚙
         </button>
@@ -165,10 +168,14 @@ function SidePanel() {
           conv={t.converted[focusLine.idx]}
           view={view}
           words={t.explained[focusLine.idx]}
-          onAsk={ask}
+          onAsk={tutor.hasAi ? ask : null}
+          onSave={(w) => t.saveWord(w, focusLine.idx)}
+          saved={t.logged}
           onRetry={() => t.explain(focusLine.idx, true)}
         />
       )}
+
+      {!tutor.hasAi && t.logged.length > 0 && <div className="logged">Saved: {[...new Set(t.logged)].join("、")}</div>}
 
       {t.chat.length > 0 && (
         <section className="chat">
@@ -182,6 +189,17 @@ function SidePanel() {
         </section>
       )}
 
+      {!tutor.hasAi ? (
+        <footer className="voice">
+          <p className="muted">
+            Tap a word to look it up and save it.{" "}
+            <button className="link" onClick={() => chrome.tabs.create({ url: chrome.runtime.getURL("tabs/setup.html") })}>
+              Add a model
+            </button>{" "}
+            to ask the tutor questions.
+          </p>
+        </footer>
+      ) : (
       <footer className="voice">
         {speechSupported() && (
           <>
@@ -208,6 +226,7 @@ function SidePanel() {
           />
         </form>
       </footer>
+      )}
       {micError && (
         <div className="banner" onClick={() => setMicError(null)}>
           {micError}
@@ -219,17 +238,6 @@ function SidePanel() {
 
 function Empty({ text }: { text: string }) {
   return <div className="empty">{text}</div>
-}
-
-function Setup() {
-  return (
-    <div className="empty">
-      <p>Choose a model and add a key to get started.</p>
-      <button className="primary" onClick={() => chrome.tabs.create({ url: chrome.runtime.getURL("tabs/setup.html") })}>
-        Open setup
-      </button>
-    </div>
-  )
 }
 
 export default SidePanel

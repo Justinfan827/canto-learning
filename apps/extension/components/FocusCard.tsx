@@ -12,7 +12,10 @@ export function FocusCard(props: {
   conv?: ConvertedLine
   view: RegisterView
   words: LineWord[] | "loading" | "error" | undefined
-  onAsk: (q: string) => void
+  /** Null when no model is set up. */
+  onAsk: ((q: string) => void) | null
+  onSave: (w: LineWord) => void
+  saved: string[]
   onRetry: () => void
 }) {
   const { line, conv, view, words, onAsk } = props
@@ -27,10 +30,10 @@ export function FocusCard(props: {
           🔊
         </button>
       </div>
-      {words === "loading" && <p className="muted">Splitting into words…</p>}
+      {words === "loading" && <p className="muted">Looking up words…</p>}
       {words === "error" && (
         <p className="muted">
-          Couldn't split this line. <button className="link" onClick={props.onRetry}>Retry</button>
+          Couldn't look up this line. <button className="link" onClick={props.onRetry}>Retry</button>
         </p>
       )}
       {Array.isArray(words) && (
@@ -43,19 +46,23 @@ export function FocusCard(props: {
           ))}
         </div>
       )}
-      {Array.isArray(words) && open != null && words[open] && <WordCard w={words[open]} onAsk={onAsk} />}
-      <div className="suggest">
-        {SUGGESTIONS.map((s) => (
-          <button key={s} className="chip" onClick={() => onAsk(s)}>
-            {s}
-          </button>
-        ))}
-      </div>
+      {Array.isArray(words) && open != null && words[open] && (
+        <WordCard w={words[open]} onAsk={onAsk} onSave={props.onSave} saved={props.saved.includes(words[open].colloquial ?? words[open].text)} />
+      )}
+      {onAsk && (
+        <div className="suggest">
+          {SUGGESTIONS.map((s) => (
+            <button key={s} className="chip" onClick={() => onAsk(s)}>
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
     </section>
   )
 }
 
-function WordCard({ w, onAsk }: { w: LineWord; onAsk: (q: string) => void }) {
+function WordCard({ w, onAsk, onSave, saved }: { w: LineWord; onAsk: ((q: string) => void) | null; onSave: (w: LineWord) => void; saved: boolean }) {
   return (
     <div className="wordcard">
       <div className="wc-head">
@@ -68,16 +75,23 @@ function WordCard({ w, onAsk }: { w: LineWord; onAsk: (q: string) => void }) {
           🐢
         </button>
       </div>
-      <p>{w.meaning}</p>
+      <p>{w.meaning || <span className="muted">Not in the dictionary.</span>}</p>
       {w.formal && w.colloquial && w.formal !== w.colloquial && (
         <p className="muted">
           口語 {w.colloquial} · 書面語 {w.formal}
         </p>
       )}
       {w.likelyError && <p className="warn">Caption probably meant {w.likelyError}</p>}
-      <button className="chip" onClick={() => onAsk(`Tell me more about ${w.colloquial ?? w.text}`)}>
-        More about this word
-      </button>
+      <div className="suggest">
+        <button className="chip" disabled={saved} onClick={() => onSave(w)}>
+          {saved ? "Saved" : "Save word"}
+        </button>
+        {onAsk && (
+          <button className="chip" onClick={() => onAsk(`Tell me more about ${w.colloquial ?? w.text}`)}>
+            More about this word
+          </button>
+        )}
+      </div>
     </div>
   )
 }

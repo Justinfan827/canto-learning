@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk"
 import { jsonSchemaOutputFormat } from "@anthropic-ai/sdk/helpers/json-schema"
-import type { LineWord, TaughtWord } from "@pna/shared"
+import type { TaughtWord } from "@pna/shared"
 
 export const ANSWER_MODEL = "claude-sonnet-5-5"
 export const BULK_MODEL = "claude-haiku-4-5"
@@ -81,63 +81,6 @@ export async function convertLines(ai: Anthropic, args: ConvertArgs) {
     output_config: { format: jsonSchemaOutputFormat(ConvertedSchema) }
   })
   return mapConverted(res.parsed_output, args)
-}
-
-// ---- Split a line into words ----
-
-export const WordsSchema = {
-  type: "object",
-  additionalProperties: false,
-  required: ["words"],
-  properties: {
-    words: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["text", "jyutping", "meaning", "formal", "colloquial", "likely_error"],
-        properties: {
-          text: { type: "string", description: "the word exactly as it appears in the line" },
-          jyutping: { type: "string" },
-          meaning: { type: "string", description: "short English gloss, a few words" },
-          formal: { type: ["string", "null"], description: "書面語 form, or null if the same" },
-          colloquial: { type: ["string", "null"], description: "口語 form, or null if the same" },
-          likely_error: { type: ["string", "null"], description: "the probably intended word if this looks like a sound-alike caption error, else null" }
-        }
-      }
-    }
-  }
-} as const
-
-export const EXPLAIN_SYSTEM = `Split a Cantonese video caption into words for a learner. Group characters into natural words (咁古怪 → 咁 / 古怪). Cover every word in order; skip punctuation. Flag likely caption errors from sound-alike characters (荊天洞地 → 驚天動地). ${HK}`
-
-export type ExplainArgs = { title: string; before: string[]; line: string }
-type WordsOut = { words: { text: string; jyutping: string; meaning: string; formal: string | null; colloquial: string | null; likely_error: string | null }[] }
-
-export function explainUser(args: ExplainArgs) {
-  return `Video: ${args.title}\nPrevious lines:\n${args.before.join("\n") || "(none)"}\n\nLine to split:\n${args.line}`
-}
-
-export async function explainLine(ai: Anthropic, args: ExplainArgs): Promise<LineWord[]> {
-  const res = await ai.messages.parse({
-    model: BULK_MODEL,
-    max_tokens: 4000,
-    system: EXPLAIN_SYSTEM,
-    messages: [{ role: "user", content: explainUser(args) }],
-    output_config: { format: jsonSchemaOutputFormat(WordsSchema) }
-  })
-  return mapWords(res.parsed_output)
-}
-
-export function mapWords(out: WordsOut | null | undefined): LineWord[] {
-  return (out?.words ?? []).map((w) => ({
-    text: w.text,
-    jyutping: w.jyutping,
-    meaning: w.meaning,
-    formal: w.formal,
-    colloquial: w.colloquial,
-    likelyError: w.likely_error
-  }))
 }
 
 // ---- Answer a question (streamed) ----

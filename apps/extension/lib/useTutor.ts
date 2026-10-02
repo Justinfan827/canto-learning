@@ -59,11 +59,17 @@ export function useTutor(tutor: Tutor | null, player: PlayerState) {
     return needsConversion
   }, [tutor, video, player.lines, player.captionKind])
 
+  // A new tutor (e.g. a model was just set up) re-checks which lines still need converting.
+  useEffect(() => {
+    savedCount.current = 0
+  }, [tutor])
+
   // A full caption file: load cached conversions, then convert the rest in batches from the current position.
   const trackLines = player.captionSource === "track" && player.lines.length ? player.lines : null
   useEffect(() => {
     if (!tutor || !video || !trackLines) return
     let cancelled = false
+    if (!tutor.hasAi) return
     ;(async () => {
       try {
         const todo = await save()
@@ -89,7 +95,7 @@ export function useTutor(tutor: Tutor | null, player: PlayerState) {
   /** Screen-read captions arrive line by line, so convert just the lines around a pause. */
   const convertAround = useCallback(
     async (idx: number) => {
-      if (!tutor || !video) return
+      if (!tutor?.hasAi || !video) return
       const todo = (await save()).filter((i) => i > idx - CONTEXT_LINES && i <= idx)
       if (todo.length) addConverted(await tutor.convert(video, todo))
     },
@@ -98,23 +104,38 @@ export function useTutor(tutor: Tutor | null, player: PlayerState) {
 
   const explain = useCallback(
     async (idx: number, retry = false) => {
-      if (!tutor || !video || idx < 0 || (explained[idx] && !retry)) return
+      const line = player.lines[idx]
+      if (!tutor || !video || !line || (explained[idx] && !retry)) return
       setExplained((x) => ({ ...x, [idx]: "loading" }))
       try {
         await save()
-        const words = await tutor.explain(video, idx)
+        const words = await tutor.explain(line.text)
         setExplained((x) => ({ ...x, [idx]: words }))
       } catch (e) {
         setExplained((x) => ({ ...x, [idx]: "error" }))
         report(e)
       }
     },
-    [tutor, video, explained, save]
+    [tutor, video, player.lines, explained, save]
+  )
+
+  const saveWord = useCallback(
+    async (w: LineWord, lineIdx: number) => {
+      if (!tutor || !video) return
+      try {
+        await save()
+        await tutor.saveWord(w, { videoId: video.id, lineIdx })
+        setLogged((l) => [...l, w.colloquial ?? w.text])
+      } catch (e) {
+        report(e)
+      }
+    },
+    [tutor, video, save]
   )
 
   const ask = useCallback(
     async (question: string, lineIdx: number, onDone?: (answer: string) => void) => {
-      if (!tutor || !video) return
+      if (!tutor?.hasAi || !video) return
       const context: CaptionLine[] = lineIdx >= 0 ? player.lines.slice(Math.max(0, lineIdx - CONTEXT_LINES + 1), lineIdx + 1) : []
       const history = chat.filter((m) => !m.error && !m.pending).map(({ role, content }) => ({ role, content }))
       setChat((c) => [...c, { role: "user", content: question }, { role: "assistant", content: "", pending: true }])
@@ -139,5 +160,5 @@ export function useTutor(tutor: Tutor | null, player: PlayerState) {
     [tutor, video, player.lines, player.timeMs, chat, save]
   )
 
-  return { converted, explained, chat, logged, error, clearError: () => setError(null), explain, convertAround, ask }
+  return { converted, explained, chat, logged, error, clearError: () => setError(null), explain, saveWord, convertAround, ask }
 }

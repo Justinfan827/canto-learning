@@ -9,3 +9,5 @@ dist
 *.log
 apps/extension/e2e/panel.png
 *.tsbuildinfo
+apps/extension/assets/dict.dat
+apps/extension/.cache

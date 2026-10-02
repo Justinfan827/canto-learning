@@ -1,7 +1,7 @@
-import type { LineWord, TaughtWord } from "@pna/shared"
+import type { TaughtWord } from "@pna/shared"
 
 import * as prompts from "./ai"
-import type { AnswerArgs, ConvertArgs, ExplainArgs, ExtractArgs } from "./ai"
+import type { AnswerArgs, ConvertArgs, ExtractArgs } from "./ai"
 
 /**
  * Any OpenAI-compatible chat endpoint: OpenRouter (free models by default),
@@ -114,16 +114,6 @@ export function openAiCompat(cfg: OpenAiConfig) {
         schema: prompts.ConvertedSchema
       })
       return prompts.mapConverted(out, args)
-    },
-
-    async explainLine(args: ExplainArgs): Promise<LineWord[]> {
-      const out = await chatJson<Parameters<typeof prompts.mapWords>[0]>(cfg, {
-        name: "words",
-        system: prompts.EXPLAIN_SYSTEM,
-        user: prompts.explainUser(args),
-        schema: prompts.WordsSchema
-      })
-      return prompts.mapWords(out)
     },
 
     async *streamAnswer(args: AnswerArgs): AsyncGenerator<string> {
