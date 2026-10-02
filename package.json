@@ -1,0 +1,11 @@
+{
+  "name": "pause-and-ask",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "dev:ext": "pnpm --filter extension dev",
+    "build:ext": "pnpm --filter extension build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  }
+}

@@ -1,0 +1,11 @@
+node_modules
+.plasmo
+build
+dist
+.wrangler
+.dev.vars
+.env*
+!.env.example
+*.log
+apps/extension/e2e/panel.png
+*.tsbuildinfo

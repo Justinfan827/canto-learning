@@ -1,0 +1,49 @@
+{
+  "name": "extension",
+  "displayName": "Pause & Ask",
+  "version": "0.1.0",
+  "description": "Pause a Cantonese YouTube video and ask a tutor about what was just said.",
+  "private": true,
+  "scripts": {
+    "dev": "plasmo dev",
+    "build": "plasmo build && node scripts/wrap-main-world.mjs",
+    "package": "pnpm build && plasmo package",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run lib",
+    "smoke": "node e2e/smoke.mjs"
+  },
+  "dependencies": {
+    "@pna/shared": "workspace:*",
+    "plasmo": "0.90.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "@anthropic-ai/sdk": "^0.131.0",
+    "idb": "^8.0.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.0.287",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "typescript": "5.6.3",
+    "fake-indexeddb": "^6.0.0",
+    "vitest": "^2.1.0",
+    "playwright-core": "1.56.1"
+  },
+  "manifest": {
+    "permissions": [
+      "sidePanel",
+      "storage",
+      "tabs"
+    ],
+    "host_permissions": [
+      "https://www.youtube.com/*",
+      "https://api.anthropic.com/*"
+    ],
+    "side_panel": {
+      "default_path": "sidepanel.html"
+    },
+    "action": {
+      "default_title": "Open Pause & Ask"
+    }
+  }
+}
