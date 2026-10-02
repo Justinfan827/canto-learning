@@ -107,3 +107,22 @@ function charReadings(word: string, dict: Dict) {
 export function splitLine(text: string, dict: Dict): LineWord[] {
   return segment(text, dict).map((w) => lookup(w, dict))
 }
+
+export interface Sense {
+  jyutping: string
+  gloss: string
+  /** 書面語 equivalent of a Cantonese-only word, or null. */
+  formal: string | null
+}
+
+/** Numbered senses for the word sheet: one per entry, or the parts of a single entry's gloss. */
+export function senses(word: string, dict: Dict, max = 4): Sense[] {
+  const entries = entriesFor(word, dict) ?? []
+  const out: Sense[] = []
+  for (const [jyutping, gloss, formal, canto] of entries) {
+    const f = canto && formal && formal !== word ? formal : null
+    const parts = entries.length === 1 ? gloss.split(/\s*;\s*/) : [gloss]
+    for (const g of parts) if (g && !out.some((s) => s.gloss === g)) out.push({ jyutping, gloss: g, formal: f })
+  }
+  return out.slice(0, max)
+}

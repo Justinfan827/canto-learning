@@ -1,6 +1,8 @@
 import { DEFAULT_FREE_MODEL, OPENROUTER_URL } from "./openaiCompat"
+import type { ListenLang } from "./speech"
 
 export type Provider = "openai" | "claude"
+export type TextSize = "s" | "m" | "l"
 
 export interface Settings {
   /** "openai" is any OpenAI-compatible endpoint, OpenRouter by default. */
@@ -11,8 +13,17 @@ export interface Settings {
   openaiKey: string
   openaiModel: string
   speakAnswers: boolean
-  /** Local speech model for videos without captions. */
+  /** Local speech model for videos without captions; "auto" picks the best one installed. */
   transcribeEngine: string
+  /** Set once the "audio stays on this computer" notice has been dismissed. */
+  transcribeNoticeSeen: boolean
+  /** Language of spoken questions. */
+  listenLang: ListenLang
+  // Display options, from the panel's Aa menu.
+  showJyutping: boolean
+  register: "colloquial" | "formal"
+  showEnglish: boolean
+  textSize: TextSize
 }
 
 const DEFAULTS: Settings = {
@@ -22,7 +33,13 @@ const DEFAULTS: Settings = {
   openaiKey: "",
   openaiModel: DEFAULT_FREE_MODEL,
   speakAnswers: false,
-  transcribeEngine: "whisper-cpp-turbo"
+  transcribeEngine: "auto",
+  transcribeNoticeSeen: false,
+  listenLang: "zh-HK",
+  showJyutping: true,
+  register: "colloquial",
+  showEnglish: true,
+  textSize: "m"
 }
 
 export async function loadSettings(): Promise<Settings> {
@@ -38,4 +55,9 @@ export async function saveSettings(s: Partial<Settings>) {
 export function isConfigured(s: Settings) {
   if (s.provider === "claude") return !!s.apiKey
   return !!s.openaiModel && (!!s.openaiKey || !s.openaiBaseUrl.startsWith(OPENROUTER_URL))
+}
+
+/** The settings that change which model the tutor uses; other changes shouldn't rebuild it. */
+export function aiKey(s: Settings) {
+  return JSON.stringify([s.provider, s.apiKey, s.openaiBaseUrl, s.openaiKey, s.openaiModel])
 }

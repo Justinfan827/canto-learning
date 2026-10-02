@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk"
-import type { CaptionLine, ConvertedLine, LineWord } from "@pna/shared"
+import type { CaptionLine, ConvertedLine, LineWord, TaughtWord } from "@pna/shared"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { ProviderError } from "./openaiCompat"
@@ -9,10 +9,15 @@ import type { PlayerState } from "./usePlayer"
 const CONTEXT_LINES = 5
 
 export interface ChatMessage {
+  id: number
   role: "user" | "assistant"
   content: string
+  /** The line the question was about; answers show under that line's card. */
+  lineIdx: number
   pending?: boolean
   error?: boolean
+  /** Words the answer taught, offered as Save chips. */
+  taught?: TaughtWord[]
 }
 
 function describe(e: unknown) {
@@ -28,22 +33,19 @@ function describe(e: unknown) {
   return e instanceof Error ? e.message : String(e)
 }
 
-/** Per-video tutor state for the side panel: conversions, word splits, chat. */
+/** Per-video tutor state for the side panel: conversions and the tutor's answers. */
 export function useTutor(tutor: Tutor | null, player: PlayerState) {
   const [converted, setConverted] = useState<Record<number, ConvertedLine>>({})
-  const [explained, setExplained] = useState<Record<number, LineWord[] | "loading" | "error">>({})
   const [chat, setChat] = useState<ChatMessage[]>([])
-  const [logged, setLogged] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const savedCount = useRef(0)
+  const nextId = useRef(0)
   const video = player.video
   const videoId = video?.id ?? null
 
   useEffect(() => {
     setConverted({})
-    setExplained({})
     setChat([])
-    setLogged([])
     setError(null)
     savedCount.current = 0
   }, [videoId])
@@ -102,30 +104,25 @@ export function useTutor(tutor: Tutor | null, player: PlayerState) {
     [tutor, video, save]
   )
 
-  const explain = useCallback(
-    async (idx: number, retry = false) => {
-      const line = player.lines[idx]
-      if (!tutor || !video || !line || (explained[idx] && !retry)) return
-      setExplained((x) => ({ ...x, [idx]: "loading" }))
-      try {
-        await save()
-        const words = await tutor.explain(line.text)
-        setExplained((x) => ({ ...x, [idx]: words }))
-      } catch (e) {
-        setExplained((x) => ({ ...x, [idx]: "error" }))
-        report(e)
-      }
-    },
-    [tutor, video, player.lines, explained, save]
-  )
-
   const saveWord = useCallback(
     async (w: LineWord, lineIdx: number) => {
       if (!tutor || !video) return
       try {
         await save()
         await tutor.saveWord(w, { videoId: video.id, lineIdx })
-        setLogged((l) => [...l, w.colloquial ?? w.text])
+      } catch (e) {
+        report(e)
+      }
+    },
+    [tutor, video, save]
+  )
+
+  const saveTaught = useCallback(
+    async (w: TaughtWord, lineIdx: number) => {
+      if (!tutor || !video) return
+      try {
+        await save()
+        await tutor.saveTaught(w, { videoId: video.id, lineIdx })
       } catch (e) {
         report(e)
       }
@@ -138,27 +135,29 @@ export function useTutor(tutor: Tutor | null, player: PlayerState) {
       if (!tutor?.hasAi || !video) return
       const context: CaptionLine[] = lineIdx >= 0 ? player.lines.slice(Math.max(0, lineIdx - CONTEXT_LINES + 1), lineIdx + 1) : []
       const history = chat.filter((m) => !m.error && !m.pending).map(({ role, content }) => ({ role, content }))
-      setChat((c) => [...c, { role: "user", content: question }, { role: "assistant", content: "", pending: true }])
+      const id = ++nextId.current
+      setChat((c) => [...c, { id: id - 0.5, role: "user", content: question, lineIdx }, { id, role: "assistant", content: "", lineIdx, pending: true }])
+      const update = (m: Partial<ChatMessage>) => setChat((c) => c.map((x) => (x.id === id ? { ...x, ...m } : x)))
       let answer = ""
       try {
         await save()
-        const onLogged = (r: { words: { colloquial: string }[] } | { error: unknown }) => {
-          if ("words" in r) setLogged((l) => [...l, ...r.words.map((w) => w.colloquial)])
-          else console.warn("Couldn't log words", r.error)
+        const onTaught = (r: { words: TaughtWord[] } | { error: unknown }) => {
+          if ("words" in r) update({ taught: r.words })
+          else console.warn("Couldn't pick out taught words", r.error)
         }
-        for await (const chunk of tutor.ask({ video, lineIdx: lineIdx >= 0 ? lineIdx : null, atMs: player.timeMs, question, context, history }, onLogged)) {
+        for await (const chunk of tutor.ask({ video, lineIdx: lineIdx >= 0 ? lineIdx : null, atMs: player.timeMs, question, context, history }, onTaught)) {
           answer += chunk
-          setChat((c) => [...c.slice(0, -1), { role: "assistant", content: answer, pending: true }])
+          update({ content: answer })
         }
-        setChat((c) => [...c.slice(0, -1), { role: "assistant", content: answer }])
+        update({ content: answer, pending: false })
         onDone?.(answer)
       } catch (e) {
-        setChat((c) => [...c.slice(0, -1), { role: "assistant", content: "Couldn't get an answer. Try again.", error: true }])
+        update({ content: "Couldn't get an answer. Try again.", pending: false, error: true })
         report(e)
       }
     },
     [tutor, video, player.lines, player.timeMs, chat, save]
   )
 
-  return { converted, explained, chat, logged, error, clearError: () => setError(null), explain, saveWord, convertAround, ask }
+  return { converted, chat, error, clearError: () => setError(null), saveWord, saveTaught, convertAround, ask }
 }

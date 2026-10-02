@@ -41,9 +41,11 @@ function onVideo(v: VideoInfo, t: CaptionTrack[]) {
   send({ type: "video", video, tracks })
   if (best) toHook({ type: "enable-track", languageCode: best.languageCode, kind: best.kind })
   clearTimeout(fallbackTimer)
-  fallbackTimer = window.setTimeout(() => {
-    if (!captions && video?.id === v.id) startScreenFallback()
-  }, SCREEN_FALLBACK_MS)
+  // With no Chinese track there's nothing useful on screen either; the panel transcribes locally instead.
+  if (best)
+    fallbackTimer = window.setTimeout(() => {
+      if (!captions && video?.id === v.id) startScreenFallback()
+    }, SCREEN_FALLBACK_MS)
 }
 
 function onTimedText(data: { videoId: string | null; languageCode: string | null; kind: string | null; payload: any }) {
