@@ -15,7 +15,12 @@ const SCREEN_FALLBACK_MS = 5000
 
 let video: VideoInfo | null = null
 let tracks: CaptionTrack[] = []
-let captions: { lines: CaptionLine[]; kind: CaptionKind; source: CaptionSource } | null = null
+type Captions = { lines: CaptionLine[]; kind: CaptionKind; source: CaptionSource }
+let captions: Captions | null = null
+/** The YouTube caption file's lines, kept while local transcription is shown instead. */
+let trackCaptions: Captions | null = null
+/** True once the panel sends locally transcribed lines; YouTube's file then stays in reserve. */
+let localActive = false
 let fallbackTimer: number | undefined
 let screenObserver: MutationObserver | null = null
 
@@ -34,6 +39,8 @@ function onVideo(v: VideoInfo, t: CaptionTrack[]) {
   tracks = t
   if (changed) {
     captions = null
+    trackCaptions = null
+    localActive = false
     stopScreenFallback()
   }
   const best = pickTrack(tracks)
@@ -56,7 +63,9 @@ function onTimedText(data: { videoId: string | null; languageCode: string | null
   const lines = parseJson3(data.payload)
   if (!lines.length) return
   stopScreenFallback()
-  captions = { lines, kind: data.kind === "asr" ? "auto" : "manual", source: "track" }
+  trackCaptions = { lines, kind: data.kind === "asr" ? "auto" : "manual", source: "track" }
+  if (localActive) return
+  captions = trackCaptions
   send({ type: "captions", videoId: video.id, ...captions })
 }
 
@@ -138,11 +147,21 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
       v?.pause()
       break
     case "local-captions":
-      // Lines transcribed on this computer, for videos without a caption file.
+      // Lines transcribed on this computer: for videos without a caption file, or when the
+      // user picked a local model over YouTube's captions.
       if (!video || msg.videoId !== video.id) break
+      localActive = true
       stopScreenFallback()
       captions = { lines: msg.lines, kind: "auto", source: "local" }
       send({ type: "captions", videoId: video.id, ...captions })
+      break
+    case "use-track":
+      // Back to YouTube's captions after local transcription.
+      localActive = false
+      if (video && trackCaptions && msg.videoId === video.id) {
+        captions = trackCaptions
+        send({ type: "captions", videoId: video.id, ...captions })
+      }
       break
   }
 })

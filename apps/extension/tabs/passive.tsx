@@ -101,7 +101,7 @@ function PausePopup() {
   const groupings = useGroupings()
   const saved = useSaved(store)
   // Keep transcribing while the video plays, so the line is there when it pauses.
-  const tr = useTranscriber(state, settings?.transcribeEngine ?? "auto", setLocalCaptions, !panelOpen)
+  const tr = useTranscriber(state, settings?.transcribeEngine ?? "auto", !!settings?.preferLocal, setLocalCaptions, !panelOpen)
 
   const [focusIdx, setFocusIdx] = useState<number | null>(null)
   const [selWord, setSelWord] = useState<number | null>(null)

@@ -279,3 +279,15 @@ html:has(.pp), html:has(.pp) body { height: auto; min-height: 0; background: tra
 .pp .sheet .grab { display: none; }
 .pp-empty { padding: 4px 10px 2px; font-size: 13px; color: var(--muted); display: grid; gap: 8px; justify-items: start; }
 .pp-empty p { margin: 0; }
+
+/* caption source menu, from the pill */
+.menu-anchor.left { min-width: 0; }
+.pop.src-menu { left: 0; right: auto; top: 30px; width: 270px; gap: 2px; }
+.menu-h { font-size: 11px; color: var(--muted); padding: 4px 8px 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+.srcopt { display: flex; align-items: flex-start; gap: 6px; text-align: left; padding: 7px 8px; border-radius: 8px; color: var(--fg); font: 13px/1.35 var(--f-ui); }
+.srcopt:hover:not(:disabled) { background: var(--soft); }
+.srcopt:disabled { color: var(--faint); }
+.srcopt.on { color: var(--jade); }
+.src-check { width: 14px; flex: none; }
+.src-text small { display: block; color: var(--muted); font-size: 11.5px; line-height: 1.3; }
+.srcopt.act-row { color: var(--amber); border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; margin-top: 2px; }

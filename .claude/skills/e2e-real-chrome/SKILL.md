@@ -5,6 +5,10 @@ description: End-to-end test the Pause & Ask extension in the user's real, runni
 
 # End-to-end testing in the user's real Chrome
 
+**Run tests headless by default.** `node apps/extension/e2e/smoke.mjs` runs in headless Chrome for Testing and opens nothing on the user's screen (`HEADED=1` shows it). Use the user's real Chrome only when they ask to watch, or for the final reload after a change. Never loop test runs that open windows, and don't open extra windows or popups in their Chrome: reuse one test tab and close it when done.
+
+**Rule: control the user's Chrome only with the `dev-browser` CLI and `--connect`.** Don't use Claude in Chrome, BrowserSkill (`bsk`), computer use, or Chrome's remote-debugging "Allow" flow from other tools for this. `--connect` attaches to the Chrome that's already running, so the user isn't asked to turn on remote debugging again.
+
 The user prefers to watch changes run in their own Chrome, on a real video, not only in the mock smoke test. Default sample video (no captions, so it exercises local transcription): https://www.youtube.com/watch?v=m9BweWeWD0g
 
 ## 0. Before you start
@@ -62,17 +66,16 @@ Settings live in `chrome.storage.local` (for example `transcribeEngine`, `regist
 
 ## 3. Open the panel and drive the video
 
-Chrome only opens the real side panel on a user gesture (the toolbar icon). Either ask the user to click it, or open the panel page pinned to the YouTube tab in a small window beside the video:
+Chrome only opens the real side panel on a user gesture (the toolbar icon). Either ask the user to click it, or load the panel page pinned to the YouTube tab in one named test tab (no new windows):
 
 ```js
-await b.evaluate(async () => {
-  const [yt] = await chrome.tabs.query({ url: "https://www.youtube.com/watch*" })
-  const w = await chrome.windows.get(yt.windowId)
-  await chrome.windows.create({ url: `sidepanel.html?tab=${yt.id}`, type: "popup", width: 430, height: w.height ?? 900, left: (w.left ?? 0) + (w.width ?? 1400) - 430, top: w.top ?? 0 })
-})
+const p = await browser.getPage("pna-test")   // reused across runs; close it at the end
+await p.goto(`${EXT}/sidepanel.html`)
+const tabId = await p.evaluate(async () => (await chrome.tabs.query({ url: "https://www.youtube.com/watch*" }))[0]?.id)
+await p.goto(`${EXT}/sidepanel.html?tab=${tabId}`)
 ```
 
-Then grab that page (`listPages()`, find the `sidepanel.html?tab=` URL, `browser.getPage(id)`) and drive the player through the extension's own bridge. This works even when the YouTube tab isn't in `listPages()`:
+Then drive the player through the extension's own bridge. This works even when the YouTube tab isn't in `listPages()`:
 
 ```js
 const cmd = (m) => panel.evaluate((m) => chrome.tabs.sendMessage(Number(new URLSearchParams(location.search).get("tab")), m).catch(() => {}), m)
@@ -88,13 +91,15 @@ Keep scripts small: one step per run, ending with a log of the state you need ne
 
 ## 4. Clean up
 
-Close tabs and windows you opened unless the user wants to keep looking. Leave the user's own tabs alone apart from the reloads above.
+Close the test tab (`browser.closePage("pna-test")`) and anything else you opened unless the user wants to keep looking. Leave the user's own tabs alone apart from the reloads above.
 
-## Alternative: a separate browser
+## Alternative: a separate, visible browser
 
-Opening a fresh tab in the user's Chrome (`browser.newPage()`) is fine for an isolated run, as long as you close it afterwards.
+Only when the user's Chrome isn't reachable (for example from a cloud session, which can't see their laptop) or the user says not to touch it.
 
-When the user's Chrome isn't reachable, or you shouldn't touch it, run the visible walkthrough in its own Chrome for Testing window with the extension preloaded:
+Opening a fresh tab in the user's Chrome (`browser.newPage()`, still through `dev-browser --connect`) is fine for an isolated run, as long as you close it afterwards.
+
+Otherwise run the visible walkthrough in its own Chrome for Testing window with the extension preloaded:
 
 ```sh
 CHROMIUM_PATH="$HOME/Library/Caches/ms-playwright/chromium-1208/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing" \

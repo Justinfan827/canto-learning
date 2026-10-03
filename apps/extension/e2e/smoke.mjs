@@ -46,7 +46,7 @@ function makeWav(seconds, rate = 8000) {
 const wav = makeWav(20)
 const ctx = await chromium.launchPersistentContext(fs.mkdtempSync("/tmp/pna-profile-"), {
   executablePath: process.env.CHROMIUM_PATH ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
-  headless: false,
+  headless: !process.env.HEADED,
   args: ["--autoplay-policy=no-user-gesture-required", `--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`],
 })
 const logs = []
@@ -187,6 +187,7 @@ await panel.screenshot({ path: SHOTS + "2-paused-no-tutor.png" })
   await panel.waitForSelector(".sheet")
   console.log("regrouped words:", await chips.allInnerTexts(), "| sheet:", (await panel.locator(".sheet .dhead").innerText()).replace(/\n/g, " "))
   await panel.keyboard.press("Escape")
+  await panel.waitForSelector(".sheet", { state: "detached" })
   const stored = await panel.evaluate(() => chrome.storage.local.get("groupings"))
   console.log("stored grouping:", JSON.stringify(stored.groupings))
   await panel.click(".regroup-hint .link")
@@ -263,7 +264,7 @@ console.log("stored words:", JSON.stringify(words.map((w) => [w.colloquial, w.jy
 // A video with no Chinese captions transcribes on its own, from the playhead.
 await yt.goto(`https://www.youtube.com/watch?v=${NOCAP}`)
 await yt.evaluate(async () => { const v = document.querySelector("video"); if (v.readyState < 1) await new Promise(r => v.addEventListener("loadedmetadata", r, { once: true })); v.currentTime = 1 })
-await panel.waitForSelector(".pill >> text=Transcribing on this computer", { timeout: 10000 })
+await panel.waitForSelector(".pill >> text=Transcribing ·", { timeout: 10000 })
 console.log("transcribing:", await panel.locator(".bar .pill").innerText(), "| notice:", await panel.locator(".notice").count(), "| skeleton:", await panel.locator(".skel").count())
 await panel.screenshot({ path: SHOTS + "7-transcribing.png" })
 await panel.click(".notice .link")
@@ -272,5 +273,20 @@ releaseTranscript()
 await yt.evaluate(() => document.querySelector("video").play())
 await panel.waitForSelector(".lyrics .ln[data-idx='1']", { timeout: 10000 })
 console.log("transcribed:", await panel.locator(".bar .pill").innerText(), "| lines:", await panel.locator(".lyrics .ln").count(), "| request:", JSON.stringify(transcribeCalls))
+console.log("menu on no-caption video:", (await (async () => { await panel.click(".bar .pill"); const t = await panel.locator(".src-menu").innerText(); await panel.keyboard.press("Escape"); await panel.click(".bar .pill"); return t })()).replace(/\n/g, " | "))
+
+// Back on a captioned video: YouTube is the default, and the pill's menu switches to a local model and back.
+await yt.goto(`https://www.youtube.com/watch?v=${VID}`)
+await panel.waitForSelector(".pill >> text=YouTube captions", { timeout: 10000 })
+await panel.click(".bar .pill")
+console.log("source menu:", (await panel.locator(".src-menu .srcopt").allInnerTexts()).map((t) => t.replace(/\n/g, " ")).join(" | "))
+await panel.click(".src-menu .srcopt:has-text('Whisper turbo')")
+await panel.waitForSelector(".pill >> text=Whisper turbo", { timeout: 10000 })
+console.log("after picking local:", await panel.locator(".bar .pill").innerText(), "| preferLocal:", (await panel.evaluate(() => chrome.storage.local.get("preferLocal"))).preferLocal)
+await panel.click(".bar .pill")
+await panel.click(".src-menu .srcopt:has-text('YouTube captions')")
+await panel.waitForSelector(".pill >> text=YouTube captions", { timeout: 10000 })
+await panel.waitForSelector(".lyrics .ln[data-idx='3'], .moment", { timeout: 5000 }).catch(() => {})
+console.log("back to YouTube:", await panel.locator(".bar .pill").innerText(), "| lines:", await panel.locator(".lyrics .ln").count(), "| card:", await text(".moment .big").catch(() => "-"))
 console.log("errors:", logs.filter((l) => /error/i.test(l)).slice(0, 5))
 await ctx.close()

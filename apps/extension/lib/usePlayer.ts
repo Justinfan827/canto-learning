@@ -123,6 +123,7 @@ export function usePlayer({ ownTab = false } = {}) {
     seek: (timeMs: number) => command({ type: "seek", timeMs }),
     play: () => command({ type: "play" }),
     pause: () => command({ type: "pause" }),
-    setLocalCaptions: (videoId: string, lines: CaptionLine[]) => command({ type: "local-captions", videoId, lines })
+    setLocalCaptions: (videoId: string, lines: CaptionLine[]) => command({ type: "local-captions", videoId, lines }),
+    useTrack: (videoId: string) => command({ type: "use-track", videoId })
   }
 }

@@ -67,10 +67,10 @@ curl -LO https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sile
 
 ```sh
 pnpm test                                   # unit tests (shared + extension)
-pnpm build:ext && xvfb-run -a pnpm --filter extension smoke
+pnpm build:ext && pnpm --filter extension smoke     # headless; HEADED=1 to watch
 ```
 
-The smoke test loads the built extension in Chromium against a mock YouTube page, a mock Claude API and a mock transcriber helper. It reads along, pauses, looks up and saves a word with no model, then with Claude asks a question and saves a taught word, tries the display options and saved words list, and finally opens a video with no Chinese captions to check it transcribes on its own. Screenshots of each state are written to `apps/extension/e2e/screenshots/`. On macOS run it without `xvfb-run`, with `CHROMIUM_PATH` pointing at a Chromium or Chrome for Testing binary.
+The smoke test loads the built extension in Chromium against a mock YouTube page, a mock Claude API and a mock transcriber helper. It reads along, pauses, looks up and saves a word with no model, then with Claude asks a question and saves a taught word, tries the display options and saved words list, and finally opens a video with no Chinese captions to check it transcribes on its own. Screenshots of each state are written to `apps/extension/e2e/screenshots/`. It runs headless (set `HEADED=1` to see the window); set `CHROMIUM_PATH` to a Chromium or Chrome for Testing binary.
 
 ## Dictionary data
 
