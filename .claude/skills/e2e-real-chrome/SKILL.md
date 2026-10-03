@@ -5,6 +5,8 @@ description: End-to-end test the Pause & Ask extension in the user's real, runni
 
 # End-to-end testing in the user's real Chrome
 
+**Rule: control the user's Chrome only with the `dev-browser` CLI and `--connect`.** Don't use Claude in Chrome, BrowserSkill (`bsk`), computer use, or Chrome's remote-debugging "Allow" flow from other tools for this. `--connect` attaches to the Chrome that's already running, so the user isn't asked to turn on remote debugging again.
+
 The user prefers to watch changes run in their own Chrome, on a real video, not only in the mock smoke test. Default sample video (no captions, so it exercises local transcription): https://www.youtube.com/watch?v=m9BweWeWD0g
 
 ## 0. Before you start
@@ -92,9 +94,11 @@ Close tabs and windows you opened unless the user wants to keep looking. Leave t
 
 ## Alternative: a separate browser
 
-Opening a fresh tab in the user's Chrome (`browser.newPage()`) is fine for an isolated run, as long as you close it afterwards.
+Only when the user's Chrome isn't reachable (for example from a cloud session, which can't see their laptop) or the user says not to touch it.
 
-When the user's Chrome isn't reachable, or you shouldn't touch it, run the visible walkthrough in its own Chrome for Testing window with the extension preloaded:
+Opening a fresh tab in the user's Chrome (`browser.newPage()`, still through `dev-browser --connect`) is fine for an isolated run, as long as you close it afterwards.
+
+Otherwise run the visible walkthrough in its own Chrome for Testing window with the extension preloaded:
 
 ```sh
 CHROMIUM_PATH="$HOME/Library/Caches/ms-playwright/chromium-1208/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing" \
