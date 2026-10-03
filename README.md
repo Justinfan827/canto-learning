@@ -57,9 +57,14 @@ curl -LO https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sile
 | Other models | `apps/extension/lib/openaiCompat.ts` | The same prompts over any OpenAI-compatible endpoint (OpenRouter, Ollama, LM Studio) |
 | Transcriber | `apps/transcriber/server.mjs`, `apps/extension/lib/useTranscriber.ts` | Local speech-to-text for videos without captions, started automatically from the playhead; lines go to the bridge as `local` captions |
 | Local database | `apps/extension/lib/localStore.ts` | IndexedDB: videos, caption lines, words, encounters, questions, reviews |
+| Study sync | `apps/extension/lib/studySync.ts`, `packages/shared/src/study.ts` | Pushes saved words with their source lines to the helper for the phone app |
 | Shared | `packages/shared` | Types, caption parsing, the `Store` interface, spaced-repetition scheduling, register diff |
 
 **Storage is local for now.** Everything goes through the `Store` interface in `packages/shared/src/store.ts`. A remote implementation (for example a Cloudflare Worker over D1, as in the plan) can implement the same interface later so the phone app shares the data, and the Claude calls can move behind that backend at the same time.
+
+## Phone study app
+
+`apps/ios` is an iPhone app for studying your saved words away from the computer: videos with their words, word pages, flashcards with spaced repetition, and a hands-free Listen mode. The extension pushes saved words to the local helper (`PUT /study`) and the app pulls them from there; see [apps/ios/README.md](apps/ios/README.md).
 
 ## Test
 

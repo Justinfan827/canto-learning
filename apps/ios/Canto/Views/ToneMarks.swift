@@ -7,9 +7,11 @@ struct ToneJyutping: View {
     var size: CGFloat = 17
     var color: Color = Palette.muted
     var showContours = true
+    @ScaledMetric(relativeTo: .body) private var scale = 1.0
 
     var body: some View {
         let syllables = Jyutping.syllables(jyutping)
+        let size = size * min(scale, 1.8)
         HStack(alignment: .bottom, spacing: size * 0.45) {
             ForEach(Array(syllables.enumerated()), id: \.offset) { _, s in
                 VStack(spacing: size * 0.25) {

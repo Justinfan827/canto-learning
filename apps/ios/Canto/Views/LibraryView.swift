@@ -101,10 +101,12 @@ struct LibraryView: View {
 struct ReviewPrompt: View {
     var count: Int
     var action: () -> Void
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12)) : AnyLayout(HStackLayout(spacing: 14))
         Button(action: action) {
-            HStack(spacing: 14) {
+            layout {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(count == 1 ? "1 word to review" : "\(count) words to review")
                         .font(.headline)
@@ -113,7 +115,7 @@ struct ReviewPrompt: View {
                         .font(.subheadline)
                         .foregroundStyle(Palette.muted)
                 }
-                Spacer()
+                if !typeSize.isAccessibilitySize { Spacer() }
                 Text("Review")
                     .font(.subheadline.weight(.semibold))
                     .padding(.horizontal, 16)
@@ -131,16 +133,19 @@ struct ReviewPrompt: View {
 struct VideoRow: View {
     var video: StudyVideo
     var words: [StudyWord]
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        // At the largest text sizes the thumbnail sits above the title so the title keeps the full width.
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10)) : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+        layout {
             Thumbnail(video: video)
-                .frame(width: 112)
+                .frame(width: typeSize.isAccessibilitySize ? 200 : 112)
             VStack(alignment: .leading, spacing: 4) {
                 Text(video.title)
                     .font(Typeface.hanzi(15, .medium, relativeTo: .subheadline))
                     .foregroundStyle(Palette.ink)
-                    .lineLimit(2)
+                    .lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
                 Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(Palette.muted)

@@ -30,7 +30,6 @@ struct ListenView: View {
                                 .font(.footnote)
                                 .foregroundStyle(Palette.muted)
                             }
-                            options(listen: $listen.options)
                             upNext
                         }
                         .padding(.horizontal, 20)
@@ -42,6 +41,7 @@ struct ListenView: View {
             .background(Palette.page)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) { optionsMenu(listen: $listen.options) }
                 ToolbarItem(placement: .topBarTrailing) { scopeMenu }
             }
         }
@@ -124,29 +124,42 @@ struct ListenView: View {
         }
     }
 
-    private func options(listen: Binding<ListenSession.Options>) -> some View {
-        VStack(spacing: 0) {
+    private func optionsMenu(listen: Binding<ListenSession.Options>) -> some View {
+        Menu {
             Toggle("Say the meaning in English", isOn: listen.sayMeaning)
-            Divider().padding(.vertical, 10)
             Toggle("Say the line it came from", isOn: listen.saySentence)
-            Divider().padding(.vertical, 10)
             Toggle("Repeat each word", isOn: listen.repeatWord)
-            Divider().padding(.vertical, 10)
-            Toggle("Speak slowly", isOn: listen.slow)
-            Divider().padding(.vertical, 10)
-            Toggle("Start over at the end", isOn: listen.loop)
+            Section {
+                Toggle("Speak slowly", isOn: listen.slow)
+                Toggle("Start over at the end", isOn: listen.loop)
+            }
+        } label: {
+            Label("Playback options", systemImage: "slider.horizontal.3")
         }
-        .font(.subheadline)
-        .padding(16)
-        .background(Palette.surface, in: .rect(cornerRadius: 18))
+        .menuActionDismissBehavior(.disabled)
+    }
+
+    /// What one pass through a word sounds like, from the current options.
+    private var recipe: String {
+        let o = listen.options
+        var parts = [o.repeatWord ? "Word twice" : "Word"]
+        if o.sayMeaning { parts.append("meaning") }
+        if o.saySentence { parts.append("the line it came from") }
+        return parts.count == 1 ? parts[0] : parts.dropLast().joined(separator: ", ") + " and " + parts.last!
     }
 
     private var upNext: some View {
         let list = listen.queue.isEmpty ? words : listen.queue
         return VStack(alignment: .leading, spacing: 10) {
-            Text(listen.queue.isEmpty ? "\(list.count) words" : "Playing \(list.count) words")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Palette.muted)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(listen.queue.isEmpty ? "\(list.count) words" : "Playing \(list.count) words")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Palette.ink)
+                Text(recipe + ".")
+                    .font(.footnote)
+                    .foregroundStyle(Palette.muted)
+            }
+            .padding(.bottom, 4)
             ForEach(Array(list.enumerated()), id: \.offset) { i, word in
                 Button {
                     if listen.queue.isEmpty { listen.start(list, at: i) } else { listen.jump(to: i) }
