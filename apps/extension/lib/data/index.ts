@@ -33,20 +33,35 @@ export async function checkConvex(cfg: ConvexConfig) {
   await createConvexStore(cfg).knownWords()
 }
 
+const METHODS = [
+  "putVideo",
+  "getVideo",
+  "getLines",
+  "saveConversions",
+  "saveLineWords",
+  "saveQuestion",
+  "logTaughtWord",
+  "listWords",
+  "getWord",
+  "setStatus",
+  "knownWords",
+  "recordReview",
+  "exportStudy"
+] as const satisfies readonly (keyof Store)[]
+
 /** A Store that forwards to whichever backend settings choose, switching when they change. */
 function switching(choose: () => Promise<Store>): Store {
   let current: Promise<Store> | null = null
   chrome.storage?.onChanged.addListener((changes) => {
     if (BACKEND_KEYS.some((k) => k in changes)) current = null
   })
-  return new Proxy({} as Store, {
-    get:
-      (_, name) =>
-      async (...args: unknown[]) => {
-        const s = (await (current ??= choose())) as unknown as Record<PropertyKey, (...a: unknown[]) => Promise<unknown>>
-        return s[name](...args)
-      }
-  })
+  const forward =
+    <K extends keyof Store>(name: K) =>
+    async (...args: Parameters<Store[K]>) => {
+      const s = await (current ??= choose())
+      return (s[name] as (...a: Parameters<Store[K]>) => ReturnType<Store[K]>)(...args)
+    }
+  return Object.fromEntries(METHODS.map((name) => [name, forward(name)])) as unknown as Store
 }
 
 /** The app's one store. */

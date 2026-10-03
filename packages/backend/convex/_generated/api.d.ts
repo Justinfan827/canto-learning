@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as admin from "../admin.js";
 import type * as importLocal from "../importLocal.js";
 import type * as lib from "../lib.js";
 import type * as store from "../store.js";
@@ -20,6 +21,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  admin: typeof admin;
   importLocal: typeof importLocal;
   lib: typeof lib;
   store: typeof store;
