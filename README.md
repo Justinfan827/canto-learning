@@ -56,11 +56,13 @@ curl -LO https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sile
 | Claude calls | `apps/extension/lib/ai.ts` | Prompts and schemas; Haiku 4.5 for conversion and word extraction (structured outputs), Sonnet 5.5 for streamed answers |
 | Other models | `apps/extension/lib/openaiCompat.ts` | The same prompts over any OpenAI-compatible endpoint (OpenRouter, Ollama, LM Studio) |
 | Transcriber | `apps/transcriber/server.mjs`, `apps/extension/lib/useTranscriber.ts` | Local speech-to-text for videos without captions, started automatically from the playhead; lines go to the bridge as `local` captions |
-| Local database | `apps/extension/lib/localStore.ts` | IndexedDB: videos, caption lines, words, encounters, questions, reviews |
-| Study sync | `apps/extension/lib/studySync.ts`, `packages/shared/src/study.ts` | Pushes saved words with their source lines to the helper for the phone app |
+| Data layer | `apps/extension/lib/data` | The one `store` the app uses; settings pick the backend. `localStore.ts` (IndexedDB, the default) or `convexStore.ts` (Convex) |
+| Local database | `apps/extension/lib/data/localStore.ts` | IndexedDB: videos, caption lines, words, encounters, questions, reviews |
+| Study sync | `apps/extension/lib/data/studySync.ts`, `packages/shared/src/study.ts` | Pushes saved words with their source lines to the helper for the phone app |
+| Convex backend | `packages/backend/convex` | Schema and functions mirroring `Store`, plus the phone's `study:snapshot` and `study:addReviews` |
 | Shared | `packages/shared` | Types, caption parsing, the `Store` interface, spaced-repetition scheduling, register diff |
 
-**Storage is local for now.** Everything goes through the `Store` interface in `packages/shared/src/store.ts`. A remote implementation (for example a Cloudflare Worker over D1, as in the plan) can implement the same interface later so the phone app shares the data, and the Claude calls can move behind that backend at the same time.
+**Storage is local by default.** The app imports `store` from `apps/extension/lib/data` and never touches IndexedDB or Convex directly. Both backends implement the `Store` interface in `packages/shared/src/store.ts`. To share words with the phone from anywhere, connect a Convex deployment under Settings > Saved words; see [packages/backend/README.md](packages/backend/README.md).
 
 ## Phone study app
 

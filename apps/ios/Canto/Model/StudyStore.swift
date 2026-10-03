@@ -20,8 +20,18 @@ final class StudyStore {
     private(set) var sync: SyncState = .idle
     private(set) var lastSyncedAt: Date?
 
+    var backendKind: BackendKind {
+        didSet { UserDefaults.standard.set(backendKind.rawValue, forKey: "backend") }
+    }
+    /// The helper on your computer.
     var address: String {
         didSet { UserDefaults.standard.set(address, forKey: "serverURL") }
+    }
+    var convexURL: String {
+        didSet { UserDefaults.standard.set(convexURL, forKey: "convexURL") }
+    }
+    var convexToken: String {
+        didSet { UserDefaults.standard.set(convexToken, forKey: "convexToken") }
     }
 
     private let dir: URL
@@ -29,7 +39,11 @@ final class StudyStore {
     init(directory: URL? = nil) {
         dir = directory ?? URL.applicationSupportDirectory.appending(path: "Study", directoryHint: .isDirectory)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        address = UserDefaults.standard.string(forKey: "serverURL") ?? Self.defaultAddress
+        let defaults = UserDefaults.standard
+        backendKind = defaults.string(forKey: "backend").flatMap(BackendKind.init) ?? .computer
+        address = defaults.string(forKey: "serverURL") ?? Self.defaultAddress
+        convexURL = defaults.string(forKey: "convexURL") ?? ""
+        convexToken = defaults.string(forKey: "convexToken") ?? ""
         snapshot = load("snapshot.json") ?? .empty
         cards = load("cards.json") ?? [:]
         pending = load("pending.json") ?? []
@@ -89,11 +103,23 @@ final class StudyStore {
     // MARK: Syncing
 
     func refresh() async {
-        guard let backend = HelperBackend(address: address) else {
-            sync = .failed(BackendError.badURL.localizedDescription)
-            return
+        do {
+            await refresh(from: try makeBackend())
+        } catch {
+            sync = .failed(error.localizedDescription)
         }
-        await refresh(from: backend)
+    }
+
+    /// The backend Settings point at.
+    func makeBackend() throws -> any StudyBackend {
+        switch backendKind {
+        case .computer:
+            guard let b = HelperBackend(address: address) else { throw BackendError.badURL }
+            return b
+        case .convex:
+            guard let b = ConvexBackend(url: convexURL, token: convexToken) else { throw BackendError.convexNotSetUp }
+            return b
+        }
     }
 
     func refresh(from backend: some StudyBackend) async {
@@ -114,7 +140,7 @@ final class StudyStore {
             save(now, "synced.json")
             sync = .synced(now)
         } catch {
-            sync = .failed(Self.describe(error))
+            sync = .failed(describe(error))
         }
     }
 
@@ -144,11 +170,11 @@ final class StudyStore {
         save(pending, "pending.json")
     }
 
-    private static func describe(_ error: Error) -> String {
+    private func describe(_ error: Error) -> String {
         if let e = error as? URLError {
             switch e.code {
             case .cannotConnectToHost, .cannotFindHost, .timedOut, .networkConnectionLost, .notConnectedToInternet:
-                return "Couldn't reach your computer. Start the helper with pnpm transcriber."
+                return backendKind == .convex ? "Couldn't reach Convex. Check the deployment URL and your connection." : "Couldn't reach your computer. Start the helper with pnpm transcriber."
             default: break
             }
         }

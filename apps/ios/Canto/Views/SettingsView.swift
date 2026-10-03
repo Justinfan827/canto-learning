@@ -10,12 +10,28 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("http://127.0.0.1:8787", text: $store.address)
-                        .keyboardType(.URL)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .submitLabel(.done)
-                        .onSubmit { Task { await store.refresh() } }
+                    Picker("Sync with", selection: $store.backendKind) {
+                        Text("Your computer").tag(BackendKind.computer)
+                        Text("Convex").tag(BackendKind.convex)
+                    }
+                    .pickerStyle(.segmented)
+                    switch store.backendKind {
+                    case .computer:
+                        TextField("http://127.0.0.1:8787", text: $store.address)
+                            .keyboardType(.URL)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .submitLabel(.done)
+                            .onSubmit { Task { await store.refresh() } }
+                    case .convex:
+                        TextField("https://your-deployment.convex.cloud", text: $store.convexURL)
+                            .keyboardType(.URL)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                        SecureField("Sync token", text: $store.convexToken)
+                            .submitLabel(.done)
+                            .onSubmit { Task { await store.refresh() } }
+                    }
                     Button {
                         Task { await store.refresh() }
                     } label: {
@@ -27,11 +43,16 @@ struct SettingsView: View {
                     }
                     .disabled(store.sync == .syncing)
                 } header: {
-                    Text("Your computer")
+                    Text("Saved words")
                 } footer: {
                     VStack(alignment: .leading, spacing: 8) {
                         status
-                        Text("Start the helper on your Mac with pnpm transcriber. From a phone on the same Wi-Fi, start it with HOST=0.0.0.0 pnpm transcriber and enter your Mac's address, like http://192.168.1.20:8787.")
+                        switch store.backendKind {
+                        case .computer:
+                            Text("Start the helper on your Mac with pnpm transcriber. From a phone on the same Wi-Fi, start it with HOST=0.0.0.0 pnpm transcriber and enter your Mac's address, like http://192.168.1.20:8787.")
+                        case .convex:
+                            Text("Use the same deployment URL and sync token as the extension's settings. Convex works from anywhere, not just your Wi-Fi.")
+                        }
                     }
                 }
 
