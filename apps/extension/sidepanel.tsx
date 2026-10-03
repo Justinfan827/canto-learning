@@ -1,7 +1,7 @@
 import { alignByTime, lineAt, lookup, pickTrack, regroup, senses, trackLabel, transcriptCoverage, type LineWord, type TaughtWord } from "@pna/shared"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-import { DisplayMenu, Header, type Pill } from "~components/Header"
+import { DisplayMenu, Header, type Pill, type SourceOption } from "~components/Header"
 import { Lyrics, type LyricLine } from "~components/Lyrics"
 import { Dock, MomentCard, Thread, WordSheet } from "~components/Moment"
 import { formatTime } from "~components/Ruby"
@@ -16,6 +16,7 @@ import { useDict } from "~lib/useDict"
 import { useGroupings } from "~lib/useGroupings"
 import { usePlayer, type PlayerState } from "~lib/usePlayer"
 import { useSaved, type SavedWord } from "~lib/useSaved"
+import { pickEngine, type Engine } from "~lib/transcriber"
 import { useTranscriber, type TranscriberStatus } from "~lib/useTranscriber"
 import { useTutor } from "~lib/useTutor"
 
@@ -41,12 +42,12 @@ function SidePanel() {
     [modelKey]
   )
 
-  const { state, seek, play, pause, setLocalCaptions } = usePlayer()
+  const { state, seek, play, pause, setLocalCaptions, useTrack } = usePlayer()
   const t = useTutor(tutor, state)
   const { dict, split } = useDict()
   const groupings = useGroupings()
   const saved = useSaved(store)
-  const tr = useTranscriber(state, settings?.transcribeEngine ?? "auto", setLocalCaptions)
+  const tr = useTranscriber(state, settings?.transcribeEngine ?? "auto", !!settings?.preferLocal, setLocalCaptions)
 
   const [view, setView] = useState<"video" | "saved">("video")
   const [menuOpen, setMenuOpen] = useState(false)
@@ -233,6 +234,14 @@ function SidePanel() {
   const header = (
     <Header
       pill={pillFor(state, status, tr.retry)}
+      sources={sourceOptions(state, tr.engines, settings, status)}
+      onSource={(id) => {
+        const hasTrack = !!pickTrack(state.tracks)
+        if (id === "youtube") {
+          saveSettings({ preferLocal: false })
+          if (state.video) useTrack(state.video.id)
+        } else saveSettings({ transcribeEngine: id, preferLocal: hasTrack })
+      }}
       savedCount={saved.list.length}
       menuOpen={menuOpen}
       onMenu={setMenuOpen}
@@ -370,14 +379,36 @@ function SidePanel() {
 }
 
 /** The caption-source pill: which source is in use, and what to do when there is none. */
+/** "SenseVoice Small (sherpa-onnx)" → "SenseVoice Small", for the pill. */
+const shortName = (label: string) => label.replace(/\s*\(.*\)$/, "")
+
+/** The pill's menu: YouTube's captions first, then each local speech model. */
+function sourceOptions(state: PlayerState, engines: Engine[] | null, s: Settings, status: TranscriberStatus): SourceOption[] {
+  const track = pickTrack(state.tracks)
+  const local = status.kind !== "off" || state.captionSource === "local"
+  const chosen = engines ? pickEngine(engines, s.transcribeEngine) : null
+  const out: SourceOption[] = [
+    track
+      ? { id: "youtube", label: trackLabel(track), active: !local }
+      : { id: "youtube", label: "YouTube captions", note: "None in Chinese on this video", active: false, disabled: true }
+  ]
+  if (!engines) {
+    out.push({ id: "none", label: "On this computer", note: "Start the transcriber: pnpm transcriber", active: false, disabled: true })
+    return out
+  }
+  for (const e of engines)
+    out.push({ id: e.id, label: shortName(e.label), note: e.unavailable ?? e.languages, active: local && chosen?.id === e.id, disabled: !!e.unavailable })
+  return out
+}
+
 function pillFor(state: PlayerState, status: TranscriberStatus, retry: () => void): Pill {
-  if (state.captionSource === "track") return { text: trackLabel(pickTrack(state.tracks)), tone: "ok" }
-  if (state.captionSource === "screen") return { text: "On-screen captions", tone: "ok" }
+  if (state.captionSource === "track" && status.kind === "off") return { text: trackLabel(pickTrack(state.tracks)), tone: "ok" }
+  if (state.captionSource === "screen" && status.kind === "off") return { text: "On-screen captions", tone: "ok" }
   switch (status.kind) {
     case "running":
-      return { text: "Transcribing on this computer", tone: "work" }
+      return { text: `Transcribing · ${shortName(status.engine)}`, tone: "work" }
     case "done":
-      return { text: "Transcribed on this computer", tone: "ok" }
+      return { text: `${shortName(status.engine)} · this computer`, tone: "ok" }
     case "missing":
       return { text: "No captions", tone: "warn", action: { label: "Set up transcriber", run: () => openSetup("#captions") } }
     case "no-engine":

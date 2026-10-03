@@ -15,6 +15,8 @@ export interface Settings {
   speakAnswers: boolean
   /** Local speech model for videos without captions; "auto" picks the best one installed. */
   transcribeEngine: string
+  /** Use the local engine even when YouTube has captions. Off: YouTube first, local only as a fallback. */
+  preferLocal: boolean
   /** Set once the "audio stays on this computer" notice has been dismissed. */
   transcribeNoticeSeen: boolean
   /** Language of spoken questions. */
@@ -34,6 +36,7 @@ const DEFAULTS: Settings = {
   openaiModel: DEFAULT_FREE_MODEL,
   speakAnswers: false,
   transcribeEngine: "auto",
+  preferLocal: false,
   transcribeNoticeSeen: false,
   listenLang: "zh-HK",
   showJyutping: true,

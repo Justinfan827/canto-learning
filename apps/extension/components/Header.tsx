@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 
 import type { Settings } from "~lib/settings"
 
@@ -9,13 +9,24 @@ export type PillTone = "ok" | "work" | "warn" | "idle"
 export interface Pill {
   text: string
   tone: PillTone
-  /** What clicking the pill does, e.g. open transcriber setup. */
+  /** A fix to offer in the source menu, e.g. open transcriber setup. */
   action?: { label: string; run: () => void }
+}
+
+/** One caption source in the pill's menu: YouTube's captions or a local speech model. */
+export interface SourceOption {
+  id: string
+  label: string
+  note?: string
+  active: boolean
+  disabled?: boolean
 }
 
 /** Caption-source pill on the left; saved words, display options and settings on the right. */
 export function Header(props: {
   pill: Pill
+  sources: SourceOption[]
+  onSource: (id: string) => void
   savedCount: number
   menuOpen: boolean
   onSaved: () => void
@@ -25,6 +36,16 @@ export function Header(props: {
 }) {
   const { pill } = props
   const menuRef = useRef<HTMLDivElement>(null)
+  const srcRef = useRef<HTMLDivElement>(null)
+  const [srcOpen, setSrcOpen] = useState(false)
+  useEffect(() => {
+    if (!srcOpen) return
+    const close = (e: PointerEvent) => {
+      if (!srcRef.current?.contains(e.target as Node)) setSrcOpen(false)
+    }
+    document.addEventListener("pointerdown", close)
+    return () => document.removeEventListener("pointerdown", close)
+  }, [srcOpen])
   useEffect(() => {
     if (!props.menuOpen) return
     const close = (e: PointerEvent) => {
@@ -38,18 +59,50 @@ export function Header(props: {
     <>
       <span className={"dot " + pill.tone} />
       <span className="pill-text">{pill.text}</span>
-      {pill.action && <span className="pill-action">{pill.action.label}</span>}
+      <Icon name="down" />
     </>
   )
   return (
     <header className="bar">
-      <div className="grow">
-        {pill.action ? (
-          <button className="pill" onClick={pill.action.run} title={pill.action.label}>
-            {pillBody}
-          </button>
-        ) : (
-          <span className="pill">{pillBody}</span>
+      <div className="grow menu-anchor left" ref={srcRef}>
+        <button className="pill" aria-haspopup="menu" aria-expanded={srcOpen} title="Change caption source" onClick={() => setSrcOpen(!srcOpen)}>
+          {pillBody}
+        </button>
+        {srcOpen && (
+          <div className="pop src-menu" role="menu">
+            <div className="menu-h">Captions from</div>
+            {props.sources.map((s) => (
+              <button
+                key={s.id}
+                role="menuitemradio"
+                aria-checked={s.active}
+                className={"src" + (s.active ? " on" : "")}
+                disabled={s.disabled}
+                onClick={() => {
+                  setSrcOpen(false)
+                  props.onSource(s.id)
+                }}
+              >
+                <span className="src-check">{s.active ? "✓" : ""}</span>
+                <span className="src-text">
+                  {s.label}
+                  {s.note && <small>{s.note}</small>}
+                </span>
+              </button>
+            ))}
+            {pill.action && (
+              <button
+                className="src act-row"
+                onClick={() => {
+                  setSrcOpen(false)
+                  pill.action!.run()
+                }}
+              >
+                <span className="src-check" />
+                <span className="src-text">{pill.action.label}</span>
+              </button>
+            )}
+          </div>
         )}
       </div>
       <button className="ib" aria-label="Saved words" title="Saved words" onClick={props.onSaved}>

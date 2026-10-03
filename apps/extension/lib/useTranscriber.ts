@@ -1,7 +1,7 @@
 import { pickTrack, sortLines, type CaptionLine } from "@pna/shared"
 import { useEffect, useRef, useState } from "react"
 
-import { listEngines, pickEngine, transcribe } from "./transcriber"
+import { listEngines, pickEngine, transcribe, type Engine } from "./transcriber"
 import type { PlayerState } from "./usePlayer"
 
 export interface TranscribeJob {
@@ -33,16 +33,30 @@ const RECHECK_MS = 8000
 const FLUSH_MS = 300
 
 /**
- * The last step of the caption-source order: when a video has no Cantonese or Chinese track,
- * transcribe it on this computer from the playhead, without being asked.
+ * Local transcription: the fallback when a video has no Cantonese or Chinese track, or the user's
+ * pick over YouTube's captions (`preferLocal`). Starts from the playhead without being asked.
  */
-export function useTranscriber(player: PlayerState, engineSetting: string, setLocalCaptions: (videoId: string, lines: CaptionLine[]) => void) {
+export function useTranscriber(
+  player: PlayerState,
+  engineSetting: string,
+  preferLocal: boolean,
+  setLocalCaptions: (videoId: string, lines: CaptionLine[]) => void
+) {
   const [status, setStatus] = useState<TranscriberStatus>({ kind: "off" })
   const [attempt, setAttempt] = useState(0)
   /** A second, written-Chinese transcript of the same audio, for the 書面語 view. */
   const [written, setWritten] = useState<CaptionLine[] | null>(null)
   const videoId = player.video?.id ?? null
-  const needed = !!videoId && !pickTrack(player.tracks) && player.captionSource !== "track" && player.captionSource !== "screen"
+  const needed = !!videoId && (preferLocal || (!pickTrack(player.tracks) && player.captionSource !== "track" && player.captionSource !== "screen"))
+  /** The helper's engines, for the caption-source menu; null when the helper isn't running. */
+  const [engines, setEngines] = useState<Engine[] | null>(null)
+  useEffect(() => {
+    let live = true
+    listEngines().then((e) => live && setEngines(e))
+    return () => {
+      live = false
+    }
+  }, [videoId, attempt])
   const timeRef = useRef(player.timeMs)
   timeRef.current = player.timeMs
   const sendRef = useRef(setLocalCaptions)
@@ -122,5 +136,5 @@ export function useTranscriber(player: PlayerState, engineSetting: string, setLo
     }
   }, [needed, videoId, engineSetting, attempt])
 
-  return { status, written, retry: () => setAttempt((n) => n + 1) }
+  return { status, written, engines, retry: () => setAttempt((n) => n + 1) }
 }
