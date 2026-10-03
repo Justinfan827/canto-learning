@@ -12,11 +12,15 @@ struct ToneJyutping: View {
         let syllables = Jyutping.syllables(jyutping)
         HStack(alignment: .bottom, spacing: size * 0.45) {
             ForEach(Array(syllables.enumerated()), id: \.offset) { _, s in
-                VStack(spacing: size * 0.18) {
+                VStack(spacing: size * 0.25) {
                     if showContours {
+                        // The tinted track is the speaking range, so a contour reads as high or low.
                         ToneContour(syllable: s)
-                            .stroke(color.opacity(0.9), style: StrokeStyle(lineWidth: max(1.5, size * 0.1), lineCap: .round, lineJoin: .round))
-                            .frame(width: size * 1.3, height: size * 0.62)
+                            .stroke(Palette.jade, style: StrokeStyle(lineWidth: max(2, size * 0.14), lineCap: .round, lineJoin: .round))
+                            .padding(.vertical, size * 0.18)
+                            .frame(minWidth: size * 1.5, maxWidth: .infinity)
+                            .frame(height: size * 1.15)
+                            .background(Palette.jadeSoft, in: .rect(cornerRadius: size * 0.25))
                     }
                     HStack(alignment: .firstTextBaseline, spacing: 0.5) {
                         Text(s.letters)
@@ -29,6 +33,7 @@ struct ToneJyutping: View {
                     }
                     .foregroundStyle(color)
                 }
+                .fixedSize()
             }
         }
         .accessibilityElement(children: .ignore)
@@ -51,8 +56,8 @@ nonisolated struct ToneContour: Shape {
         if a == b {
             p.addLine(to: end)
         } else {
-            // A gentle curve: pitch glides rather than steps.
-            p.addCurve(to: end, control1: CGPoint(x: start.x + (end.x - start.x) * 0.45, y: start.y), control2: CGPoint(x: start.x + (end.x - start.x) * 0.6, y: end.y))
+            // Pitch holds briefly, then glides.
+            p.addQuadCurve(to: end, control: CGPoint(x: start.x + (end.x - start.x) * 0.5, y: start.y))
         }
         return p
     }

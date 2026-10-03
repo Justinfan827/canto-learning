@@ -179,12 +179,13 @@ struct SpeakButton: View {
     }
 }
 
-func highlighted(_ line: String, _ word: String) -> AttributedString {
+/// The line with the word picked out in jade, at the line's own size.
+func highlighted(_ line: String, _ word: String, size: CGFloat = 20) -> AttributedString {
     var s = AttributedString(line)
     s.foregroundColor = Palette.ink
     if let r = s.range(of: word) {
         s[r].foregroundColor = Palette.jade
-        s[r].font = Typeface.hanzi(20, .semibold, relativeTo: .title3)
+        s[r].font = Typeface.hanzi(size, .semibold)
     }
     return s
 }

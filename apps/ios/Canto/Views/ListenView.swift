@@ -22,9 +22,13 @@ struct ListenView: View {
                             NowPlaying(word: listen.current ?? words.first, step: listen.step, position: listen.current == nil ? nil : (listen.index, listen.queue.count))
                             controls
                             if !Speaker.hasCantoneseVoice {
-                                Text("No Cantonese voice is installed. Add one in Settings > Accessibility > Spoken Content > Voices > Chinese (Hong Kong).")
-                                    .font(.footnote)
-                                    .foregroundStyle(Palette.amber)
+                                Label {
+                                    Text("For a Cantonese voice, add Chinese (Hong Kong) in Settings, Accessibility, Spoken Content, Voices.")
+                                } icon: {
+                                    Image(systemName: "info.circle")
+                                }
+                                .font(.footnote)
+                                .foregroundStyle(Palette.muted)
                             }
                             options(listen: $listen.options)
                             upNext
@@ -35,7 +39,8 @@ struct ListenView: View {
                 }
             }
             .navigationTitle("Listen")
-            .background(Palette.paper)
+            .background(Palette.page)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { scopeMenu }
             }
@@ -104,6 +109,7 @@ struct ListenView: View {
                     .frame(width: 84, height: 84)
             }
             .buttonStyle(.glassProminent)
+                    .foregroundStyle(Palette.onAccent)
             .buttonBorderShape(.circle)
             .accessibilityLabel(listen.isPlaying ? "Pause" : "Play")
 
@@ -132,7 +138,7 @@ struct ListenView: View {
         }
         .font(.subheadline)
         .padding(16)
-        .background(Palette.soft, in: .rect(cornerRadius: 18))
+        .background(Palette.surface, in: .rect(cornerRadius: 18))
     }
 
     private var upNext: some View {
@@ -207,6 +213,8 @@ struct NowPlaying: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .animation(.easeInOut(duration: 0.2), value: step)
+        .padding(22)
+        .background(Palette.surface, in: .rect(cornerRadius: 24))
         .padding(.top, 8)
     }
 }

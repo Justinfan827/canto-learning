@@ -37,19 +37,19 @@ struct VideoDetailView: View {
                         Button {
                             studying = words
                         } label: {
-                            Label("Flashcards", systemImage: "rectangle.on.rectangle.angled")
-                                .frame(maxWidth: .infinity)
+                            IconLabel("Flashcards", "rectangle.on.rectangle.angled")
                         }
                         .buttonStyle(.glassProminent)
+                    .foregroundStyle(Palette.onAccent)
                         Button {
                             listen.start(words)
                         } label: {
-                            Label("Listen", systemImage: "headphones")
-                                .frame(maxWidth: .infinity)
+                            IconLabel("Listen", "headphones")
                         }
                         .buttonStyle(.glass)
                     }
                     .controlSize(.large)
+                    .padding(.horizontal, 1)
                     .padding(.top, 4)
                 }
                 .listRowInsets(EdgeInsets())
@@ -61,9 +61,12 @@ struct VideoDetailView: View {
                         VideoWordRow(word: word, source: word.sources.first { $0.videoId == video.id })
                     }
                 }
+                .listRowBackground(Palette.surface)
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(Palette.page)
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(item: Binding(get: { studying.map(Deck.init) }, set: { studying = $0?.words })) { deck in
             FlashcardSession(words: deck.words)
@@ -89,12 +92,28 @@ struct VideoWordRow: View {
                     Text(timestamp(source.startMs))
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(Palette.faint)
-                    Text(highlighted(source.spoken, word.colloquial))
+                    Text(highlighted(source.spoken, word.colloquial, size: 14))
                         .font(Typeface.hanzi(14, relativeTo: .footnote))
                         .lineLimit(1)
                         .opacity(0.75)
                 }
             }
         }
+    }
+}
+
+/// Icon and title for a full-width button; Label drops the icon in some glass styles.
+struct IconLabel: View {
+    var title: String
+    var icon: String
+    init(_ title: String, _ icon: String) { self.title = title; self.icon = icon }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+            Text(title)
+        }
+        .font(.body.weight(.semibold))
+        .frame(maxWidth: .infinity)
     }
 }

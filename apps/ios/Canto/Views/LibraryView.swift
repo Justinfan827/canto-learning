@@ -6,11 +6,12 @@ struct LibraryView: View {
     @State private var mode: Mode = .videos
     @State private var query = ""
     @State private var showSettings = false
+    @State private var path = NavigationPath()
 
     enum Mode: String, CaseIterable { case videos = "Videos", words = "Words" }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 if store.hasWords {
                     content
@@ -29,6 +30,15 @@ struct LibraryView: View {
             .sheet(isPresented: $showSettings) { SettingsView() }
             .refreshable { await store.refresh() }
         }
+        .onAppear(perform: openLaunchRoute)
+    }
+
+    /// `-video <id>` or `-word <id>` on launch opens that page (used for screenshots).
+    private func openLaunchRoute() {
+        guard path.isEmpty else { return }
+        let d = UserDefaults.standard
+        if let id = d.string(forKey: "video"), let v = store.video(id) { path.append(v) }
+        if d.integer(forKey: "word") > 0, let w = store.word(d.integer(forKey: "word")) { path.append(w) }
     }
 
     private var content: some View {
@@ -54,6 +64,7 @@ struct LibraryView: View {
                     ForEach(store.videos) { video in
                         NavigationLink(value: video) { VideoRow(video: video, words: store.words(in: video)) }
                     }
+                    .listRowBackground(Palette.surface)
                 } footer: {
                     SyncFooter()
                 }
@@ -62,12 +73,16 @@ struct LibraryView: View {
                     ForEach(filteredWords) { word in
                         NavigationLink(value: word) { WordRow(word: word) }
                     }
+                    .listRowBackground(Palette.surface)
                 } footer: {
                     SyncFooter()
                 }
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(Palette.page)
+        .listSectionSpacing(.compact)
         .searchable(text: $query, prompt: "Characters, Jyutping or meaning")
         .onChange(of: query) { if !query.isEmpty { mode = .words } }
     }
@@ -104,7 +119,7 @@ struct ReviewPrompt: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .background(Palette.jade, in: .capsule)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Palette.onAccent)
             }
             .padding(16)
             .background(Palette.jadeSoft, in: .rect(cornerRadius: 18))
@@ -255,6 +270,7 @@ struct EmptyLibrary: View {
         } actions: {
             Button("Sync now") { Task { await store.refresh() } }
                 .buttonStyle(.glassProminent)
+                    .foregroundStyle(Palette.onAccent)
             Button("Try sample words") { store.loadSample() }
             Button("Computer address") { showSettings = true }
                 .font(.footnote)

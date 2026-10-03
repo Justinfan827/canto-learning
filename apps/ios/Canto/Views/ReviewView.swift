@@ -35,7 +35,8 @@ struct ReviewView: View {
                 }
             }
             .navigationTitle("Review")
-            .background(Palette.paper)
+            .background(Palette.page)
+            .navigationBarTitleDisplayMode(.inline)
         }
         .fullScreenCover(item: $deck) { FlashcardSession(words: $0.words) }
         .onAppear {
@@ -78,6 +79,7 @@ struct ReviewView: View {
                             Text("Start review").frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.glassProminent)
+                    .foregroundStyle(Palette.onAccent)
                     }
                     Button {
                         deck = Deck(words: store.words.filter { !$0.isKnown }.shuffled())

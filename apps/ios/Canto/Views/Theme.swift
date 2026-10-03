@@ -12,6 +12,11 @@ enum Palette {
     static let jadeSoft = dynamic(0xE2F2EC, 0x173229)
     static let amber = dynamic(0xB45309, 0xF0A64A)
     static let amberSoft = dynamic(0xFDF1DF, 0x33240F)
+    /// Grouped screens: a tinted page with lighter surfaces in light mode, the reverse in dark.
+    static let page = dynamic(0xF3F5F4, 0x141917)
+    static let surface = dynamic(0xFFFFFF, 0x222927)
+    /// Text on a jade fill: white in light mode, near-black on the brighter dark-mode jade.
+    static let onAccent = dynamic(0xFFFFFF, 0x0F1412)
 
     private static func dynamic(_ light: UInt32, _ dark: UInt32) -> Color {
         Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor(hex: dark) : UIColor(hex: light) })

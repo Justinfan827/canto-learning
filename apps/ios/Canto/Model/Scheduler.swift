@@ -33,8 +33,8 @@ nonisolated enum Scheduler {
             n.ease = max(1.3, ((s.ease - 0.2) * 100).rounded() / 100)
             n.timesMissed += 1
         }
-        // A miss comes back later in the same session; the next real review is in ten minutes.
-        n.dueAt = now + (correct ? n.intervalDays * day : 10 * 60 * 1000)
+        // Misses repeat within the session itself; the schedule brings them back tomorrow.
+        n.dueAt = now + n.intervalDays * day
         n.reviews += 1
         n.lastReviewedAt = now
         return n

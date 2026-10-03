@@ -38,9 +38,12 @@ struct FlashcardSession: View {
                 }
             }
         }
-        .background(Palette.soft.ignoresSafeArea())
+        .background(Palette.page.ignoresSafeArea())
         .sensoryFeedback(trigger: answered) { _, _ in lastCorrect ? .success : .impact(weight: .light) }
-        .onAppear { if queue.isEmpty { restart(with: words) } }
+        .onAppear {
+            if queue.isEmpty { restart(with: words) }
+            if UserDefaults.standard.bool(forKey: "flipped") { flipped = true }
+        }
         .onChange(of: position) { autoplay() }
         .onChange(of: flipped) { if flipped, front != .sound, let w = current { speaker.say(w.colloquial) } }
     }
@@ -64,7 +67,7 @@ struct FlashcardSession: View {
             ProgressView(value: Double(min(answered, total)), total: Double(max(total, 1)))
                 .tint(Palette.jade)
 
-            Text("\(min(firstAnswers.count + (current == nil ? 0 : 1), words.count)) of \(words.count)")
+            Text(current == nil ? "Done" : "\(min(firstAnswers.count + (isRepeat ? 0 : 1), words.count)) of \(words.count)")
                 .font(.subheadline.monospacedDigit())
                 .foregroundStyle(Palette.muted)
                 .frame(minWidth: 52, alignment: .trailing)
@@ -74,6 +77,9 @@ struct FlashcardSession: View {
     }
 
     private var total: Int { queue.count }
+
+    /// A word you said you're still learning, seen again.
+    private var isRepeat: Bool { current.map { firstAnswers[$0.id] != nil } ?? false }
 
     private func card(_ word: StudyWord) -> some View {
         let dx = offset.width
@@ -85,6 +91,17 @@ struct FlashcardSession: View {
             CardFace { BackContent(word: word) }
                 .rotation3DEffect(.degrees(reduceMotion ? 0 : (flipped ? 0 : -180)), axis: (0, 1, 0), perspective: 0.6)
                 .opacity(flipped ? 1 : 0)
+        }
+        .overlay(alignment: .topLeading) {
+            if isRepeat && dx == 0 {
+                Text("Again")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Palette.amber)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Palette.amberSoft, in: .capsule)
+                    .padding(18)
+            }
         }
         .overlay(alignment: .top) {
             HStack {
@@ -141,6 +158,7 @@ struct FlashcardSession: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.glassProminent)
+                    .foregroundStyle(Palette.onAccent)
         }
         .controlSize(.extraLarge)
         .padding(.horizontal, 20)
@@ -224,7 +242,7 @@ struct CardFace<Content: View>: View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(24)
-            .background(Palette.paper, in: .rect(cornerRadius: 28))
+            .background(Palette.surface, in: .rect(cornerRadius: 28))
             .shadow(color: .black.opacity(0.06), radius: 1, y: 1)
             .shadow(color: .black.opacity(0.08), radius: 24, y: 12)
     }
@@ -287,7 +305,7 @@ struct BackContent: View {
             Spacer(minLength: 0)
             if let source = word.latestSource {
                 VStack(spacing: 6) {
-                    Text(highlighted(source.spoken, word.colloquial))
+                    Text(highlighted(source.spoken, word.colloquial, size: 17))
                         .font(Typeface.hanzi(17, relativeTo: .body))
                         .multilineTextAlignment(.center)
                         .lineLimit(3)
@@ -318,7 +336,6 @@ struct SessionSummary: View {
         let missed = words.filter { firstAnswers[$0.id] == false }
         let known = words.count - missed.count
         VStack(alignment: .leading, spacing: 24) {
-            Spacer()
             VStack(alignment: .leading, spacing: 8) {
                 Text(missed.isEmpty ? "You knew all \(words.count)." : "You knew \(known) of \(words.count).")
                     .font(.largeTitle.weight(.semibold))
@@ -330,7 +347,7 @@ struct SessionSummary: View {
             if !missed.isEmpty {
                 FlowWords(words: missed)
             }
-            Spacer()
+            Spacer(minLength: 0)
             VStack(spacing: 12) {
                 if !missed.isEmpty {
                     Button { again(missed) } label: {
@@ -340,22 +357,43 @@ struct SessionSummary: View {
                 }
                 Button(action: done) { Text("Done").frame(maxWidth: .infinity) }
                     .buttonStyle(.glassProminent)
+                    .foregroundStyle(Palette.onAccent)
             }
             .controlSize(.extraLarge)
         }
-        .padding(24)
+        .padding(.horizontal, 20)
+        .padding(.top, 48)
+        .padding(.bottom, 12)
     }
 }
 
-/// Missed words laid out like a line of text.
+/// The missed words, each with its sound and meaning, so the summary is one more look.
 struct FlowWords: View {
     var words: [StudyWord]
 
     var body: some View {
-        Text(words.map(\.colloquial).joined(separator: "   "))
-            .font(Typeface.hanzi(28, .medium, relativeTo: .title))
-            .foregroundStyle(Palette.amber)
-            .lineSpacing(8)
-            .cantonese()
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(words.prefix(6).enumerated()), id: \.element.id) { i, word in
+                HStack(alignment: .center, spacing: 14) {
+                    Text(word.colloquial)
+                        .font(Typeface.hanzi(24, .medium, relativeTo: .title2))
+                        .foregroundStyle(Palette.ink)
+                        .cantonese()
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(word.jyutping ?? "").font(.subheadline).foregroundStyle(Palette.muted)
+                        Text(word.meaning ?? "").font(.subheadline).foregroundStyle(Palette.ink).lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
+                    SpeakButton(text: word.colloquial, size: 34)
+                }
+                .padding(.vertical, 12)
+                .overlay(alignment: .top) { if i > 0 { Rectangle().fill(Palette.line).frame(height: 1) } }
+            }
+            if words.count > 6 {
+                Text("and \(words.count - 6) more").font(.footnote).foregroundStyle(Palette.muted).padding(.top, 8)
+            }
+        }
+        .padding(.horizontal, 16)
+        .background(Palette.surface, in: .rect(cornerRadius: 18))
     }
 }
