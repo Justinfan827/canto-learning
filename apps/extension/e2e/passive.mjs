@@ -1,5 +1,6 @@
-// The pause popup on a real YouTube video: plays, pauses, checks the popup shows the line over
-// the sidebar, taps and saves a word, steps lines, then resumes and checks it hides.
+// The pause popup on a real YouTube video: a small mark while playing that opens into the line's
+// card on pause, placed beside the player normally and over it in theater and fullscreen. Taps and
+// saves a word, steps lines with the arrows and by scrolling, then resumes and checks it collapses.
 // Needs the transcriber running (pnpm transcriber) for videos without captions.
 // Run: node e2e/passive.mjs [videoId]   (HEADED=1 to watch, SHOTS=dir for screenshots)
 import { chromium } from "playwright-core"
@@ -35,16 +36,27 @@ const frame = async () => {
     await wait(250)
   }
 }
-const pop = await frame()
+let pop = await frame()
 const iframe = yt.locator("iframe.pna-pop")
+const overlaps = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
+const placement = async () => {
+  const box = await iframe.boundingBox()
+  const player = await yt.locator("#movie_player").boundingBox()
+  return { box, overVideo: overlaps(box, player) }
+}
 
-step("Playing: the popup stays hidden")
+const lineY = async () => (await iframe.boundingBox()).y + (await pop.locator(".moment .big").boundingBox()).y
+
+step("Playing: the current line shows quietly, beside the player")
 await yt.evaluate(() => document.querySelector("video")?.play().catch(() => {}))
 await wait(3000)
-console.log("hidden while playing:", await iframe.evaluate((el) => el.classList.contains("hidden")))
+console.log("live:", await pop.locator(".pp.live").count(), await placement())
+await shot(yt, "0-playing.png")
 
 step("Waiting for captions or the local transcript to reach the playhead")
+let liveY = null
 for (let i = 0; i < 120; i++) {
+  if (await pop.locator(".pp.live .moment").count()) liveY = await lineY()
   await yt.evaluate(() => document.querySelector("video")?.pause())
   await wait(800)
   if (await pop.locator(".moment .chip-w").count()) break
@@ -54,9 +66,8 @@ for (let i = 0; i < 120; i++) {
 
 step("Paused: the popup shows the line")
 await pop.waitForSelector(".moment .chip-w", { timeout: 10000 })
-const box = await iframe.boundingBox()
-const side = await yt.locator("#secondary").boundingBox()
-console.log("popup at", box, "sidebar at", side)
+console.log("card:", await placement())
+console.log("line moved on pause by", liveY == null ? "?" : (await lineY()) - liveY, "px")
 console.log("line:", (await pop.locator(".moment .big").innerText()).replace(/\s+/g, " "))
 await shot(yt, "1-paused.png")
 
@@ -74,28 +85,53 @@ await pop.click(".sheet .save")
 await pop.waitForSelector(".sheet .save.done")
 await shot(yt, "3-saved.png")
 
+const lineText = () => pop.locator(".moment .big").innerText()
 step("Previous line")
-const before = await pop.locator(".moment .big").innerText()
+let before = await lineText()
 await pop.click('button[aria-label="Previous line"]')
-await wait(800)
-console.log("changed line:", before !== (await pop.locator(".moment .big").innerText()))
+await wait(600)
+console.log("changed line:", before !== (await lineText()))
+
+step("Scrolling over the card steps lines")
+before = await lineText()
+await pop.locator(".moment").hover()
+await yt.mouse.wheel(0, -120)
+await wait(400)
+const up = await lineText()
+await yt.mouse.wheel(0, 120)
+await wait(400)
+console.log("scroll up changed line:", before !== up, "scroll down came back:", before === (await lineText()))
+await wait(500)
 console.log("still paused:", await yt.evaluate(() => document.querySelector("video").paused))
 
-step("Space in the popup resumes and hides it")
-await pop.locator(".pp-bar").click()
+step("Space in the popup resumes and collapses it to the line")
+await pop.locator(".pp-time").click()
 await yt.keyboard.press("Space")
 await wait(1500)
-console.log("playing:", !(await yt.evaluate(() => document.querySelector("video").paused)))
-console.log("hidden:", await iframe.evaluate((el) => el.classList.contains("hidden")))
+console.log("playing:", !(await yt.evaluate(() => document.querySelector("video").paused)), "live:", await pop.locator(".pp.live").count())
 
-step("Theater mode: the popup moves over the player")
+step("Theater mode: the card goes over the video")
 await yt.evaluate(() => document.querySelector(".ytp-size-button")?.click())
 await wait(1000)
 await yt.evaluate(() => document.querySelector("video")?.pause())
-await wait(1000)
-console.log("popup at", await iframe.boundingBox(), "player at", await yt.locator("#movie_player").boundingBox())
-console.log("video paused:", await yt.evaluate(() => document.querySelector("video").paused), "popup hidden attr:", await pop.evaluate(() => document.querySelector(".pp")?.hidden))
+await pop.waitForSelector(".pp.card", { timeout: 5000 })
+await wait(500)
+console.log("card:", await placement())
 await shot(yt, "4-theater.png")
+await yt.evaluate(() => document.querySelector(".ytp-size-button")?.click())
+
+step("Fullscreen: the card shows inside it")
+await yt.locator("#movie_player").hover()
+await yt.locator(".ytp-fullscreen-button").click()
+await wait(2500)
+pop = await frame()
+await yt.evaluate(() => document.querySelector("video")?.pause())
+await pop.waitForSelector(".moment, .pp-empty", { timeout: 15000 }).catch(() => {})
+await wait(800)
+console.log("fullscreen:", await yt.evaluate(() => !!document.fullscreenElement), "card:", await placement())
+await shot(yt, "5-fullscreen.png")
+await yt.keyboard.press("Escape")
+await wait(1000)
 
 const saved = await pop.evaluate(
   () =>

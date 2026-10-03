@@ -29,12 +29,34 @@ const store = createLocalStore()
 // No AI here: the popup is for quick lookups. Explanations live in the side panel.
 const tutor = createTutor(store, null, loadDict)
 const PANEL_CHECK_MS = 2000
+/** Scroll distance per line step, and the pause after which a new scroll starts fresh. */
+const WHEEL_STEP = 60
+const WHEEL_RESET_MS = 250
+const SEEK_SETTLE_MS = 300
 
 document.documentElement.dataset.theme = new URLSearchParams(location.search).get("theme") ?? ""
 
-/** Tells the host whether to show the popup, and how tall its content is. */
-function report(visible: boolean, height: number) {
-  window.parent.postMessage({ source: "pna-passive", visible, height }, "https://www.youtube.com")
+type Mode = "none" | "live" | "card"
+
+/** Tells the host what to show and how big it is. */
+function report(mode: Mode, width: number, height: number) {
+  window.parent.postMessage({ source: "pna-passive", mode, width, height }, "https://www.youtube.com")
+}
+
+/** Play state and card width straight from the host page, which sees the <video> directly. */
+function useHost() {
+  const [paused, setPaused] = useState<boolean | null>(null)
+  const [cardWidth, setCardWidth] = useState<number | null>(null)
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      if (e.origin !== "https://www.youtube.com" || e.data?.source !== "pna-host") return
+      if (typeof e.data.paused === "boolean") setPaused(e.data.paused)
+      if (typeof e.data.cardWidth === "number") setCardWidth(e.data.cardWidth)
+    }
+    window.addEventListener("message", onMsg)
+    return () => window.removeEventListener("message", onMsg)
+  }, [])
+  return { paused, cardWidth }
 }
 
 /** Whether the side panel is open in this tab's window; the popup stays out of its way. */
@@ -63,7 +85,11 @@ function PausePopup() {
     return () => chrome.storage.onChanged.removeListener(onChange)
   }, [])
 
-  const { state, seek, play, pause, setLocalCaptions } = usePlayer({ ownTab: true })
+  const player = usePlayer({ ownTab: true })
+  const { seek, play, pause, setLocalCaptions } = player
+  const host = useHost()
+  // The host's word on play and pause wins: it comes from the <video> itself.
+  const state = useMemo(() => (host.paused == null ? player.state : { ...player.state, paused: host.paused }), [player.state, host.paused])
   const [windowId, setWindowId] = useState<number | null>(null)
   useEffect(() => {
     if (state.tabId != null) chrome.tabs.get(state.tabId).then((t) => setWindowId(t.windowId))
@@ -90,11 +116,13 @@ function PausePopup() {
   const line = focus != null ? state.lines[focus] : undefined
   const words = useMemo(() => (line ? wordsOf(line.text) : []), [line?.text, groupings.map, dict, split])
   const prev = focus != null && focus > 0 ? state.lines[focus - 1] : undefined
+  const [pausedAt, setPausedAt] = useState(0)
 
   // A pause opens the popup on the current line; playing closes it, unless it's looping.
   const wasPaused = useRef(state.paused)
   useEffect(() => {
     if (state.paused && !wasPaused.current) {
+      setPausedAt(state.timeMs)
       setFocusIdx(current >= 0 ? current : null)
       setSelWord(null)
       setLoopIdx(null)
@@ -120,33 +148,59 @@ function PausePopup() {
     setLoopIdx(null)
   }, [state.video?.id])
 
-  const visible = !!settings?.pausePopup && !!state.video && !panelOpen && !dismissed && (state.paused || loopIdx != null)
+  const mode: Mode =
+    !settings?.pausePopup || !state.video || panelOpen ? "none" : (state.paused && !dismissed) || loopIdx != null
+        ? "card"
+        : line || tr.status.kind === "running" || tr.status.kind === "checking"
+          ? "live"
+          : "none"
 
-  // Report visibility and content height to the host on every layout change.
+  // Report the mode and the content's size to the host on every layout change.
   const box = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const el = box.current
-    if (!el) return report(visible, 0)
-    const send = () => report(visible, Math.ceil(el.getBoundingClientRect().height))
+    if (!el || mode === "none") return report("none", 0, 0)
+    const send = () => {
+      const r = el.getBoundingClientRect()
+      report(mode, Math.ceil(r.width), Math.ceil(r.height))
+    }
     send()
     const ro = new ResizeObserver(send)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [visible])
+  }, [mode])
 
+  // Stepping through lines moves the card at once; the video follows once the stepping stops.
+  const seekTimer = useRef<number>()
   const goTo = (idx: number) => {
     const l = state.lines[idx]
     if (!l) return
     setFocusIdx(idx)
     setSelWord(null)
     if (loopIdx != null) setLoopIdx(idx)
-    seek(l.startMs)
+    clearTimeout(seekTimer.current)
+    seekTimer.current = window.setTimeout(() => seek(l.startMs), SEEK_SETTLE_MS)
+  }
+
+  // Scrolling over the card steps lines: up for earlier, down for later.
+  const wheel = useRef({ acc: 0, last: 0 })
+  const onWheel = (e: React.WheelEvent) => {
+    if (focus == null) return
+    const w = wheel.current
+    const now = performance.now()
+    if (now - w.last > WHEEL_RESET_MS) w.acc = 0
+    w.last = now
+    w.acc += e.deltaY
+    if (Math.abs(w.acc) < WHEEL_STEP) return
+    const step = w.acc < 0 ? -1 : 1
+    w.acc = 0
+    goTo(focus + step)
   }
 
   // Keys once the popup has focus: Space resumes, arrows step lines, Esc closes.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || !visible) return
+      if (e.defaultPrevented || mode !== "card") return
       if (e.key === "Escape") {
         if (selWord != null) setSelWord(null)
         else setDismissed(true)
@@ -172,104 +226,131 @@ function PausePopup() {
     chrome.sidePanel.open({ tabId: state.tabId }).then(() => setPanelOpen(true), console.warn)
   }
 
-  if (!settings) return null
-  const word = line && selWord != null ? words[selWord] : null
+  if (!settings || mode === "none") return null
+  const card = mode === "card"
+  const word = card && line && selWord != null ? words[selWord] : null
+  const looping = !!line && loopIdx === line.idx
 
+  // One layout for both modes: the line sits at the top and the card's tools open below it,
+  // so pausing never moves the line you were reading.
   return (
-    <div ref={box} className={"pp size-" + settings.textSize} hidden={!visible}>
-      <div className="pp-bar">
-        <span className="pp-time">
-          {loopIdx != null ? "Looping" : "Paused"} {line ? formatTime(line.startMs) : formatTime(state.timeMs)}
-        </span>
-        <span className="grow" />
-        {line && (
-          <>
-            <button className="ib small" aria-label="Previous line" title="Previous line (↑)" disabled={!prev} onClick={() => goTo(focus! - 1)}>
-              <Icon name="up" />
-            </button>
-            <button
-              className="ib small"
-              aria-label="Next line"
-              title="Next line (↓)"
-              disabled={focus! + 1 >= state.lines.length}
-              onClick={() => goTo(focus! + 1)}
-            >
-              <Icon name="down" />
-            </button>
-          </>
-        )}
-        <button className="ib small" aria-label="Open transcript" title="Open the full transcript" onClick={openPanel}>
-          <Icon name="panel" />
-        </button>
-        <button className="ib small" aria-label="Close" title="Close (Esc)" onClick={() => setDismissed(true)}>
-          <Icon name="close" />
-        </button>
-      </div>
-
+    <div
+      ref={box}
+      className={"pp size-" + settings.textSize + (card ? " card" : " live")}
+      style={host.cardWidth ? { width: host.cardWidth } : undefined}
+      onWheel={card ? onWheel : undefined}
+      onClick={card ? undefined : () => pause()}
+      title={card ? undefined : "Pause to look up this line"}
+    >
       {line ? (
-        <>
-          {prev && (
-            <button className="pp-prev" lang="yue-Hant" onClick={() => goTo(focus! - 1)}>
-              {prev.text}
-            </button>
-          )}
-          <MomentCard
-            words={words}
-            startMs={line.startMs}
-            english={null}
-            inferred={false}
-            showJyutping={settings.showJyutping}
-            saved={saved.words}
-            selected={selWord}
-            looping={loopIdx === line.idx}
-            onWord={(i) => setSelWord(selWord === i ? null : i)}
-            regrouped={!!groupings.map[line.text]}
-            onRegroup={(a, b) => {
-              const next = regroup(
-                words.map((w) => w.text),
-                a,
-                b
-              )
-              groupings.set(line.text, next)
-              let at = 0
-              setSelWord(next.findIndex((w) => (at += [...w].length) > Math.min(a, b)))
-            }}
-            onResetGrouping={() => {
-              groupings.clear(line.text)
-              setSelWord(null)
-            }}
-            onHear={(slow) => speak(line.text, { slow })}
-            onLoop={() => {
-              if (loopIdx === line.idx) {
-                setLoopIdx(null)
-                pause()
-              } else {
-                setLoopIdx(line.idx)
-                seek(line.startMs)
-                play()
-              }
-            }}
-            onExplain={null}
-          />
-          {word ? (
+        <MomentCard
+          words={words}
+          startMs={line.startMs}
+          english={null}
+          inferred={false}
+          showJyutping={settings.showJyutping}
+          saved={saved.words}
+          selected={card ? selWord : null}
+          looping={looping}
+          onWord={(i) => setSelWord(selWord === i ? null : i)}
+          regrouped={!!groupings.map[line.text]}
+          onRegroup={(a, b) => {
+            const next = regroup(
+              words.map((w) => w.text),
+              a,
+              b
+            )
+            groupings.set(line.text, next)
+            let at = 0
+            setSelWord(next.findIndex((w) => (at += [...w].length) > Math.min(a, b)))
+          }}
+          onResetGrouping={() => {
+            groupings.clear(line.text)
+            setSelWord(null)
+          }}
+          onHear={() => {}}
+          onLoop={() => {}}
+          onExplain={null}
+        />
+      ) : card ? (
+        <NoLine status={tr.status} hasLines={state.lines.length > 0} onOpen={openPanel} />
+      ) : (
+        <p className="pp-live-note">Transcribing…</p>
+      )}
+
+      {card && (
+        <div className="pp-more">
+          {word && (
             <WordSheet
               word={word}
               senses={dict ? senses(word.text, dict) : []}
               saved={saved.words.has(word.colloquial ?? word.text)}
-              fromMs={line.startMs}
+              fromMs={line!.startMs}
               onSave={async () => {
-                await t.saveWord(word, line.idx)
+                await t.saveWord(word, line!.idx)
                 saved.refresh()
               }}
               onHear={() => speak(word.colloquial ?? word.text)}
               onClose={() => setSelWord(null)}
             />
-          ) : (
-            <p className="pp-hint">Tap a word to look it up</p>
           )}
-        </>
-      ) : (
-        <NoLine status={tr.status} hasLines={state.lines.length > 0} onOpen={openPanel} />
+          <div className="pp-bar">
+            {line && (
+              <>
+                <button className="ib small" aria-label="Hear it" title="Hear it" onClick={() => speak(line.text)}>
+                  <Icon name="sound" />
+                </button>
+                <button className="ib small" aria-label="Hear it slower" title="Hear it slower" onClick={() => speak(line.text, { slow: true })}>
+                  <Icon name="slow" />
+                </button>
+                <button
+                  className={"ib small" + (looping ? " on" : "")}
+                  aria-label={looping ? "Stop looping" : "Loop this line"}
+                  aria-pressed={looping}
+                  title={looping ? "Stop looping" : "Loop this line"}
+                  onClick={() => {
+                    if (looping) {
+                      setLoopIdx(null)
+                      pause()
+                    } else {
+                      setLoopIdx(line.idx)
+                      seek(line.startMs)
+                      play()
+                    }
+                  }}
+                >
+                  <Icon name="loop" />
+                </button>
+              </>
+            )}
+            <span className="pp-time">
+              {looping ? "Looping " + formatTime(line!.startMs) : focusIdx != null && focusIdx !== current ? formatTime(line?.startMs ?? 0) : formatTime(pausedAt)}
+            </span>
+            <span className="grow" />
+            {line && (
+              <>
+                <button className="ib small" aria-label="Previous line" title="Previous line (scroll up or ↑)" disabled={!prev} onClick={() => goTo(focus! - 1)}>
+                  <Icon name="up" />
+                </button>
+                <button
+                  className="ib small"
+                  aria-label="Next line"
+                  title="Next line (scroll down or ↓)"
+                  disabled={focus! + 1 >= state.lines.length}
+                  onClick={() => goTo(focus! + 1)}
+                >
+                  <Icon name="down" />
+                </button>
+              </>
+            )}
+            <button className="ib small" aria-label="Open transcript" title="Open the full transcript" onClick={openPanel}>
+              <Icon name="panel" />
+            </button>
+            <button className="ib small" aria-label="Close" title="Close (Esc)" onClick={() => setDismissed(true)}>
+              <Icon name="close" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )
