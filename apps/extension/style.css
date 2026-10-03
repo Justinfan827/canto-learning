@@ -254,7 +254,7 @@ rt { font: 400 9.5px/1 var(--f-ui); color: var(--muted); letter-spacing: 0; padd
 .menu-anchor.left { min-width: 0; }
 .pop.src-menu { left: 0; right: auto; top: 30px; width: 270px; gap: 2px; }
 .menu-h { font-size: 11px; color: var(--muted); padding: 4px 8px 2px; text-transform: uppercase; letter-spacing: 0.04em; }
-.src { display: flex; align-items: flex-start; gap: 6px; text-align: left; padding: 7px 8px; border-radius: 8px; color: var(--fg); font-size: 13px; }
+.src { display: flex; align-items: flex-start; gap: 6px; text-align: left; padding: 7px 8px; border-radius: 8px; color: var(--fg); font: 13px/1.35 var(--f-ui); }
 .src:hover:not(:disabled) { background: var(--soft); }
 .src:disabled { color: var(--faint); }
 .src.on { color: var(--jade); }
