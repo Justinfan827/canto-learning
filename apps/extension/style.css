@@ -264,17 +264,8 @@ rt { font: 400 9.5px/1 var(--f-ui); color: var(--muted); letter-spacing: 0; padd
 }
 html:has(.pp), html:has(.pp) body { height: auto; min-height: 0; background: transparent; overflow: hidden; }
 .pp { padding: 6px; display: grid; gap: 6px; background: var(--bg); }
-/* Playing: just the current line, quiet. Pausing opens the tools below it without moving it. */
-.pp.live { cursor: pointer; }
-.pp.live .moment { background: transparent; }
-.pp.live .moment .big { pointer-events: none; }
-.pp.live .chip-w { border-bottom-color: transparent; }
-.pp.live rt { visibility: hidden; }
-.pp.live .regroup-hint { display: none; }
 .pp .moment .acts { display: none; }
-.pp .moment { transition: background-color 0.18s; }
 .pp-more { display: grid; gap: 6px; animation: fade 0.18s ease-out; }
-.pp-live-note { margin: 0; padding: 4px 8px; font-size: 12px; color: var(--muted); }
 .pp-bar { display: flex; align-items: center; gap: 2px; padding: 0 2px; }
 .pp-bar .ib.on { color: var(--jade); }
 .pp-time { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; margin-left: 6px; }

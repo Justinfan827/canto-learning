@@ -36,7 +36,7 @@ const SEEK_SETTLE_MS = 300
 
 document.documentElement.dataset.theme = new URLSearchParams(location.search).get("theme") ?? ""
 
-type Mode = "none" | "live" | "card"
+type Mode = "none" | "card"
 
 /** Tells the host what to show and how big it is. */
 function report(mode: Mode, width: number, height: number) {
@@ -111,8 +111,7 @@ function PausePopup() {
   const current = lineAt(state.lines, state.timeMs)
   const focus = focusIdx ?? (current >= 0 ? current : null)
 
-  const wordsOf = (text: string): LineWord[] =>
-    groupings.map[text] && dict ? groupings.map[text].map((w) => lookup(w, dict)) : split(text)
+  const wordsOf = (text: string): LineWord[] => (groupings.map[text] && dict ? groupings.map[text].map((w) => lookup(w, dict)) : split(text))
   const line = focus != null ? state.lines[focus] : undefined
   const words = useMemo(() => (line ? wordsOf(line.text) : []), [line?.text, groupings.map, dict, split])
   const prev = focus != null && focus > 0 ? state.lines[focus - 1] : undefined
@@ -148,12 +147,8 @@ function PausePopup() {
     setLoopIdx(null)
   }, [state.video?.id])
 
-  const mode: Mode =
-    !settings?.pausePopup || !state.video || panelOpen ? "none" : (state.paused && !dismissed) || loopIdx != null
-        ? "card"
-        : line || tr.status.kind === "running" || tr.status.kind === "checking"
-          ? "live"
-          : "none"
+  // Nothing at all while the video plays; the card only while paused (or looping a line).
+  const mode: Mode = settings?.pausePopup && state.video && !panelOpen && ((state.paused && !dismissed) || loopIdx != null) ? "card" : "none"
 
   // Report the mode and the content's size to the host on every layout change.
   const box = useRef<HTMLDivElement>(null)
@@ -227,21 +222,11 @@ function PausePopup() {
   }
 
   if (!settings || mode === "none") return null
-  const card = mode === "card"
-  const word = card && line && selWord != null ? words[selWord] : null
+  const word = line && selWord != null ? words[selWord] : null
   const looping = !!line && loopIdx === line.idx
 
-  // One layout for both modes: the line sits at the top and the card's tools open below it,
-  // so pausing never moves the line you were reading.
   return (
-    <div
-      ref={box}
-      className={"pp size-" + settings.textSize + (card ? " card" : " live")}
-      style={host.cardWidth ? { width: host.cardWidth } : undefined}
-      onWheel={card ? onWheel : undefined}
-      onClick={card ? undefined : () => pause()}
-      title={card ? undefined : "Pause to look up this line"}
-    >
+    <div ref={box} className={"pp card size-" + settings.textSize} style={host.cardWidth ? { width: host.cardWidth } : undefined} onWheel={onWheel}>
       {line ? (
         <MomentCard
           words={words}
@@ -250,7 +235,7 @@ function PausePopup() {
           inferred={false}
           showJyutping={settings.showJyutping}
           saved={saved.words}
-          selected={card ? selWord : null}
+          selected={selWord}
           looping={looping}
           onWord={(i) => setSelWord(selWord === i ? null : i)}
           regrouped={!!groupings.map[line.text]}
@@ -272,86 +257,86 @@ function PausePopup() {
           onLoop={() => {}}
           onExplain={null}
         />
-      ) : card ? (
-        <NoLine status={tr.status} hasLines={state.lines.length > 0} onOpen={openPanel} />
       ) : (
-        <p className="pp-live-note">Transcribing…</p>
+        <NoLine status={tr.status} hasLines={state.lines.length > 0} onOpen={openPanel} />
       )}
 
-      {card && (
-        <div className="pp-more">
-          {word && (
-            <WordSheet
-              word={word}
-              senses={dict ? senses(word.text, dict) : []}
-              saved={saved.words.has(word.colloquial ?? word.text)}
-              fromMs={line!.startMs}
-              onSave={async () => {
-                await t.saveWord(word, line!.idx)
-                saved.refresh()
-              }}
-              onHear={() => speak(word.colloquial ?? word.text)}
-              onClose={() => setSelWord(null)}
-            />
+      <div className="pp-more">
+        {word && (
+          <WordSheet
+            word={word}
+            senses={dict ? senses(word.text, dict) : []}
+            saved={saved.words.has(word.colloquial ?? word.text)}
+            fromMs={line!.startMs}
+            onSave={async () => {
+              await t.saveWord(word, line!.idx)
+              saved.refresh()
+            }}
+            onHear={() => speak(word.colloquial ?? word.text)}
+            onClose={() => setSelWord(null)}
+          />
+        )}
+        <div className="pp-bar">
+          {line && (
+            <>
+              <button className="ib small" aria-label="Hear it" title="Hear it" onClick={() => speak(line.text)}>
+                <Icon name="sound" />
+              </button>
+              <button className="ib small" aria-label="Hear it slower" title="Hear it slower" onClick={() => speak(line.text, { slow: true })}>
+                <Icon name="slow" />
+              </button>
+              <button
+                className={"ib small" + (looping ? " on" : "")}
+                aria-label={looping ? "Stop looping" : "Loop this line"}
+                aria-pressed={looping}
+                title={looping ? "Stop looping" : "Loop this line"}
+                onClick={() => {
+                  if (looping) {
+                    setLoopIdx(null)
+                    pause()
+                  } else {
+                    setLoopIdx(line.idx)
+                    seek(line.startMs)
+                    play()
+                  }
+                }}
+              >
+                <Icon name="loop" />
+              </button>
+            </>
           )}
-          <div className="pp-bar">
-            {line && (
-              <>
-                <button className="ib small" aria-label="Hear it" title="Hear it" onClick={() => speak(line.text)}>
-                  <Icon name="sound" />
-                </button>
-                <button className="ib small" aria-label="Hear it slower" title="Hear it slower" onClick={() => speak(line.text, { slow: true })}>
-                  <Icon name="slow" />
-                </button>
-                <button
-                  className={"ib small" + (looping ? " on" : "")}
-                  aria-label={looping ? "Stop looping" : "Loop this line"}
-                  aria-pressed={looping}
-                  title={looping ? "Stop looping" : "Loop this line"}
-                  onClick={() => {
-                    if (looping) {
-                      setLoopIdx(null)
-                      pause()
-                    } else {
-                      setLoopIdx(line.idx)
-                      seek(line.startMs)
-                      play()
-                    }
-                  }}
-                >
-                  <Icon name="loop" />
-                </button>
-              </>
-            )}
-            <span className="pp-time">
-              {looping ? "Looping " + formatTime(line!.startMs) : focusIdx != null && focusIdx !== current ? formatTime(line?.startMs ?? 0) : formatTime(pausedAt)}
-            </span>
-            <span className="grow" />
-            {line && (
-              <>
-                <button className="ib small" aria-label="Previous line" title="Previous line (scroll up or ↑)" disabled={!prev} onClick={() => goTo(focus! - 1)}>
-                  <Icon name="up" />
-                </button>
-                <button
-                  className="ib small"
-                  aria-label="Next line"
-                  title="Next line (scroll down or ↓)"
-                  disabled={focus! + 1 >= state.lines.length}
-                  onClick={() => goTo(focus! + 1)}
-                >
-                  <Icon name="down" />
-                </button>
-              </>
-            )}
-            <button className="ib small" aria-label="Open transcript" title="Open the full transcript" onClick={openPanel}>
-              <Icon name="panel" />
-            </button>
-            <button className="ib small" aria-label="Close" title="Close (Esc)" onClick={() => setDismissed(true)}>
-              <Icon name="close" />
-            </button>
-          </div>
+          <span className="pp-time">
+            {looping
+              ? "Looping " + formatTime(line!.startMs)
+              : focusIdx != null && focusIdx !== current
+                ? formatTime(line?.startMs ?? 0)
+                : formatTime(pausedAt)}
+          </span>
+          <span className="grow" />
+          {line && (
+            <>
+              <button className="ib small" aria-label="Previous line" title="Previous line (scroll up or ↑)" disabled={!prev} onClick={() => goTo(focus! - 1)}>
+                <Icon name="up" />
+              </button>
+              <button
+                className="ib small"
+                aria-label="Next line"
+                title="Next line (scroll down or ↓)"
+                disabled={focus! + 1 >= state.lines.length}
+                onClick={() => goTo(focus! + 1)}
+              >
+                <Icon name="down" />
+              </button>
+            </>
+          )}
+          <button className="ib small" aria-label="Open transcript" title="Open the full transcript" onClick={openPanel}>
+            <Icon name="panel" />
+          </button>
+          <button className="ib small" aria-label="Close" title="Close (Esc)" onClick={() => setDismissed(true)}>
+            <Icon name="close" />
+          </button>
         </div>
-      )}
+      </div>
     </div>
   )
 }

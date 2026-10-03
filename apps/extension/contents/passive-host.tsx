@@ -1,8 +1,8 @@
 /**
  * Hosts the pause popup (tabs/passive.tsx) in the YouTube page. The popup runs as an extension
  * page in an iframe, so it shares the side panel's storage; this script only places it and sizes
- * it to what the popup asks for: the current line while the video plays, opening into the line's
- * card in place when paused.
+ * it to what the popup asks for. Nothing shows while the video plays; the line's card shows when
+ * it's paused.
  *
  * Placement follows the player's layout: beside the player (over the recommendations) in the
  * normal layout, over the video's top-right corner in theater mode, and inside the fullscreen
@@ -20,8 +20,10 @@ export const getStyle: PlasmoGetStyle = () => {
   const style = document.createElement("style")
   style.textContent = `
     .pna-pop { position: fixed; z-index: 2100; border: 0; border-radius: 14px; background: transparent; color-scheme: normal;
-      box-shadow: 0 1px 2px rgba(0,0,0,.14), 0 10px 28px -10px rgba(0,0,0,.4); transition: height .18s cubic-bezier(.2,0,0,1); }
-    @media (prefers-reduced-motion: reduce) { .pna-pop { transition: none; } }
+      box-shadow: 0 1px 2px rgba(0,0,0,.14), 0 10px 28px -10px rgba(0,0,0,.4); }
+    .pna-pop.shown { animation: pna-in .14s ease-out; }
+    @keyframes pna-in { from { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .pna-pop.shown { animation: none; } }
     .pna-pop.hidden { visibility: hidden; pointer-events: none; }
   `
   return style
@@ -36,7 +38,7 @@ const PLAYER_CONTROLS = 64
 /** Narrower than this beside the player and the card goes over the video instead. */
 const MIN_SIDE = 300
 
-type Want = { mode: "none" } | { mode: "live" | "card"; width: number; height: number }
+type Want = { mode: "none" } | { mode: "card"; width: number; height: number }
 
 /** The right edge, top and room the popup has. It grows down and to the left from the top-right. */
 interface Slot {
@@ -87,7 +89,7 @@ function PassiveHost() {
     const onMsg = (e: MessageEvent) => {
       if (e.origin !== origin || e.data?.source !== "pna-passive") return
       const d = e.data
-      setWant(d.mode === "live" || d.mode === "card" ? { mode: d.mode, width: Number(d.width) || 0, height: Number(d.height) || 0 } : { mode: "none" })
+      setWant(d.mode === "card" ? { mode: d.mode, width: Number(d.width) || 0, height: Number(d.height) || 0 } : { mode: "none" })
     }
     const onNav = () => setWatch(location.pathname === "/watch")
     window.addEventListener("message", onMsg)
@@ -170,7 +172,6 @@ function PassiveHost() {
   const on = visible && !!where
   let style: React.CSSProperties = { left: 0, top: 0, width: WIDTH, height: 0 }
   if (on && where && "width" in want) {
-    // Same width in both modes, so the line never rewraps when the card opens.
     const width = where.maxWidth
     const height = Math.min(want.height, Math.max(120, where.maxHeight))
     style = { left: where.right - width, top: where.top, width, height }

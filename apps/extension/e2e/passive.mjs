@@ -1,5 +1,4 @@
-// The pause popup on a real YouTube video: a small mark while playing that opens into the line's
-// card on pause, placed beside the player normally and over it in theater and fullscreen. Taps and
+// The pause popup on a real YouTube video: nothing while playing, the line's card on pause, placed beside the player normally and over it in theater and fullscreen. Taps and
 // saves a word, steps lines with the arrows and by scrolling, then resumes and checks it collapses.
 // Needs the transcriber running (pnpm transcriber) for videos without captions.
 // Run: node e2e/passive.mjs [videoId]   (HEADED=1 to watch, SHOTS=dir for screenshots)
@@ -52,18 +51,15 @@ const placement = async () => {
   return { box, overVideo: overlaps(box, player) }
 }
 
-const lineY = async () => (await iframe.boundingBox()).y + (await pop.locator(".moment .big").boundingBox()).y
 
-step("Playing: the current line shows quietly, beside the player")
+step("Playing: nothing shows")
 await yt.evaluate(() => document.querySelector("video")?.play().catch(() => {}))
 await wait(3000)
-console.log("live:", await pop.locator(".pp.live").count(), await placement())
+console.log("hidden while playing:", await iframe.evaluate((el) => el.classList.contains("hidden")))
 await shot(yt, "0-playing.png")
 
 step("Waiting for captions or the local transcript to reach the playhead")
-let liveY = null
 for (let i = 0; i < 120; i++) {
-  if (await pop.locator(".pp.live .moment").count()) liveY = await lineY()
   await yt.evaluate(() => document.querySelector("video")?.pause())
   await wait(800)
   if (await pop.locator(".moment .chip-w").count()) break
@@ -74,7 +70,6 @@ for (let i = 0; i < 120; i++) {
 step("Paused: the popup shows the line")
 await pop.waitForSelector(".moment .chip-w", { timeout: 10000 })
 console.log("card:", await placement())
-console.log("line moved on pause by", liveY == null ? "?" : (await lineY()) - liveY, "px")
 console.log("line:", (await pop.locator(".moment .big").innerText()).replace(/\s+/g, " "))
 await shot(yt, "1-paused.png")
 
@@ -114,11 +109,11 @@ console.log("scroll up changed line:", before !== up, "scroll down came back:", 
 await wait(500)
 console.log("still paused:", await yt.evaluate(() => document.querySelector("video").paused))
 
-step("Space in the popup resumes and collapses it to the line")
+step("Space in the popup resumes and hides it")
 await pop.locator(".pp-time").click()
 await yt.keyboard.press("Space")
 await wait(1500)
-console.log("playing:", !(await yt.evaluate(() => document.querySelector("video").paused)), "live:", await pop.locator(".pp.live").count())
+console.log("playing:", !(await yt.evaluate(() => document.querySelector("video").paused)), "hidden:", await iframe.evaluate((el) => el.classList.contains("hidden")))
 
 step("Theater mode: the card goes over the video")
 await yt.evaluate(() => document.querySelector(".ytp-size-button")?.click())
