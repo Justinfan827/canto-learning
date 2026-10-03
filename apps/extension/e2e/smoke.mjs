@@ -46,7 +46,7 @@ function makeWav(seconds, rate = 8000) {
 const wav = makeWav(20)
 const ctx = await chromium.launchPersistentContext(fs.mkdtempSync("/tmp/pna-profile-"), {
   executablePath: process.env.CHROMIUM_PATH ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
-  headless: false,
+  headless: !process.env.HEADED,
   args: ["--autoplay-policy=no-user-gesture-required", `--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`],
 })
 const logs = []
