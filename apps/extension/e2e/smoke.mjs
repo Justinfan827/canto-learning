@@ -75,9 +75,14 @@ await ctx.route("https://www.youtube.com/**", async (route) => {
 let releaseTranscript
 const transcriptHeld = new Promise((r) => (releaseTranscript = r))
 const transcribeCalls = []
+const studyPushes = []
 await ctx.route("http://127.0.0.1:8787/**", async (route) => {
   const url = new URL(route.request().url())
-  const cors = { "access-control-allow-origin": "*" }
+  const cors = { "access-control-allow-origin": "*", "access-control-allow-methods": "*", "access-control-allow-headers": "*" }
+  if (url.pathname === "/study") {
+    if (route.request().method() === "PUT") studyPushes.push(route.request().postDataJSON())
+    return route.fulfill({ status: route.request().method() === "OPTIONS" ? 204 : 200, contentType: "application/json", headers: cors, body: "{}" })
+  }
   if (url.pathname === "/engines")
     return route.fulfill({ contentType: "application/json", headers: cors, body: JSON.stringify({ engines: [
       { id: "whisper-cpp-turbo", label: "Whisper large-v3-turbo (whisper.cpp)", languages: "", unavailable: "not installed" },
@@ -288,5 +293,8 @@ await panel.click(".src-menu .srcopt:has-text('YouTube captions')")
 await panel.waitForSelector(".pill >> text=YouTube captions", { timeout: 10000 })
 await panel.waitForSelector(".lyrics .ln[data-idx='3'], .moment", { timeout: 5000 }).catch(() => {})
 console.log("back to YouTube:", await panel.locator(".bar .pill").innerText(), "| lines:", await panel.locator(".lyrics .ln").count(), "| card:", await text(".moment .big").catch(() => "-"))
+const lastPush = studyPushes.at(-1)
+console.log("study pushes:", studyPushes.length, "| words:", lastPush?.words.map((w) => [w.colloquial, w.sources.length]), "| videos:", lastPush?.videos.map((v) => v.id))
+if (!lastPush?.words.length || !lastPush.words.every((w) => w.sources.length)) throw new Error("study snapshot missing saved words or their source lines")
 console.log("errors:", logs.filter((l) => /error/i.test(l)).slice(0, 5))
 await ctx.close()
