@@ -17,6 +17,8 @@ export interface Settings {
   transcribeEngine: string
   /** Set once the "audio stays on this computer" notice has been dismissed. */
   transcribeNoticeSeen: boolean
+  /** Show the paused line in a small popup over YouTube's sidebar when the side panel is closed. */
+  pausePopup: boolean
   /** Language of spoken questions. */
   listenLang: ListenLang
   // Display options, from the panel's Aa menu.
@@ -35,6 +37,7 @@ const DEFAULTS: Settings = {
   speakAnswers: false,
   transcribeEngine: "auto",
   transcribeNoticeSeen: false,
+  pausePopup: true,
   listenLang: "zh-HK",
   showJyutping: true,
   register: "colloquial",

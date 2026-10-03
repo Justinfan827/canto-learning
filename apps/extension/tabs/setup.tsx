@@ -84,6 +84,15 @@ function Setup() {
       <h1>Pause &amp; Ask settings</h1>
       <p>Captions, the dictionary and saved words work with nothing set up here.</p>
 
+      <section id="popup">
+        <h2>Pause popup</h2>
+        <label className="row">
+          <input type="checkbox" checked={s.pausePopup} onChange={(e) => setNow({ pausePopup: e.target.checked })} />
+          Show the paused line over YouTube&apos;s sidebar
+        </label>
+        <p className="muted">When you pause, a small card shows the line so you can look up a word without opening the side panel. It stays hidden while the side panel is open.</p>
+      </section>
+
       <section id="captions">
         <h2>Captions</h2>
         <p className="muted">

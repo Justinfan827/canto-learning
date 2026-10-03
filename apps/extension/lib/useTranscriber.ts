@@ -36,13 +36,19 @@ const FLUSH_MS = 300
  * The last step of the caption-source order: when a video has no Cantonese or Chinese track,
  * transcribe it on this computer from the playhead, without being asked.
  */
-export function useTranscriber(player: PlayerState, engineSetting: string, setLocalCaptions: (videoId: string, lines: CaptionLine[]) => void) {
+export function useTranscriber(
+  player: PlayerState,
+  engineSetting: string,
+  setLocalCaptions: (videoId: string, lines: CaptionLine[]) => void,
+  /** False while another page (the side panel) is already transcribing this video. */
+  enabled = true
+) {
   const [status, setStatus] = useState<TranscriberStatus>({ kind: "off" })
   const [attempt, setAttempt] = useState(0)
   /** A second, written-Chinese transcript of the same audio, for the 書面語 view. */
   const [written, setWritten] = useState<CaptionLine[] | null>(null)
   const videoId = player.video?.id ?? null
-  const needed = !!videoId && !pickTrack(player.tracks) && player.captionSource !== "track" && player.captionSource !== "screen"
+  const needed = enabled && !!videoId && !pickTrack(player.tracks) && player.captionSource !== "track" && player.captionSource !== "screen"
   const timeRef = useRef(player.timeMs)
   timeRef.current = player.timeMs
   const sendRef = useRef(setLocalCaptions)
