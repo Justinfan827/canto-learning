@@ -76,7 +76,7 @@ export function Header(props: {
                 key={s.id}
                 role="menuitemradio"
                 aria-checked={s.active}
-                className={"src" + (s.active ? " on" : "")}
+                className={"srcopt" + (s.active ? " on" : "")}
                 disabled={s.disabled}
                 onClick={() => {
                   setSrcOpen(false)
@@ -92,7 +92,7 @@ export function Header(props: {
             ))}
             {pill.action && (
               <button
-                className="src act-row"
+                className="srcopt act-row"
                 onClick={() => {
                   setSrcOpen(false)
                   pill.action!.run()
