@@ -1,0 +1,522 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		04D8A8BC9DE01E395AB3165A /* CantoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C42409D7DB9D5B94567E9D /* CantoTests.swift */; };
+		139C969585D1C4B50F99C118 /* ToneMarks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DEF59EF16D41AA9AC62A049 /* ToneMarks.swift */; };
+		1589670B5E38347A43860CC7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AD052DD7EDFF2F09A3D8F61F /* Assets.xcassets */; };
+		16928C912D13295ACE1A5C27 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19CFB2AB6F2AF7ACD5F575AD /* LibraryView.swift */; };
+		2D263A476A3B64E4EC177D9B /* StudyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8180230E105DA29C1639F4B1 /* StudyStore.swift */; };
+		34461C30590E0FBC64F95E16 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C7A006FEF7425D583AC9F1 /* Theme.swift */; };
+		3789B7E1A72BF05C19BC3E23 /* WordDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84FB44CE9307B83E326D38F /* WordDetailView.swift */; };
+		4E49EC8B1A024A58667EE5F3 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94D75235BBD4F201D107A1E0 /* SettingsView.swift */; };
+		4FB1EC6640D68C05C5441F10 /* ListenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1215AE100A5293ABD174D8 /* ListenView.swift */; };
+		5A9E51718B9C3351317C6985 /* study-sample.json in Resources */ = {isa = PBXBuildFile; fileRef = 2812C9324C139D00CC41CA40 /* study-sample.json */; };
+		631E32A209239735CE5EA643 /* FlashcardSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF852398463FE7905863967 /* FlashcardSession.swift */; };
+		7E54A21FFDAFAA46C6182D89 /* ReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFDDD7AC83C83909F773FF13 /* ReviewView.swift */; };
+		836022555801767C3681139E /* CantoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32A6AE1480BF27184AF07F68 /* CantoApp.swift */; };
+		8935926A6CD281B01452BF83 /* ListenSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B8EFFC5AA7DCAEC688677C5 /* ListenSession.swift */; };
+		898349C1362BE68617682834 /* Study.swift in Sources */ = {isa = PBXBuildFile; fileRef = A72CD5CA716378311D6565E9 /* Study.swift */; };
+		A1F436FFB85E4B61230D676C /* Speaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D9B88DA2B2A48A038BC8B1 /* Speaker.swift */; };
+		AAD694E18D9CD9FD919F50B6 /* Scheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDCB53DCD4B75F867D101039 /* Scheduler.swift */; };
+		BC45C01261C588E4EA609A7C /* StudyBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25120545AF4F98F1B284304A /* StudyBackend.swift */; };
+		C34B050C1361D1829257A2CD /* Jyutping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94CFDAECDC4498E02A274B8E /* Jyutping.swift */; };
+		DE313B5E301949C6AB097125 /* VideoDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FAA336BD85E7CBE0B2CAC31 /* VideoDetailView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		3816C20D917521C9BDDE1887 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2CB5F1C67D125A8E8D7C0F0D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5F4B68B139B3C527915844D5;
+			remoteInfo = Canto;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0B8EFFC5AA7DCAEC688677C5 /* ListenSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenSession.swift; sourceTree = "<group>"; };
+		19CFB2AB6F2AF7ACD5F575AD /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		25120545AF4F98F1B284304A /* StudyBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyBackend.swift; sourceTree = "<group>"; };
+		27C7A006FEF7425D583AC9F1 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		2812C9324C139D00CC41CA40 /* study-sample.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "study-sample.json"; sourceTree = "<group>"; };
+		2D77F72AF034F0315D37A797 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		32A6AE1480BF27184AF07F68 /* CantoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CantoApp.swift; sourceTree = "<group>"; };
+		4051A0699C7A7C83A5DEA783 /* CantoTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CantoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5089DDD4BF31B9AE8A30B132 /* Canto.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Canto.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6FF852398463FE7905863967 /* FlashcardSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlashcardSession.swift; sourceTree = "<group>"; };
+		7FAA336BD85E7CBE0B2CAC31 /* VideoDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDetailView.swift; sourceTree = "<group>"; };
+		8180230E105DA29C1639F4B1 /* StudyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyStore.swift; sourceTree = "<group>"; };
+		94CFDAECDC4498E02A274B8E /* Jyutping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Jyutping.swift; sourceTree = "<group>"; };
+		94D75235BBD4F201D107A1E0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		9DEF59EF16D41AA9AC62A049 /* ToneMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToneMarks.swift; sourceTree = "<group>"; };
+		A72CD5CA716378311D6565E9 /* Study.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Study.swift; sourceTree = "<group>"; };
+		AD052DD7EDFF2F09A3D8F61F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AF1215AE100A5293ABD174D8 /* ListenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenView.swift; sourceTree = "<group>"; };
+		D5D9B88DA2B2A48A038BC8B1 /* Speaker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speaker.swift; sourceTree = "<group>"; };
+		D7C42409D7DB9D5B94567E9D /* CantoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CantoTests.swift; sourceTree = "<group>"; };
+		D84FB44CE9307B83E326D38F /* WordDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordDetailView.swift; sourceTree = "<group>"; };
+		DFDDD7AC83C83909F773FF13 /* ReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewView.swift; sourceTree = "<group>"; };
+		FDCB53DCD4B75F867D101039 /* Scheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scheduler.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		002942387C8C51519B95A909 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5089DDD4BF31B9AE8A30B132 /* Canto.app */,
+				4051A0699C7A7C83A5DEA783 /* CantoTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		1E87F3D37CBEF3AB3F8C3C48 = {
+			isa = PBXGroup;
+			children = (
+				E5CA436B6FFDCD8074BCFB89 /* Canto */,
+				64FCF21D364C5939F6F1CAB4 /* CantoTests */,
+				002942387C8C51519B95A909 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		2A206BE175F12AE7E56E98A7 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				6FF852398463FE7905863967 /* FlashcardSession.swift */,
+				19CFB2AB6F2AF7ACD5F575AD /* LibraryView.swift */,
+				AF1215AE100A5293ABD174D8 /* ListenView.swift */,
+				DFDDD7AC83C83909F773FF13 /* ReviewView.swift */,
+				94D75235BBD4F201D107A1E0 /* SettingsView.swift */,
+				27C7A006FEF7425D583AC9F1 /* Theme.swift */,
+				9DEF59EF16D41AA9AC62A049 /* ToneMarks.swift */,
+				7FAA336BD85E7CBE0B2CAC31 /* VideoDetailView.swift */,
+				D84FB44CE9307B83E326D38F /* WordDetailView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		55E29A63D79AA6C020166808 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				94CFDAECDC4498E02A274B8E /* Jyutping.swift */,
+				FDCB53DCD4B75F867D101039 /* Scheduler.swift */,
+				A72CD5CA716378311D6565E9 /* Study.swift */,
+				25120545AF4F98F1B284304A /* StudyBackend.swift */,
+				8180230E105DA29C1639F4B1 /* StudyStore.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		64FCF21D364C5939F6F1CAB4 /* CantoTests */ = {
+			isa = PBXGroup;
+			children = (
+				D7C42409D7DB9D5B94567E9D /* CantoTests.swift */,
+			);
+			path = CantoTests;
+			sourceTree = "<group>";
+		};
+		82580224A50319E9C01BFEC0 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				2812C9324C139D00CC41CA40 /* study-sample.json */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		98B9ECB63AE49DAC80AC1741 /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				0B8EFFC5AA7DCAEC688677C5 /* ListenSession.swift */,
+				D5D9B88DA2B2A48A038BC8B1 /* Speaker.swift */,
+			);
+			path = Audio;
+			sourceTree = "<group>";
+		};
+		E5CA436B6FFDCD8074BCFB89 /* Canto */ = {
+			isa = PBXGroup;
+			children = (
+				AD052DD7EDFF2F09A3D8F61F /* Assets.xcassets */,
+				32A6AE1480BF27184AF07F68 /* CantoApp.swift */,
+				2D77F72AF034F0315D37A797 /* Info.plist */,
+				98B9ECB63AE49DAC80AC1741 /* Audio */,
+				55E29A63D79AA6C020166808 /* Model */,
+				82580224A50319E9C01BFEC0 /* Resources */,
+				2A206BE175F12AE7E56E98A7 /* Views */,
+			);
+			path = Canto;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		5F4B68B139B3C527915844D5 /* Canto */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3E087C7CE24BEF50B4C60B9D /* Build configuration list for PBXNativeTarget "Canto" */;
+			buildPhases = (
+				CF014EB874496F7AAFE52391 /* Sources */,
+				C6AC43198B4B0CC10E26D62E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Canto;
+			packageProductDependencies = (
+			);
+			productName = Canto;
+			productReference = 5089DDD4BF31B9AE8A30B132 /* Canto.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D7F35048F843186746126779 /* CantoTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 828F44875409A61B3BFC7EA3 /* Build configuration list for PBXNativeTarget "CantoTests" */;
+			buildPhases = (
+				DED2B942FBE9396FE3BDCACF /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				15BCFB32103D70D7A33EB88D /* PBXTargetDependency */,
+			);
+			name = CantoTests;
+			packageProductDependencies = (
+			);
+			productName = CantoTests;
+			productReference = 4051A0699C7A7C83A5DEA783 /* CantoTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		2CB5F1C67D125A8E8D7C0F0D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					5F4B68B139B3C527915844D5 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					D7F35048F843186746126779 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = F0A364787D24532FA087464B /* Build configuration list for PBXProject "Canto" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 1E87F3D37CBEF3AB3F8C3C48;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 002942387C8C51519B95A909 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5F4B68B139B3C527915844D5 /* Canto */,
+				D7F35048F843186746126779 /* CantoTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C6AC43198B4B0CC10E26D62E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1589670B5E38347A43860CC7 /* Assets.xcassets in Resources */,
+				5A9E51718B9C3351317C6985 /* study-sample.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CF014EB874496F7AAFE52391 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				836022555801767C3681139E /* CantoApp.swift in Sources */,
+				631E32A209239735CE5EA643 /* FlashcardSession.swift in Sources */,
+				C34B050C1361D1829257A2CD /* Jyutping.swift in Sources */,
+				16928C912D13295ACE1A5C27 /* LibraryView.swift in Sources */,
+				8935926A6CD281B01452BF83 /* ListenSession.swift in Sources */,
+				4FB1EC6640D68C05C5441F10 /* ListenView.swift in Sources */,
+				7E54A21FFDAFAA46C6182D89 /* ReviewView.swift in Sources */,
+				AAD694E18D9CD9FD919F50B6 /* Scheduler.swift in Sources */,
+				4E49EC8B1A024A58667EE5F3 /* SettingsView.swift in Sources */,
+				A1F436FFB85E4B61230D676C /* Speaker.swift in Sources */,
+				898349C1362BE68617682834 /* Study.swift in Sources */,
+				BC45C01261C588E4EA609A7C /* StudyBackend.swift in Sources */,
+				2D263A476A3B64E4EC177D9B /* StudyStore.swift in Sources */,
+				34461C30590E0FBC64F95E16 /* Theme.swift in Sources */,
+				139C969585D1C4B50F99C118 /* ToneMarks.swift in Sources */,
+				DE313B5E301949C6AB097125 /* VideoDetailView.swift in Sources */,
+				3789B7E1A72BF05C19BC3E23 /* WordDetailView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DED2B942FBE9396FE3BDCACF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				04D8A8BC9DE01E395AB3165A /* CantoTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		15BCFB32103D70D7A33EB88D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5F4B68B139B3C527915844D5 /* Canto */;
+			targetProxy = 3816C20D917521C9BDDE1887 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1703C341D9986C40E8150254 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		29D83FD1CF374EF794F53482 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Canto/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.justinfan.canto;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		5951BB8701D056490DDF06D1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		641A8F23B58C47A44944941C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.justinfan.CantoTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Canto.app/Canto";
+			};
+			name = Debug;
+		};
+		698B67217E61B328205778B3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Canto/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.justinfan.canto;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		FF00964B42DA470A32CF9606 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.justinfan.CantoTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Canto.app/Canto";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3E087C7CE24BEF50B4C60B9D /* Build configuration list for PBXNativeTarget "Canto" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				698B67217E61B328205778B3 /* Debug */,
+				29D83FD1CF374EF794F53482 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		828F44875409A61B3BFC7EA3 /* Build configuration list for PBXNativeTarget "CantoTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				641A8F23B58C47A44944941C /* Debug */,
+				FF00964B42DA470A32CF9606 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F0A364787D24532FA087464B /* Build configuration list for PBXProject "Canto" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1703C341D9986C40E8150254 /* Debug */,
+				5951BB8701D056490DDF06D1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 2CB5F1C67D125A8E8D7C0F0D /* Project object */;
+}

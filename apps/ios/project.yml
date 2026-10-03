@@ -1,0 +1,50 @@
+name: Canto
+options:
+  bundleIdPrefix: com.justinfan
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+targets:
+  Canto:
+    type: application
+    platform: iOS
+    sources:
+      - path: Canto
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.justinfan.canto
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Canto/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+  CantoTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: CantoTests
+    dependencies:
+      - target: Canto
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        BUNDLE_LOADER: $(TEST_HOST)
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Canto.app/Canto
+schemes:
+  Canto:
+    build:
+      targets:
+        Canto: all
+        CantoTests: [test]
+    test:
+      targets:
+        - CantoTests

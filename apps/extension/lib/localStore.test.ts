@@ -42,4 +42,20 @@ describe("local store", () => {
     expect(reviewed.intervalDays).toBeCloseTo(2.3)
     expect((await s.listWords({ status: "learning" })).length).toBe(1)
   })
+
+  it("exports saved words with their source lines for the study app", async () => {
+    const s = createLocalStore("t-study")
+    await s.putVideo({ id: "v9", title: "Vlog", channel: "Chan" }, lines, "manual")
+    await s.putVideo({ id: "unused", title: "No words" }, lines, "manual")
+    await s.saveConversions("v9", [{ idx: 1, sourceRegister: "formal", textFormal: "這麼古怪", textColloquial: "咁古怪", colloquialInferred: true, textEnglish: "So weird" }])
+    await s.logTaughtWord(kam, { videoId: "v9", lineIdx: 1 })
+    const snap = await s.exportStudy()
+    expect(snap.version).toBe(1)
+    expect(snap.videos).toEqual([{ id: "v9", title: "Vlog", channel: "Chan", url: "https://www.youtube.com/watch?v=v9", firstSeenAt: expect.any(Number) }])
+    expect(snap.words).toHaveLength(1)
+    expect(snap.words[0]).toMatchObject({ colloquial: "咁", jyutping: "gam3", status: "learning" })
+    expect(snap.words[0].sources).toEqual([
+      { videoId: "v9", lineIdx: 1, startMs: 2000, endMs: 4000, text: "這麼古怪", textColloquial: "咁古怪", textFormal: "這麼古怪", textEnglish: "So weird", createdAt: expect.any(Number) }
+    ])
+  })
 })

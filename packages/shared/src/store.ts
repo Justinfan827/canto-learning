@@ -1,3 +1,4 @@
+import type { StudySnapshot } from "./study"
 import type { CaptionKind, CaptionLine, ConvertedLine, Encounter, LineWord, QuizType, VideoInfo, Word } from "./types"
 
 /** A word the tutor taught, as extracted from an answer. */
@@ -42,4 +43,7 @@ export interface Store {
   setStatus(id: number, status: Word["status"]): Promise<Word>
   knownWords(): Promise<string[]>
   recordReview(wordId: number, quizType: QuizType, correct: boolean): Promise<Word>
+
+  /** Saved words with their source lines and videos, for the phone study app. */
+  exportStudy(): Promise<StudySnapshot>
 }

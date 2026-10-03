@@ -1,0 +1,696 @@
+{
+ "version": 1,
+ "exportedAt": 1791049342630,
+ "videos": [
+  {
+   "id": "lsqmMsH-cTs",
+   "title": "cantonese vlog: a day in my life",
+   "channel": "Cantonese with Brittany",
+   "url": "https://www.youtube.com/watch?v=lsqmMsH-cTs",
+   "firstSeenAt": 1790790142630
+  },
+  {
+   "id": "m9BweWeWD0g",
+   "title": "【女神配對計劃-番外篇】ep.4｜三角枱拍攝背後｜超級緊湊嘅拍攝日",
+   "channel": "羅毓儀 Yuki",
+   "url": "https://www.youtube.com/watch?v=m9BweWeWD0g",
+   "firstSeenAt": 1790876542630
+  },
+  {
+   "id": "GB00Vi0tnl0",
+   "title": "【女神配對計劃-QnA】ep3｜大爆節目內幕｜解答IG觀眾問題",
+   "channel": "羅毓儀 Yuki",
+   "url": "https://www.youtube.com/watch?v=GB00Vi0tnl0",
+   "firstSeenAt": 1790962942630
+  }
+ ],
+ "words": [
+  {
+   "id": 1,
+   "colloquial": "早晨",
+   "formal": null,
+   "jyutping": "zou2 san4",
+   "meaning": "good morning",
+   "notes": "Used until about noon.",
+   "status": "known",
+   "timesAsked": 1,
+   "timesMissed": 0,
+   "intervalDays": 1,
+   "ease": 2.5,
+   "dueAt": 1790876722630,
+   "createdAt": 1790790322630,
+   "updatedAt": 1790790322630,
+   "sources": [
+    {
+     "videoId": "lsqmMsH-cTs",
+     "lineIdx": 3,
+     "startMs": 33798,
+     "endMs": 34790,
+     "text": "早晨早晨。",
+     "textColloquial": "早晨早晨。",
+     "textFormal": null,
+     "textEnglish": "Morning, morning.",
+     "createdAt": 1790790322630
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "colloquial": "刷牙",
+   "formal": null,
+   "jyutping": "caat3 ngaa4",
+   "meaning": "to brush your teeth",
+   "notes": null,
+   "status": "learning",
+   "timesAsked": 1,
+   "timesMissed": 0,
+   "intervalDays": 1,
+   "ease": 2.5,
+   "dueAt": 1790876842630,
+   "createdAt": 1790790442630,
+   "updatedAt": 1790790442630,
+   "sources": [
+    {
+     "videoId": "lsqmMsH-cTs",
+     "lineIdx": 5,
+     "startMs": 36774,
+     "endMs": 38822,
+     "text": "第一件事要刷牙洗面。",
+     "textColloquial": "第一件事要刷牙洗面。",
+     "textFormal": null,
+     "textEnglish": "First thing: brush my teeth and wash my face.",
+     "createdAt": 1790790442630
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "colloquial": "洗面",
+   "formal": "洗臉",
+   "jyutping": "sai2 min6",
+   "meaning": "to wash your face",
+   "notes": "面 is the spoken word for face (臉 in writing).",
+   "status": "learning",
+   "timesAsked": 2,
+   "timesMissed": 1,
+   "intervalDays": 1,
+   "ease": 2.3,
+   "dueAt": 1790876842630,
+   "createdAt": 1790790442630,
+   "updatedAt": 1790790442630,
+   "sources": [
+    {
+     "videoId": "lsqmMsH-cTs",
+     "lineIdx": 5,
+     "startMs": 36774,
+     "endMs": 38822,
+     "text": "第一件事要刷牙洗面。",
+     "textColloquial": "第一件事要刷牙洗面。",
+     "textFormal": null,
+     "textEnglish": "First thing: brush my teeth and wash my face.",
+     "createdAt": 1790790442630
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "colloquial": "平時",
+   "formal": null,
+   "jyutping": "ping4 si4",
+   "meaning": "usually; normally",
+   "notes": null,
+   "status": "learning",
+   "timesAsked": 1,
+   "timesMissed": 0,
+   "intervalDays": 1,
+   "ease": 2.5,
+   "dueAt": 1790877022630,
+   "createdAt": 1790790622630,
+   "updatedAt": 1790790622630,
+   "sources": [
+    {
+     "videoId": "lsqmMsH-cTs",
+     "lineIdx": 8,
+     "startMs": 47718,
+     "endMs": 50301,
+     "text": "咁平時咧，我就唔食早餐嘅",
+     "textColloquial": "咁平時咧，我就唔食早餐嘅",
+     "textFormal": null,
+     "textEnglish": "Usually I don't eat breakfast.",
+     "createdAt": 1790790622630
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "colloquial": "早餐",
+   "formal": null,
+   "jyutping": "zou2 caan1",
+   "meaning": "breakfast",
+   "notes": null,
+   "status": "known",
+   "timesAsked": 1,
+   "timesMissed": 0,
+   "intervalDays": 1,
+   "ease": 2.5,
+   "dueAt": 1790877022630,
+   "createdAt": 1790790622630,
+   "updatedAt": 1790790622630,
+   "sources": [
+    {
+     "videoId": "lsqmMsH-cTs",
+     "lineIdx": 8,
+     "startMs": 47718,
+     "endMs": 50301,
+     "text": "咁平時咧，我就唔食早餐嘅",
+     "textColloquial": "咁平時咧，我就唔食早餐嘅",
+     "textFormal": null,
+     "textEnglish": "Usually I don't eat breakfast.",
+     "createdAt": 1790790622630
+    }
+   ]
+  },
+  {
+   "id": 6,
+   "colloquial": "衝涼",
+   "formal": "洗澡",
+   "jyutping": "cung1 loeng4",
+   "meaning": "to take a shower",
+   "notes": "Often split: 衝個涼.",
+   "status": "learning",
+   "timesAsked": 3,
+   "timesMissed": 2,
+   "intervalDays": 1,
+   "ease": 2.1,
+   "dueAt": 1790877742630,
+   "createdAt": 1790791342630,
+   "updatedAt": 1790791342630,
+   "sources": [
+    {
+     "videoId": "lsqmMsH-cTs",
+     "lineIdx": 20,
+     "startMs": 108998,
+     "endMs": 113686,
+     "text": "做完運動之後，我就即刻翻嚟誒衝個涼準備好曬",
+     "textColloquial": "做完運動之後，我就即刻翻嚟誒衝個涼準備好曬",
+     "textFormal": null,
+     "textEnglish": "After working out I come straight home, shower and get ready.",
+     "createdAt": 1790791342630
+    }
+   ]
+  },
+  {
+   "id": 7,
+   "colloquial": "屋企",
+   "formal": "家裏",
+   "jyutping": "uk1 kei2",
+   "meaning": "home",
+   "notes": null,
+   "status": "learning",
+   "timesAsked": 1,
+   "timesMissed": 0,
+   "intervalDays": 1,
+   "ease": 2.5,
+   "dueAt": 1790879122630,
+   "createdAt": 1790792722630,
+   "updatedAt": 1790792722630,
+   "sources": [
+    {
+     "videoId": "lsqmMsH-cTs",
+     "lineIdx": 43,
+     "startMs": 196501,
+     "endMs": 201244,
+     "text": "成日坐喺屋企做嘢覺得出下去誒散下步啊都幾好。",
+     "textColloquial": "成日坐喺屋企做嘢覺得出下去誒散下步啊都幾好。",
+     "textFormal": null,
+     "textEnglish": "Sitting at home working all day, it's nice to go out for a walk.",
+     "createdAt": 1790792722630
+    }
+   ]
+  },
+  {
+   "id": 8,
+   "colloquial": "散步",
+   "formal": null,
+   "jyutping": "saan3 bou6",
+   "meaning": "to go for a walk",
+   "notes": null,
+   "status": "learning",
+   "timesAsked": 1,
+   "timesMissed": 0,
+   "intervalDays": 1,
+   "ease": 2.5,
+   "dueAt": 1790879122630,
+   "createdAt": 1790792722630,
+   "updatedAt": 1790792722630,
+   "sources": [
+    {
+     "videoId": "lsqmMsH-cTs",
+     "lineIdx": 43,
+     "startMs": 196501,
+     "endMs": 201244,
+     "text": "成日坐喺屋企做嘢覺得出下去誒散下步啊都幾好。",
+     "textColloquial": "成日坐喺屋企做嘢覺得出下去誒散下步啊都幾好。",
+     "textFormal": null,
+     "textEnglish": "Sitting at home working all day, it's nice to go out for a walk.",
+     "createdAt": 1790792722630
+    }
+   ]
+  },
+  {
+   "id": 9,
+   "colloquial": "舒服",
+   "formal": null,
+   "jyutping": "syu1 fuk6",
+   "meaning": "comfortable",
+   "notes": null,
+   "status": "learning",
+   "timesAsked": 1,
+   "timesMissed": 0,
+   "intervalDays": 1,
+   "ease": 2.5,
+   "dueAt": 1790879302630,
+   "createdAt": 1790792902630,
+   "updatedAt": 1790792902630,
+   "sources": [
+    {
+     "videoId": "lsqmMsH-cTs",
+     "lineIdx": 46,
+     "startMs": 207767,
+     "endMs": 209436,
+     "text": "其實都好舒服咯。",
+     "textColloquial": "其實都好舒服咯。",
+     "textFormal": null,
+     "textEnglish": "It's actually really comfortable.",
+     "createdAt": 1790792902630
+    }
+   ]
+  },
+  {
+   "id": 10,
+   "colloquial": "嗌外賣",
+   "formal": "叫外賣",
+   "jyutping": "aai3 ngoi6 maai6",
+   "meaning": "to order takeout",
+   "notes": "嗌 means to shout or call out; here, to order.",
+   "status": "learning",
+   "timesAsked": 2,
+   "timesMissed": 1,
+   "intervalDays": 1,
+   "ease": 2.3,
+   "dueAt": 1790879602630,
+   "createdAt": 1790793202630,
+   "updatedAt": 1790793202630,
+   "sources": [
+    {
+     "videoId": "lsqmMsH-cTs",
+     "lineIdx": 51,
+     "startMs": 222098,
+     "endMs": 224723,
+     "text": "食下魚啊，有時我哋會嗌下外賣啊",
+     "textColloquial": "食下魚啊，有時我哋會嗌下外賣啊",
+     "textFormal": null,
+     "textEnglish": "Eat some fish; sometimes we order takeout.",
+     "createdAt": 1790793202630
+    }
+   ]
+  },
+  {
+   "id": 11,
+   "colloquial": "瞓覺",
+   "formal": "睡覺",
+   "jyutping": "fan3 gaau3",
+   "meaning": "to sleep; go to bed",
+   "notes": null,
+   "status": "learning",
+   "timesAsked": 1,
+   "timesMissed": 0,
+   "intervalDays": 1,
+   "ease": 2.5,
+   "dueAt": 1790879782630,
+   "createdAt": 1790793382630,
+   "updatedAt": 1790793382630,
+   "sources": [
+    {
+     "videoId": "lsqmMsH-cTs",
+     "lineIdx": 54,
+     "startMs": 233580,
+     "endMs": 235548,
+     "text": "我就會開始準備去瞓覺啦。",
+     "textColloquial": "我就會開始準備去瞓覺啦。",
+     "textFormal": null,
+     "textEnglish": "I start getting ready for bed.",
+     "createdAt": 1790793382630
+    }
+   ]
+  },
+  {
+   "id": 12,
+   "colloquial": "而家",
+   "formal": "現在",
+   "jyutping": "ji4 gaa1",
+   "meaning": "now",
+   "notes": null,
+   "status": "known",
+   "timesAsked": 1,
+   "timesMissed": 0,
+   "intervalDays": 1,
+   "ease": 2.5,
+   "dueAt": 1790962942630,
+   "createdAt": 1790876542630,
+   "updatedAt": 1790876542630,
+   "sources": [
+    {
+     "videoId": "m9BweWeWD0g",
+     "lineIdx": 0,
+     "startMs": 390,
+     "endMs": 2655,
+     "text": "而家其他先亂啲啦",
+     "textColloquial": "而家其他先亂啲啦",
+     "textFormal": null,
+     "textEnglish": "Now it's a bit messier.",
+     "createdAt": 1790876542630
+    }
+   ]
+  },
+  {
+   "id": 13,
+   "colloquial": "揀",
+   "formal": "選",
+   "jyutping": "gaan2",
+   "meaning": "to choose; to pick",
+   "notes": null,
+   "status": "learning",
+   "timesAsked": 2,
+   "timesMissed": 1,
+   "intervalDays": 1,
+   "ease": 2.3,
+   "dueAt": 1790963242630,
+   "createdAt": 1790876842630,
+   "updatedAt": 1790876842630,
+   "sources": [
+    {
+     "videoId": "m9BweWeWD0g",
+     "lineIdx": 5,
+     "startMs": 28902,
+     "endMs": 32418,
+     "text": "已經揀咗三個人啦，我覺得，我揀得都幾好",
+     "textColloquial": "已經揀咗三個人啦，我覺得，我揀得都幾好",
+     "textFormal": null,
+     "textEnglish": "I've already picked three people; I think I chose pretty well.",
+     "createdAt": 1790876842630
+    }
+   ]
+  },
+  {
+   "id": 14,
+   "colloquial": "擔心",
+   "formal": null,
+   "jyutping": "daam1 sam1",
+   "meaning": "to worry",
+   "notes": null,
+   "status": "learning",
+   "timesAsked": 1,
+   "timesMissed": 0,
+   "intervalDays": 1,
+   "ease": 2.5,
+   "dueAt": 1790963602630,
+   "createdAt": 1790877202630,
+   "updatedAt": 1790877202630,
+   "sources": [
+    {
+     "videoId": "m9BweWeWD0g",
+     "lineIdx": 11,
+     "startMs": 50530,
+     "endMs": 53599,
+     "text": "但係其實我都有啲擔心，但係其實",
+     "textColloquial": "但係其實我都有啲擔心，但係其實",
+     "textFormal": null,
+     "textEnglish": "But actually I'm a little worried too.",
+     "createdAt": 1790877202630
+    }
+   ]
+  },
+  {
+   "id": 15,
+   "colloquial": "緊張",
+   "formal": null,
+   "jyutping": "gan2 zoeng1",
+   "meaning": "nervous; tense",
+   "notes": null,
+   "status": "learning",
+   "timesAsked": 1,
+   "timesMissed": 0,
+   "intervalDays": 1,
+   "ease": 2.5,
+   "dueAt": 1790964682630,
+   "createdAt": 1790878282630,
+   "updatedAt": 1790878282630,
+   "sources": [
+    {
+     "videoId": "m9BweWeWD0g",
+     "lineIdx": 29,
+     "startMs": 109145,
+     "endMs": 111644,
+     "text": "好緊張，因唔知點解，我咁緊張。",
+     "textColloquial": "好緊張，因唔知點解，我咁緊張。",
+     "textFormal": null,
+     "textEnglish": "So nervous, I don't know why I'm this nervous.",
+     "createdAt": 1790878282630
+    }
+   ]
+  },
+  {
+   "id": 16,
+   "colloquial": "唔知點解",
+   "formal": "不知道為什麼",
+   "jyutping": "m4 zi1 dim2 gaai2",
+   "meaning": "don't know why",
+   "notes": null,
+   "status": "learning",
+   "timesAsked": 3,
+   "timesMissed": 2,
+   "intervalDays": 1,
+   "ease": 2.1,
+   "dueAt": 1790964682630,
+   "createdAt": 1790878282630,
+   "updatedAt": 1790878282630,
+   "sources": [
+    {
+     "videoId": "m9BweWeWD0g",
+     "lineIdx": 29,
+     "startMs": 109145,
+     "endMs": 111644,
+     "text": "好緊張，因唔知點解，我咁緊張。",
+     "textColloquial": "好緊張，因唔知點解，我咁緊張。",
+     "textFormal": null,
+     "textEnglish": "So nervous, I don't know why I'm this nervous.",
+     "createdAt": 1790878282630
+    }
+   ]
+  },
+  {
+   "id": 17,
+   "colloquial": "淘汰",
+   "formal": null,
+   "jyutping": "tou4 taai3",
+   "meaning": "to eliminate (from a competition)",
+   "notes": null,
+   "status": "learning",
+   "timesAsked": 1,
+   "timesMissed": 0,
+   "intervalDays": 1,
+   "ease": 2.5,
+   "dueAt": 1790964982630,
+   "createdAt": 1790878582630,
+   "updatedAt": 1790878582630,
+   "sources": [
+    {
+     "videoId": "m9BweWeWD0g",
+     "lineIdx": 34,
+     "startMs": 129001,
+     "endMs": 133696,
+     "text": "咁第三日嘅拍攝聽説咧係會再淘汰一啲參賽者啦",
+     "textColloquial": "咁第三日嘅拍攝聽説咧係會再淘汰一啲參賽者啦",
+     "textFormal": null,
+     "textEnglish": "I heard on day three they'll eliminate more contestants.",
+     "createdAt": 1790878582630
+    }
+   ]
+  },
+  {
+   "id": 18,
+   "colloquial": "策略",
+   "formal": null,
+   "jyutping": "caak3 loek6",
+   "meaning": "strategy; tactic",
+   "notes": null,
+   "status": "learning",
+   "timesAsked": 1,
+   "timesMissed": 0,
+   "intervalDays": 1,
+   "ease": 2.5,
+   "dueAt": 1790965282630,
+   "createdAt": 1790878882630,
+   "updatedAt": 1790878882630,
+   "sources": [
+    {
+     "videoId": "m9BweWeWD0g",
+     "lineIdx": 39,
+     "startMs": 144794,
+     "endMs": 151196,
+     "text": "係唔想咁快淘汰其中一位所以我就用咗一啲策略去留低我嘅參加者。",
+     "textColloquial": "係唔想咁快淘汰其中一位所以我就用咗一啲策略去留低我嘅參加者。",
+     "textFormal": null,
+     "textEnglish": "I didn't want to eliminate one so soon, so I used a strategy to keep my contestants.",
+     "createdAt": 1790878882630
+    }
+   ]
+  },
+  {
+   "id": 19,
+   "colloquial": "即刻",
+   "formal": "立刻",
+   "jyutping": "zik1 hak1",
+   "meaning": "immediately; right away",
+   "notes": null,
+   "status": "learning",
+   "timesAsked": 2,
+   "timesMissed": 1,
+   "intervalDays": 1,
+   "ease": 2.3,
+   "dueAt": 1790965822630,
+   "createdAt": 1790879422630,
+   "updatedAt": 1790879422630,
+   "sources": [
+    {
+     "videoId": "m9BweWeWD0g",
+     "lineIdx": 48,
+     "startMs": 176049,
+     "endMs": 179302,
+     "text": "我哋而家即刻出發去小花佬餐廳。",
+     "textColloquial": "我哋而家即刻出發去小花佬餐廳。",
+     "textFormal": null,
+     "textEnglish": "We're heading to the restaurant right now.",
+     "createdAt": 1790879422630
+    }
+   ]
+  },
+  {
+   "id": 20,
+   "colloquial": "自卑",
+   "formal": null,
+   "jyutping": "zi6 bei1",
+   "meaning": "to feel inferior; low self-esteem",
+   "notes": null,
+   "status": "learning",
+   "timesAsked": 1,
+   "timesMissed": 0,
+   "intervalDays": 1,
+   "ease": 2.5,
+   "dueAt": 1791049522630,
+   "createdAt": 1790963122630,
+   "updatedAt": 1790963122630,
+   "sources": [
+    {
+     "videoId": "GB00Vi0tnl0",
+     "lineIdx": 3,
+     "startMs": 11590,
+     "endMs": 16230,
+     "text": "有冇試過自卑比唔起其他旅神。",
+     "textColloquial": "有冇試過自卑比唔起其他旅神。",
+     "textFormal": null,
+     "textEnglish": "Have you ever felt insecure next to the other goddesses?",
+     "createdAt": 1790963122630
+    }
+   ]
+  },
+  {
+   "id": 21,
+   "colloquial": "留言",
+   "formal": null,
+   "jyutping": "lau4 jin4",
+   "meaning": "a comment; to leave a message",
+   "notes": null,
+   "status": "learning",
+   "timesAsked": 1,
+   "timesMissed": 0,
+   "intervalDays": 1,
+   "ease": 2.5,
+   "dueAt": 1791049822630,
+   "createdAt": 1790963422630,
+   "updatedAt": 1790963422630,
+   "sources": [
+    {
+     "videoId": "GB00Vi0tnl0",
+     "lineIdx": 8,
+     "startMs": 29798,
+     "endMs": 35724,
+     "text": "q and a 嘅問題收集 story 就到成功收集到唔少人嘅留言啦",
+     "textColloquial": "q and a 嘅問題收集 story 就到成功收集到唔少人嘅留言啦",
+     "textFormal": null,
+     "textEnglish": "The Q&A story collected quite a few people's comments.",
+     "createdAt": 1790963422630
+    }
+   ]
+  },
+  {
+   "id": 22,
+   "colloquial": "靚女",
+   "formal": "美女",
+   "jyutping": "leng3 neoi2",
+   "meaning": "pretty girl; a friendly way to address a young woman",
+   "notes": null,
+   "status": "learning",
+   "timesAsked": 1,
+   "timesMissed": 0,
+   "intervalDays": 1,
+   "ease": 2.5,
+   "dueAt": 1791049942630,
+   "createdAt": 1790963542630,
+   "updatedAt": 1790963542630,
+   "sources": [
+    {
+     "videoId": "GB00Vi0tnl0",
+     "lineIdx": 10,
+     "startMs": 39449,
+     "endMs": 43004,
+     "text": "你唔需要自卑啊，因為你真係好靚女啊啊多謝。",
+     "textColloquial": "你唔需要自卑啊，因為你真係好靚女啊啊多謝。",
+     "textFormal": null,
+     "textEnglish": "You don't need to feel insecure, you're really pretty. Thank you!",
+     "createdAt": 1790963542630
+    }
+   ]
+  },
+  {
+   "id": 23,
+   "colloquial": "照顧",
+   "formal": null,
+   "jyutping": "ziu3 gu3",
+   "meaning": "to look after; take care of",
+   "notes": null,
+   "status": "learning",
+   "timesAsked": 1,
+   "timesMissed": 0,
+   "intervalDays": 1,
+   "ease": 2.5,
+   "dueAt": 1791050062630,
+   "createdAt": 1790963662630,
+   "updatedAt": 1790963662630,
+   "sources": [
+    {
+     "videoId": "GB00Vi0tnl0",
+     "lineIdx": 12,
+     "startMs": 46739,
+     "endMs": 50116,
+     "text": "我覺得波爸爸係每一個女神都係咁照顧",
+     "textColloquial": "我覺得波爸爸係每一個女神都係咁照顧",
+     "textFormal": null,
+     "textEnglish": "I think he takes care of every goddess like that.",
+     "createdAt": 1790963662630
+    }
+   ]
+  }
+ ]
+}
