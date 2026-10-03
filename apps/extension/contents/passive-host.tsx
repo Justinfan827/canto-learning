@@ -59,7 +59,14 @@ function slot(): Slot | null {
     const top = Math.max(p.top, MASTHEAD + GAP)
     return { right: window.innerWidth - GAP, top, maxWidth: Math.min(room, WIDTH + 40), maxHeight: window.innerHeight - top - GAP }
   }
-  // Theater, fullscreen, or a window too narrow for a side column: over the video's top-right.
+  // Theater or fullscreen with black bars wide enough: in the bar beside the picture.
+  const pic = document.querySelector("video")?.getBoundingClientRect()
+  const bar = pic ? p.right - pic.right - 2 * GAP : 0
+  if (bar >= MIN_SIDE) {
+    const top = Math.max(p.top + GAP, fullscreen ? GAP : MASTHEAD + GAP)
+    return { right: p.right - GAP, top, maxWidth: Math.min(bar, WIDTH + 40), maxHeight: p.bottom - PLAYER_CONTROLS - top }
+  }
+  // Otherwise (or a window too narrow for a side column): over the video's top-right.
   const top = Math.max(p.top + GAP, fullscreen ? GAP : MASTHEAD + GAP)
   return { right: p.right - GAP, top, maxWidth: Math.min(WIDTH, p.width - 2 * GAP), maxHeight: p.bottom - PLAYER_CONTROLS - top }
 }

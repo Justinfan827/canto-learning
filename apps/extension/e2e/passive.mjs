@@ -15,18 +15,25 @@ const step = (s) => console.log(`\n▶ ${s}`)
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 const shot = async (page, name) => SHOTS && (await page.screenshot({ path: path.join(SHOTS, name) }))
 
-const ctx = await chromium.launchPersistentContext(fs.mkdtempSync(path.join(os.tmpdir(), "pna-passive-")), {
-  executablePath: process.env.CHROMIUM_PATH,
-  headless: !process.env.HEADED,
-  viewport: { width: 1440, height: 900 },
-  args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`, "--autoplay-policy=no-user-gesture-required"]
-})
-let [sw] = ctx.serviceWorkers()
-if (!sw) sw = await ctx.waitForEvent("serviceworker")
-for (const p of ctx.pages()) if (p.url().includes("setup.html")) await p.close()
+// CONNECT=ws://127.0.0.1:PORT/devtools/browser runs in an already-running Chrome (with the
+// extension loaded) in a new tab; otherwise a fresh Chrome for Testing with the build preloaded.
+const remote = process.env.CONNECT ? await chromium.connectOverCDP(process.env.CONNECT) : null
+const ctx = remote
+  ? remote.contexts()[0]
+  : await chromium.launchPersistentContext(fs.mkdtempSync(path.join(os.tmpdir(), "pna-passive-")), {
+      executablePath: process.env.CHROMIUM_PATH,
+      headless: !process.env.HEADED,
+      viewport: { width: 1440, height: 900 },
+      args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`, "--autoplay-policy=no-user-gesture-required"]
+    })
+if (!remote) {
+  let [sw] = ctx.serviceWorkers()
+  if (!sw) sw = await ctx.waitForEvent("serviceworker")
+  for (const p of ctx.pages()) if (p.url().includes("setup.html")) await p.close()
+}
 
 step("Opening the video at 5:20")
-const yt = ctx.pages()[0] ?? (await ctx.newPage())
+const yt = remote ? await ctx.newPage() : (ctx.pages()[0] ?? (await ctx.newPage()))
 await yt.goto(`https://www.youtube.com/watch?v=${VID}&t=320s`, { waitUntil: "domcontentloaded", timeout: 60000 })
 await yt.waitForSelector("video", { timeout: 30000 })
 const frame = async () => {
@@ -80,10 +87,13 @@ await wait(400)
 console.log("popup height with word:", (await iframe.boundingBox()).height)
 await shot(yt, "2-word.png")
 
-step("Saving it")
-await pop.click(".sheet .save")
-await pop.waitForSelector(".sheet .save.done")
-await shot(yt, "3-saved.png")
+// Saving writes to the real word list, so only in a throwaway browser.
+if (!remote) {
+  step("Saving it")
+  await pop.click(".sheet .save")
+  await pop.waitForSelector(".sheet .save.done")
+  await shot(yt, "3-saved.png")
+}
 
 const lineText = () => pop.locator(".moment .big").innerText()
 step("Previous line")
@@ -144,5 +154,6 @@ const saved = await pop.evaluate(
     })
 )
 console.log("\nsaved words:", JSON.stringify(saved.map((w) => [w.colloquial, w.jyutping])))
+if (remote) process.exit(0) // leave the tab open in the user's Chrome
 if (process.env.HEADED) await new Promise((r) => ctx.on("close", r))
 await ctx.close()
