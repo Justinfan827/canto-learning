@@ -55,7 +55,7 @@ export const videoById = (ctx: QueryCtx, videoId: string) =>
     .unique()
 
 /** The `Word` shape from @pna/shared. */
-export const toWord = ({ _id, _creationTime, num, createdAt: _c, updatedAt: _u, ...w }: Doc<"words">) => ({ id: num, ...w })
+export const toWord = ({ _id, _creationTime, num, updatedAt: _u, ...w }: Doc<"words">) => ({ id: num, ...w })
 
 /** The `StoredLine` shape from @pna/shared. */
 export const toLine = ({ _id, _creationTime, videoId: _v, ...l }: Doc<"lines">) => l

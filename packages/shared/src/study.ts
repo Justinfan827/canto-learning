@@ -36,6 +36,8 @@ export interface StudyWord {
   dueAt: number
   createdAt: number
   updatedAt: number
+  /** "manual" for words typed in by hand; missing means saved from a video. */
+  source?: "video" | "manual"
   sources: StudySource[]
 }
 
@@ -50,6 +52,14 @@ export interface StudySource {
   textFormal: string | null
   textEnglish: string | null
   createdAt: number
+}
+
+/** A word typed in on the phone, queued for the extension when syncing through the local helper. */
+export interface StudyNewWord {
+  colloquial: string
+  jyutping: string | null
+  meaning: string | null
+  at: number
 }
 
 /** A flashcard answer from the phone, sent back so another client can apply it later. */

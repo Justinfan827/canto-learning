@@ -41,6 +41,7 @@ const METHODS = [
   "saveLineWords",
   "saveQuestion",
   "logTaughtWord",
+  "addWord",
   "listWords",
   "getWord",
   "setStatus",

@@ -10,6 +10,23 @@ export interface TaughtWord {
   notes: string | null
 }
 
+/** A word typed in by hand. Only the Cantonese is required. */
+export interface NewWord {
+  colloquial: string
+  jyutping: string | null
+  meaning: string | null
+  formal?: string | null
+  notes?: string | null
+}
+
+/** Trims a typed word, turning blank fields into null. Returns null when there's no Cantonese. */
+export function cleanNewWord(w: NewWord): NewWord | null {
+  const t = (s: string | null | undefined) => s?.trim() || null
+  const colloquial = t(w.colloquial)
+  if (!colloquial) return null
+  return { colloquial, jyutping: t(w.jyutping), meaning: t(w.meaning), formal: t(w.formal), notes: t(w.notes) }
+}
+
 export interface StoredLine extends ConvertedLine {
   words: LineWord[] | null
 }
@@ -37,6 +54,12 @@ export interface Store {
   saveQuestion(q: QuestionRecord): Promise<void>
   /** Logs a taught word: new words start learning; asking again counts as a miss. */
   logTaughtWord(w: TaughtWord, at: { videoId: string; lineIdx: number | null }): Promise<Word>
+
+  /**
+   * Adds a word typed in by hand, tagged `source: "manual"`. A word that's
+   * already saved keeps its schedule and only has its blank fields filled.
+   */
+  addWord(w: NewWord): Promise<{ word: Word; created: boolean }>
 
   listWords(opts?: { status?: Word["status"]; sort?: "missed" | "due" }): Promise<Word[]>
   getWord(id: number): Promise<{ word: Word; encounters: Encounter[] } | null>

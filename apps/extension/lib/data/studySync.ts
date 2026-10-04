@@ -36,6 +36,7 @@ export function withStudySync(store: Store, url = `${TRANSCRIBER_URL}/study`): S
   return {
     ...store,
     logTaughtWord: after(store.logTaughtWord),
+    addWord: after(store.addWord),
     setStatus: after(store.setStatus),
     recordReview: after(store.recordReview),
     // Line conversions add English and 口語 text to the sources.
