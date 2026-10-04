@@ -40,9 +40,12 @@ nonisolated struct StudyWord: Codable, Sendable, Identifiable, Hashable {
     var dueAt: Double
     var createdAt: Double
     var updatedAt: Double
+    /// "manual" for words typed in by hand; missing means saved from a video.
+    var source: String? = nil
     var sources: [StudySource]
 
     var isKnown: Bool { status == "known" }
+    var isManual: Bool { source == "manual" }
     /// The written form, only when it differs from the spoken one.
     var formalIfDifferent: String? { formal.flatMap { $0.isEmpty || $0 == colloquial ? nil : $0 } }
     var latestSource: StudySource? { sources.first }
@@ -61,6 +64,14 @@ nonisolated struct StudySource: Codable, Sendable, Hashable {
 
     /// The spoken (口語) line when the extension has one, else the caption as captured.
     var spoken: String { textColloquial ?? text }
+}
+
+/// A word typed in on the phone, queued for upload. Matches `StudyNewWord` in study.ts.
+nonisolated struct StudyNewWord: Codable, Sendable, Hashable {
+    var colloquial: String
+    var jyutping: String?
+    var meaning: String?
+    var at: Double
 }
 
 /// A flashcard answer queued for upload, matching `StudyReview` in study.ts.
