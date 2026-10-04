@@ -97,5 +97,29 @@ export default defineSchema({
     at: v.number()
   }),
 
-  counters: defineTable({ name: v.string(), value: v.number() }).index("by_name", ["name"])
+  counters: defineTable({ name: v.string(), value: v.number() }).index("by_name", ["name"]),
+
+  // Squads (convex/squads.ts). Users are anonymous: a display name plus the
+  // sessions of the devices signed in as them. Nothing here is sensitive.
+
+  users: defineTable({
+    name: v.string(),
+    /** Counts each app reports from its own saved words. */
+    learned: v.number(),
+    saved: v.number(),
+    progressAt: nullable(v.number()),
+    createdAt: v.number()
+  }),
+
+  /** One per signed-in device. Only a SHA-256 of the secret is kept. */
+  sessions: defineTable({ userId: v.id("users"), secretHash: v.string(), createdAt: v.number() }).index("by_hash", ["secretHash"]),
+
+  squads: defineTable({ name: v.string(), code: v.string(), createdBy: v.id("users"), createdAt: v.number() }).index("by_code", ["code"]),
+
+  memberships: defineTable({ squadId: v.id("squads"), userId: v.id("users"), joinedAt: v.number() })
+    .index("by_squad", ["squadId"])
+    .index("by_user", ["userId", "squadId"]),
+
+  /** Short-lived, single-use codes that sign another device in as the same user. */
+  linkCodes: defineTable({ code: v.string(), userId: v.id("users"), expiresAt: v.number() }).index("by_code", ["code"])
 })

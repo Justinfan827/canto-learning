@@ -4,7 +4,7 @@ import { internalMutation } from "./_generated/server"
 export const clearAll = internalMutation({
   args: {},
   handler: async (ctx) => {
-    for (const table of ["videos", "lines", "words", "encounters", "questions", "reviews", "phoneReviews", "counters"] as const)
+    for (const table of ["videos", "lines", "words", "encounters", "questions", "reviews", "phoneReviews", "counters", "users", "sessions", "squads", "memberships", "linkCodes"] as const)
       for (const row of await ctx.db.query(table).collect()) await ctx.db.delete(row._id)
   }
 })
