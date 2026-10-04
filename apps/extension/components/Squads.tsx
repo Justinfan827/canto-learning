@@ -36,7 +36,9 @@ export function Squads(props: { defaultUrl: string; onBack: () => void }) {
     if (!id) return
     const api = createConvexSquads(id.url)
     try {
-      await api.report(id, progressOf(await store.listWords()))
+      // A browser with no saved words shouldn't overwrite counts another device reported.
+      const progress = progressOf(await store.listWords())
+      if (progress.saved > 0) await api.report(id, progress)
       setSquads(await api.mySquads(id))
     } catch (e) {
       setError(squadError(e))

@@ -117,3 +117,92 @@ nonisolated final class StubProtocol: URLProtocol, @unchecked Sendable {
         #expect(ConvexBackend(url: "https://x.convex.cloud", token: "") == nil)
     }
 }
+
+/// Records calls and serves canned squads, standing in for Convex.
+private final class FakeSquads: SquadBackend, @unchecked Sendable {
+    var reported: [SquadProgress] = []
+    let session = SquadSession(userId: "u1", secret: "s1")
+    let squad = Squad(id: "q1", name: "Crew", code: "AB2CD3", members: [SquadMember(name: "Ana", learned: 2, saved: 3, isMe: true, updatedAt: nil)])
+
+    func redeemLinkCode(_ code: String) async throws -> (session: SquadSession, name: String) {
+        guard code == "LINK42" else { throw BackendError.server("That link code didn't work") }
+        return (session, "Ana")
+    }
+    func report(_ s: SquadSession, _ p: SquadProgress) async throws { reported.append(p) }
+    func mySquads(_ s: SquadSession) async throws -> [Squad] { [squad] }
+    func create(_ s: SquadSession, name: String) async throws -> Squad { squad }
+    func join(_ s: SquadSession, code: String) async throws -> Squad { squad }
+    func leave(_ s: SquadSession, squadId: String) async throws {}
+}
+
+@MainActor
+struct SquadStoreTests {
+    @Test func linkCodeSignsInReportsAndLoads() async throws {
+        let defaults = UserDefaults(suiteName: "squads-\(UUID())")!
+        let fake = FakeSquads()
+        let store = SquadStore(defaults: defaults, backend: { _ in fake })
+        store.serverURL = "http://127.0.0.1:3210"
+
+        await store.link(code: "nope", progress: SquadProgress(learned: 1, saved: 1))
+        #expect(!store.signedIn)
+        #expect(store.error == "That link code didn't work")
+
+        await store.link(code: "LINK42", progress: SquadProgress(learned: 4, saved: 9))
+        #expect(store.signedIn && store.name == "Ana" && store.error == nil)
+        #expect(fake.reported == [SquadProgress(learned: 4, saved: 9)])
+        #expect(store.squads.map(\.code) == ["AB2CD3"])
+
+        // A phone with no words yet leaves the counts alone.
+        await store.refresh(progress: SquadProgress(learned: 0, saved: 0))
+        #expect(fake.reported.count == 1)
+
+        // The sign-in survives a relaunch.
+        let again = SquadStore(defaults: defaults, backend: { _ in fake })
+        #expect(again.signedIn && again.name == "Ana")
+    }
+
+    @Test func learnedCountsKnownAndMatureWords() throws {
+        let dir = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        let study = StudyStore(directory: dir)
+        study.loadSample()
+        let words = study.snapshot.words
+        let expected = words.filter { $0.isKnown || max(1, $0.intervalDays) >= 21 }.count
+        #expect(SquadStore.progress(of: study) == SquadProgress(learned: expected, saved: words.count))
+    }
+}
+
+private struct ConvexValue<V: Decodable>: Decodable { var value: V }
+
+/// Runs against a local deployment: TEST_RUNNER_CONVEX_TEST_URL=http://127.0.0.1:3210 xcodebuild test ...
+struct ConvexSquadsTests {
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["CONVEX_TEST_URL"] != nil))
+    func redeemsLinkCodeAndJoins() async throws {
+        let url = ProcessInfo.processInfo.environment["CONVEX_TEST_URL"]!
+        let api = try #require(ConvexSquads(url: url))
+        // Make the extension's user and a link code the way the extension does.
+        func mutation<T: Decodable>(_ path: String, _ args: [String: Any]) async throws -> T {
+            var req = URLRequest(url: URL(string: url)!.appending(path: "api/mutation"))
+            req.httpMethod = "POST"
+            req.setValue("application/json", forHTTPHeaderField: "content-type")
+            req.httpBody = try JSONSerialization.data(withJSONObject: ["path": path, "args": args, "format": "json"])
+            return try JSONDecoder().decode(ConvexValue<T>.self, from: try await URLSession.shared.data(for: req).0).value
+        }
+        let chrome: SquadSession = try await mutation("squads:signUp", ["name": "Ana"])
+        let squad: Squad = try await mutation("squads:create", ["session": ["userId": chrome.userId, "secret": chrome.secret], "name": "Crew"])
+        struct Link: Decodable { var code: String }
+        let link: Link = try await mutation("squads:linkCode", ["session": ["userId": chrome.userId, "secret": chrome.secret]])
+
+        let (phone, name) = try await api.redeemLinkCode(link.code)
+        #expect(name == "Ana" && phone.userId == chrome.userId)
+        try await api.report(phone, SquadProgress(learned: 5, saved: 8))
+        let mine = try await api.mySquads(phone)
+        #expect(mine.map(\.code) == [squad.code])
+        #expect(mine[0].members.map(\.learned) == [5])
+        do {
+            _ = try await api.join(phone, code: "ZZZZZZ")
+            Issue.record("joined a squad that doesn't exist")
+        } catch {
+            #expect(error.localizedDescription == "No squad has the code ZZZZZZ")
+        }
+    }
+}

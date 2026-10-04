@@ -24,3 +24,12 @@ Then give each app the deployment URL (`CONVEX_URL` in `.env.local`, like `https
 - Words and encounters keep numeric ids (`num`, from the `counters` table) so both clients see the same shapes as the local store.
 - `admin:clearAll` is internal (CLI or dashboard only). The smoke test calls it on a local deployment: `CONVEX_URL=http://127.0.0.1:3210 CONVEX_TOKEN=<token> node apps/extension/e2e/smoke.mjs`.
 - Integration tests for the adapter: `CONVEX_TEST_URL=http://127.0.0.1:3210 CONVEX_TEST_TOKEN=<token> pnpm --filter extension test`.
+
+## Squads
+
+`convex/squads.ts` holds squads and their words-learned leaderboard. There's no login: the extension's Squads view creates an anonymous user (a display name) and keeps that device's session secret in `chrome.storage.sync`, so it follows the Chrome profile. The phone joins as the same user with a one-time link code from the extension (Squads > Use squads on your phone). Only a SHA-256 of each session secret is stored.
+
+- Squad functions don't take `SYNC_TOKEN`, so friends can share a deployment for squads without access to your words. Build the extension with `PLASMO_PUBLIC_SQUADS_URL=<deployment url>` to prefill it; otherwise it suggests the Convex URL from settings.
+- Each app reports its own counts (`squads:report`): learned is words marked known or with a review interval of 21 days or more, out of words saved. Last report wins between devices; a device with no words doesn't report.
+- Per-user words and real accounts (e.g. Convex Auth, or a username and password for recovery) are the follow-up.
+- Tests: `CONVEX_TEST_URL=http://127.0.0.1:3210 pnpm --filter extension test`, and `pnpm --filter extension build && CONVEX_URL=http://127.0.0.1:3210 node apps/extension/e2e/squads.mjs` (headless Chromium).
