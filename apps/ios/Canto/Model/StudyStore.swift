@@ -17,6 +17,8 @@ final class StudyStore {
     private(set) var snapshot: StudySnapshot = .empty
     private(set) var cards: [Int: CardState] = [:]
     private(set) var pending: [StudyReview] = []
+    /// Words typed in on this phone that haven't come back in a snapshot yet.
+    private(set) var added: [AddedWord] = []
     private(set) var sync: SyncState = .idle
     private(set) var lastSyncedAt: Date?
 
@@ -47,12 +49,20 @@ final class StudyStore {
         snapshot = load("snapshot.json") ?? .empty
         cards = load("cards.json") ?? [:]
         pending = load("pending.json") ?? []
+        added = load("added.json") ?? []
         lastSyncedAt = load("synced.json")
     }
 
     // MARK: Reading
 
-    var hasWords: Bool { !snapshot.words.isEmpty }
+    var hasWords: Bool { !allWords.isEmpty }
+
+    /// The snapshot's words plus the ones added here that it doesn't have yet.
+    private var allWords: [StudyWord] {
+        guard !added.isEmpty else { return snapshot.words }
+        let have = Set(snapshot.words.map(\.colloquial))
+        return snapshot.words + added.filter { !have.contains($0.word.colloquial) }.map(\.studyWord)
+    }
 
     /// Videos with saved words, most recently studied first.
     var videos: [StudyVideo] {
@@ -61,7 +71,7 @@ final class StudyStore {
     }
 
     /// All words, newest saved first.
-    var words: [StudyWord] { snapshot.words.sorted { $0.createdAt > $1.createdAt } }
+    var words: [StudyWord] { allWords.sorted { $0.createdAt > $1.createdAt } }
 
     func words(in video: StudyVideo) -> [StudyWord] {
         snapshot.words
@@ -71,14 +81,19 @@ final class StudyStore {
 
     func video(_ id: String) -> StudyVideo? { snapshot.videos.first { $0.id == id } }
 
-    func word(_ id: Int) -> StudyWord? { snapshot.words.first { $0.id == id } }
+    func word(_ id: Int) -> StudyWord? { allWords.first { $0.id == id } }
+
+    func isSaved(_ colloquial: String) -> Bool {
+        let c = colloquial.trimmingCharacters(in: .whitespacesAndNewlines)
+        return allWords.contains { $0.colloquial == c }
+    }
 
     func card(for word: StudyWord) -> CardState { cards[word.id] ?? .seed(from: word) }
 
     /// Words to study now: reviewed ones that are due, then new ones. Words marked
     /// known in the extension stay out unless you ask for them.
     func dueWords(now: Date = .now, includeKnown: Bool = false, newLimit: Int = 20) -> [StudyWord] {
-        let pool = snapshot.words.filter { includeKnown || !$0.isKnown }
+        let pool = allWords.filter { includeKnown || !$0.isKnown }
         let due = pool.filter { !card(for: $0).isNew && card(for: $0).dueAt <= now.ms }.sorted { card(for: $0).dueAt < card(for: $1).dueAt }
         let fresh = pool.filter { card(for: $0).isNew }.sorted { $0.createdAt < $1.createdAt }.prefix(newLimit)
         return due + fresh
@@ -88,7 +103,7 @@ final class StudyStore {
 
     /// When the next card comes due, if nothing is due now.
     var nextDue: Date? {
-        snapshot.words.filter { !$0.isKnown && !card(for: $0).isNew }.map { card(for: $0).dueAt }.min().map { Date(ms: $0) }
+        allWords.filter { !$0.isKnown && !card(for: $0).isNew }.map { card(for: $0).dueAt }.min().map { Date(ms: $0) }
     }
 
     // MARK: Reviewing
@@ -98,6 +113,39 @@ final class StudyStore {
         pending.append(StudyReview(wordId: word.id, colloquial: word.colloquial, correct: correct, at: now.ms))
         save(cards, "cards.json")
         save(pending, "pending.json")
+    }
+
+    // MARK: Adding
+
+    enum AddOutcome: Equatable { case added, alreadySaved, empty }
+
+    /// Saves a word typed in by hand. Only the Cantonese is required; it shows up
+    /// right away and goes to the backend on the next sync.
+    @discardableResult
+    func addWord(colloquial: String, jyutping: String = "", meaning: String = "", now: Date = .now) -> AddOutcome {
+        func clean(_ s: String) -> String? {
+            let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+            return t.isEmpty ? nil : t
+        }
+        guard let c = clean(colloquial) else { return .empty }
+        if isSaved(c) { return .alreadySaved }
+        added.append(AddedWord(word: StudyNewWord(colloquial: c, jyutping: clean(jyutping), meaning: clean(meaning), at: now.ms), sent: false))
+        save(added, "added.json")
+        return .added
+    }
+
+    /// Drops added words the snapshot now has, carrying over any flashcard progress.
+    private func settleAdded() {
+        let byText = Dictionary(snapshot.words.map { ($0.colloquial, $0.id) }, uniquingKeysWith: { a, _ in a })
+        let arrived = added.filter { byText[$0.word.colloquial] != nil }
+        guard !arrived.isEmpty else { return }
+        for a in arrived {
+            let temp = a.studyWord.id
+            if let card = cards.removeValue(forKey: temp), let real = byText[a.word.colloquial], cards[real] == nil { cards[real] = card }
+        }
+        added.removeAll { byText[$0.word.colloquial] != nil }
+        save(cards, "cards.json")
+        save(added, "added.json")
     }
 
     // MARK: Syncing
@@ -125,12 +173,20 @@ final class StudyStore {
     func refresh(from backend: some StudyBackend) async {
         sync = .syncing
         do {
+            // Send new words first, so a Convex snapshot already has them.
+            let unsent = added.filter { !$0.sent }.map(\.word)
+            try await backend.add(words: unsent)
+            let sentAt = Set(unsent.map(\.at))
+            added = added.map { sentAt.contains($0.word.at) ? AddedWord(word: $0.word, sent: true) : $0 }
+            save(added, "added.json")
+
             let snap = try await backend.fetchSnapshot()
             // An empty export from a fresh browser shouldn't wipe what the phone has.
             if !snap.words.isEmpty || snapshot.words.isEmpty {
                 snapshot = snap
                 save(snapshot, "snapshot.json")
             }
+            settleAdded()
             let sent = pending
             try await backend.upload(reviews: sent)
             pending.removeFirst(min(sent.count, pending.count))
@@ -191,5 +247,21 @@ final class StudyStore {
     private func save<T: Encodable>(_ value: T, _ name: String) {
         guard let data = try? JSONEncoder().encode(value) else { return }
         try? data.write(to: dir.appending(path: name), options: .atomic)
+    }
+}
+
+/// A word added on this phone. `sent` once the backend has it; it stays listed
+/// until a snapshot includes it (through the helper, that waits for the extension).
+nonisolated struct AddedWord: Codable, Sendable, Hashable {
+    var word: StudyNewWord
+    var sent: Bool
+
+    /// How it shows until the real one arrives, under a negative id so it can't clash.
+    var studyWord: StudyWord {
+        StudyWord(
+            id: -Int(word.at), colloquial: word.colloquial, formal: nil, jyutping: word.jyutping, meaning: word.meaning, notes: nil,
+            status: "learning", timesAsked: 0, timesMissed: 0, intervalDays: 1, ease: 2.5, dueAt: word.at + Scheduler.day,
+            createdAt: word.at, updatedAt: word.at, source: "manual", sources: []
+        )
     }
 }

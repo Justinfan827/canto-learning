@@ -1,5 +1,6 @@
 import type { Store } from "@pna/shared"
 
+import { fillFromDict } from "../dict"
 import { loadSettings, type Settings } from "../settings"
 import { copyLocalToConvex, createConvexStore, type ConvexConfig } from "./convexStore"
 import { createLocalStore } from "./localStore"
@@ -21,7 +22,7 @@ export function convexConfig(s: Pick<Settings, (typeof BACKEND_KEYS)[number]>): 
 
 let local: Store | null = null
 // The local helper relays local data to the phone; with Convex the phone reads Convex itself.
-const localStore = () => (local ??= withStudySync(createLocalStore()))
+const localStore = () => (local ??= withStudySync(createLocalStore(), { fill: fillFromDict }))
 
 async function pick(): Promise<Store> {
   const cfg = convexConfig(await loadSettings())
@@ -41,6 +42,7 @@ const METHODS = [
   "saveLineWords",
   "saveQuestion",
   "logTaughtWord",
+  "addWord",
   "listWords",
   "getWord",
   "setStatus",

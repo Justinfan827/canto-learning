@@ -213,7 +213,13 @@ function SidePanel() {
         <SavedList
           list={saved.list}
           videoId={state.video?.id ?? null}
+          dict={dict}
           onBack={() => setView("video")}
+          onAdd={async (w) => {
+            const r = await store.addWord(w)
+            await saved.refresh()
+            return r
+          }}
           onOpen={(s: SavedWord) => {
             if (!s.at) return
             if (s.at.videoId === state.video?.id) seek(s.at.startMs)
@@ -224,8 +230,9 @@ function SidePanel() {
         />
       </div>
     )
-  if (!state.tabId) return <Empty text="Open a YouTube video in this window to start." />
-  if (!state.video) return <Empty text="Waiting for the video… if this doesn't change, reload the YouTube tab." />
+  const openSaved = () => setView("saved")
+  if (!state.tabId) return <Empty text="Open a YouTube video in this window to start." onSaved={openSaved} />
+  if (!state.video) return <Empty text="Waiting for the video… if this doesn't change, reload the YouTube tab." onSaved={openSaved} />
 
   const status = tr.status
   const job = status.kind === "running" ? status : null
@@ -495,8 +502,17 @@ function EmptyLyrics({ status, hasTrack, screen, onRetry }: { status: Transcribe
   )
 }
 
-function Empty({ text }: { text: string }) {
-  return <div className="empty">{text}</div>
+function Empty({ text, onSaved }: { text: string; onSaved: () => void }) {
+  return (
+    <div className="empty">
+      <div>
+        <p>{text}</p>
+        <button className="link" onClick={onSaved}>
+          Saved words
+        </button>
+      </div>
+    </div>
+  )
 }
 
 export default SidePanel

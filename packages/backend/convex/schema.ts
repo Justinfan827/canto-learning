@@ -15,6 +15,7 @@ export const lineWord = v.object({
 export const captionKind = v.union(v.literal("manual"), v.literal("auto"))
 export const register = v.union(v.literal("formal"), v.literal("colloquial"))
 export const wordStatus = v.union(v.literal("learning"), v.literal("known"))
+export const wordSource = v.union(v.literal("video"), v.literal("manual"))
 
 /**
  * Mirrors the extension's IndexedDB stores (apps/extension/lib/localStore.ts).
@@ -57,6 +58,8 @@ export default defineSchema({
     intervalDays: v.number(),
     ease: v.number(),
     dueAt: v.number(),
+    /** "manual" for words typed in by hand; missing means saved from a video. */
+    source: v.optional(wordSource),
     createdAt: v.number(),
     updatedAt: v.number()
   })

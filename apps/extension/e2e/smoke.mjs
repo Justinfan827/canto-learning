@@ -301,6 +301,23 @@ await panel.click("button[aria-label='Saved words']")
 await panel.waitForSelector(".list .item")
 console.log("saved list:", (await panel.locator(".list .item").allInnerTexts()).map((t) => t.replace(/\n/g, " ")))
 await panel.screenshot({ path: SHOTS + "6-saved.png" })
+
+// Add a word by hand: the dictionary fills Jyutping and meaning, and it lands at the top tagged as added by hand.
+await panel.click(".bar .pill >> text=Add word")
+await panel.fill(".add input.hz", "傾偈")
+await panel.waitForFunction(() => document.querySelectorAll(".add input")[1]?.value, null, { timeout: 5000 })
+const filled = await panel.locator(".add input").evaluateAll((els) => els.map((e) => e.value))
+console.log("add word filled:", JSON.stringify(filled))
+if (!filled[1] || !filled[2]) throw new Error("dictionary didn't fill the new word")
+await panel.screenshot({ path: SHOTS + "8-add-word.png" })
+await panel.click(".add button[type=submit]")
+await panel.waitForSelector(".add-note.ok", { timeout: 5000 })
+const top = (await panel.locator(".list .item").first().innerText()).replace(/\n/g, " ")
+console.log("after add:", await panel.locator(".add-note").innerText(), "| top item:", top)
+if (!top.includes("傾偈") || !top.includes("Added by hand")) throw new Error("added word isn't at the top of the list")
+await panel.fill(".add input.hz", "古怪")
+console.log("duplicate hint:", await panel.locator(".add-note.warn").innerText())
+await panel.click(".add button[aria-label='Close']")
 await panel.click("text=Back to video")
 
 // Space plays; playing collapses the card.
@@ -342,6 +359,8 @@ console.log("back to YouTube:", await panel.locator(".bar .pill").innerText(), "
 const lastPush = convex ? await convexSnapshot() : studyPushes.at(-1)
 console.log(convex ? "convex snapshot:" : `study pushes: ${studyPushes.length} |`, "words:", lastPush?.words.map((w) => [w.colloquial, w.sources.length]), "| videos:", lastPush?.videos.map((v) => v.id))
 if (convex && studyPushes.length) throw new Error("pushed to the helper while on Convex")
-if (!lastPush?.words.length || !lastPush.words.every((w) => w.sources.length)) throw new Error("study snapshot missing saved words or their source lines")
+const fromVideos = lastPush?.words.filter((w) => w.source !== "manual") ?? []
+if (!fromVideos.length || !fromVideos.every((w) => w.sources.length)) throw new Error("study snapshot missing saved words or their source lines")
+if (!lastPush.words.some((w) => w.colloquial === "傾偈" && w.source === "manual" && w.jyutping)) throw new Error("study snapshot missing the word added by hand")
 console.log("errors:", logs.filter((l) => /error/i.test(l)).slice(0, 5))
 await ctx.close()

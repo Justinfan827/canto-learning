@@ -44,6 +44,9 @@ export interface LineWord {
   likelyError: string | null
 }
 
+/** Where a word came from: saved while watching (the default), or typed in by hand. */
+export type WordSource = "video" | "manual"
+
 export interface Word {
   id: number
   colloquial: string
@@ -57,6 +60,10 @@ export interface Word {
   intervalDays: number
   ease: number
   dueAt: number
+  /** Missing on words saved before this field existed, which all came from videos. */
+  source?: WordSource
+  /** When the word was first saved. */
+  createdAt?: number
 }
 
 export interface Encounter {

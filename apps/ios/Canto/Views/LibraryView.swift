@@ -6,6 +6,7 @@ struct LibraryView: View {
     @State private var mode: Mode = .videos
     @State private var query = ""
     @State private var showSettings = false
+    @State private var showAdd = false
     @State private var path = NavigationPath()
 
     enum Mode: String, CaseIterable { case videos = "Videos", words = "Words" }
@@ -16,11 +17,14 @@ struct LibraryView: View {
                 if store.hasWords {
                     content
                 } else {
-                    EmptyLibrary(showSettings: $showSettings)
+                    EmptyLibrary(showSettings: $showSettings, showAdd: $showAdd)
                 }
             }
             .navigationTitle("Library")
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Add a word", systemImage: "plus") { showAdd = true }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Settings", systemImage: "gearshape") { showSettings = true }
                 }
@@ -28,6 +32,7 @@ struct LibraryView: View {
             .navigationDestination(for: StudyVideo.self) { VideoDetailView(video: $0) }
             .navigationDestination(for: StudyWord.self) { WordDetailView(wordID: $0.id) }
             .sheet(isPresented: $showSettings) { SettingsView() }
+            .sheet(isPresented: $showAdd) { AddWordView { mode = .words } }
             .refreshable { await store.refresh() }
         }
         .onAppear(perform: openLaunchRoute)
@@ -39,6 +44,7 @@ struct LibraryView: View {
         let d = UserDefaults.standard
         if let id = d.string(forKey: "video"), let v = store.video(id) { path.append(v) }
         if d.integer(forKey: "word") > 0, let w = store.word(d.integer(forKey: "word")) { path.append(w) }
+        if d.bool(forKey: "add") { showAdd = true }
     }
 
     private var content: some View {
@@ -265,6 +271,7 @@ struct SyncFooter: View {
 
 struct EmptyLibrary: View {
     @Binding var showSettings: Bool
+    @Binding var showAdd: Bool
     @Environment(StudyStore.self) private var store
 
     var body: some View {
@@ -277,6 +284,7 @@ struct EmptyLibrary: View {
                 .buttonStyle(.glassProminent)
                     .foregroundStyle(Palette.onAccent)
             Button("Try sample words") { store.loadSample() }
+            Button("Add a word") { showAdd = true }
             Button("Computer address") { showSettings = true }
                 .font(.footnote)
         }

@@ -5,6 +5,9 @@ import Foundation
 nonisolated protocol StudyBackend: Sendable {
     func fetchSnapshot() async throws -> StudySnapshot
     func upload(reviews: [StudyReview]) async throws
+    /// Words typed in on the phone. Convex saves them right away; the helper
+    /// queues them until the extension adds them to its store.
+    func add(words: [StudyNewWord]) async throws
 }
 
 /// Which backend to sync with, chosen in Settings. The helper is the default.
@@ -31,7 +34,7 @@ nonisolated enum BackendError: LocalizedError {
     }
 }
 
-/// The local helper in apps/transcriber: `GET /study` and `POST /study/reviews`.
+/// The local helper in apps/transcriber: `GET /study`, `POST /study/reviews` and `POST /study/words`.
 nonisolated struct HelperBackend: StudyBackend {
     var baseURL: URL
     var session: URLSession = .shared
@@ -60,6 +63,17 @@ nonisolated struct HelperBackend: StudyBackend {
         req.timeoutInterval = 6
         req.setValue("application/json", forHTTPHeaderField: "content-type")
         req.httpBody = try JSONEncoder().encode(["reviews": reviews])
+        let (_, resp) = try await session.data(for: req)
+        try check(resp)
+    }
+
+    func add(words: [StudyNewWord]) async throws {
+        guard !words.isEmpty else { return }
+        var req = URLRequest(url: baseURL.appending(path: "study/words"))
+        req.httpMethod = "POST"
+        req.timeoutInterval = 6
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        req.httpBody = try JSONEncoder().encode(["words": words])
         let (_, resp) = try await session.data(for: req)
         try check(resp)
     }

@@ -59,6 +59,8 @@ export function createConvexStore({ url, token }: ConvexConfig, client = new Con
     saveLineWords: (videoId, idx, words) => m(api.store.saveLineWords, { token, videoId, idx, words: words.map(lineWord) }).then(done),
     saveQuestion: ({ videoId, lineIdx, atMs, question, answer }) => m(api.store.saveQuestion, { token, videoId, lineIdx, atMs, question, answer }).then(done),
     logTaughtWord: (word, at) => m(api.store.logTaughtWord, { token, word: taughtWord(word), at: { videoId: at.videoId, lineIdx: at.lineIdx } }),
+    addWord: ({ colloquial, jyutping, meaning, formal, notes }) =>
+      m(api.store.addWord, { token, word: { colloquial, jyutping: jyutping ?? null, meaning: meaning ?? null, formal: formal ?? null, notes: notes ?? null } }),
     listWords: (opts = {}) => q(api.store.listWords, { token, status: opts.status, sort: opts.sort }),
     getWord: (id) => q(api.store.getWord, { token, id }),
     setStatus: (id, status) => m(api.store.setStatus, { token, id, status }),

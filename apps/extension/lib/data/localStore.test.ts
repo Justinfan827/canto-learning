@@ -58,4 +58,23 @@ describe("local store", () => {
       { videoId: "v9", lineIdx: 1, startMs: 2000, endMs: 4000, text: "這麼古怪", textColloquial: "咁古怪", textFormal: "這麼古怪", textEnglish: "So weird", createdAt: expect.any(Number) }
     ])
   })
+
+  it("adds words by hand, tagged manual, without touching an existing word's schedule", async () => {
+    const s = createLocalStore("t-add")
+    await expect(s.addWord({ colloquial: "  ", jyutping: null, meaning: null })).rejects.toThrow()
+    const { word, created } = await s.addWord({ colloquial: " 傾偈 ", jyutping: "king1 gai2", meaning: " " })
+    expect(created).toBe(true)
+    expect(word).toMatchObject({ colloquial: "傾偈", jyutping: "king1 gai2", meaning: null, source: "manual", timesAsked: 0, status: "learning" })
+    const again = await s.addWord({ colloquial: "傾偈", jyutping: "ignored", meaning: "to chat" })
+    expect(again).toMatchObject({ created: false, word: { id: word.id, jyutping: "king1 gai2", meaning: "to chat", timesMissed: 0 } })
+
+    await s.putVideo(video, lines, "manual")
+    const taught = await s.logTaughtWord(kam, { videoId: "v1", lineIdx: 1 })
+    const kept = await s.addWord({ colloquial: "咁", jyutping: null, meaning: null })
+    expect(kept.word).toMatchObject({ id: taught.id, timesAsked: 1, timesMissed: 0, dueAt: taught.dueAt })
+    expect(kept.word.source).toBeUndefined()
+
+    const snap = await s.exportStudy()
+    expect(snap.words.find((w) => w.colloquial === "傾偈")).toMatchObject({ source: "manual", sources: [] })
+  })
 })

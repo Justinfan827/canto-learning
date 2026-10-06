@@ -57,6 +57,44 @@ struct SnapshotTests {
         // Survives a relaunch.
         #expect(StudyStore(directory: dir).cards[due[0].id]?.reviews == 1)
     }
+    @Test func addsWordsByHandAndSettlesThemWhenTheyArrive() async throws {
+        let dir = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        let store = StudyStore(directory: dir)
+        #expect(store.addWord(colloquial: "  ") == .empty)
+        #expect(store.addWord(colloquial: " 傾偈 ", meaning: "to chat") == .added)
+        #expect(store.addWord(colloquial: "傾偈") == .alreadySaved)
+        let temp = try #require(store.words.first)
+        #expect(temp.colloquial == "傾偈" && temp.isManual && temp.id < 0 && temp.jyutping == nil)
+        #expect(store.dueWords().contains(temp))
+        store.record(temp, correct: true)
+        // Survives a relaunch.
+        #expect(StudyStore(directory: dir).words.map(\.colloquial) == ["傾偈"])
+
+        let backend = FakeBackend()
+        await store.refresh(from: backend)
+        #expect(backend.added.map(\.colloquial) == ["傾偈"])
+        // The helper hasn't handed it to the extension yet: still listed, not sent twice.
+        #expect(store.added.first?.sent == true)
+        await store.refresh(from: backend)
+        #expect(backend.added.count == 1)
+
+        var real = temp
+        real.id = 42
+        real.jyutping = "king1 gai2"
+        backend.snapshot.words = [real]
+        await store.refresh(from: backend)
+        #expect(store.added.isEmpty)
+        #expect(store.words.map(\.id) == [42])
+        #expect(store.cards[42]?.reviews == 1)
+    }
+}
+
+final class FakeBackend: StudyBackend, @unchecked Sendable {
+    var snapshot = StudySnapshot.empty
+    var added: [StudyNewWord] = []
+    func fetchSnapshot() async throws -> StudySnapshot { snapshot }
+    func upload(reviews: [StudyReview]) async throws {}
+    func add(words: [StudyNewWord]) async throws { added += words }
 }
 
 struct ExampleTests {
@@ -120,6 +158,19 @@ nonisolated final class StubProtocol: URLProtocol, @unchecked Sendable {
         StubProtocol.reply = Data(#"{"status":"error","errorMessage":"[Request ID: 1] Server Error\nUncaught Error: Wrong sync token\n    at checkToken (../convex/lib.ts:11:0)"}"#.utf8)
         await #expect(throws: BackendError.self) { try await backend().fetchSnapshot() }
         #expect(ConvexBackend.reason("[Request ID: 1] Server Error\nUncaught Error: Wrong sync token\n    at x") == "Wrong sync token")
+    }
+
+    @Test func addsWordsThroughTheMutationAPI() async throws {
+        StubProtocol.reply = Data(#"{"status":"success","value":{"created":true,"word":{}}}"#.utf8)
+        StubProtocol.sent = []
+        try await backend().add(words: [StudyNewWord(colloquial: "傾偈", jyutping: nil, meaning: "to chat", at: 1)])
+        let req = try #require(StubProtocol.sent.first)
+        #expect(req.url?.absoluteString == "https://happy-otter-123.convex.cloud/api/mutation")
+        let body = try JSONSerialization.jsonObject(with: req.httpBody ?? Data()) as? [String: Any]
+        #expect(body?["path"] as? String == "store:addWord")
+        let word = (body?["args"] as? [String: Any])?["word"] as? [String: Any]
+        #expect(word?["colloquial"] as? String == "傾偈")
+        #expect(word?["jyutping"] is NSNull)
     }
 
     @Test func needsAURLAndToken() {

@@ -59,8 +59,8 @@ curl -LO https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sile
 | Transcriber | `apps/transcriber/server.mjs`, `apps/extension/lib/useTranscriber.ts` | Local speech-to-text for videos without captions, started automatically from the playhead; lines go to the bridge as `local` captions |
 | Data layer | `apps/extension/lib/data` | The one `store` the app uses; settings pick the backend. `localStore.ts` (IndexedDB, the default) or `convexStore.ts` (Convex) |
 | Local database | `apps/extension/lib/data/localStore.ts` | IndexedDB: videos, caption lines, words, encounters, questions, reviews |
-| Study sync | `apps/extension/lib/data/studySync.ts`, `packages/shared/src/study.ts` | Pushes saved words with their source lines to the helper for the phone app |
-| Convex backend | `packages/backend/convex` | Schema and functions mirroring `Store`, plus the phone's `study:snapshot` and `study:addReviews` |
+| Study sync | `apps/extension/lib/data/studySync.ts`, `packages/shared/src/study.ts` | Pushes saved words with their source lines to the helper for the phone app, and adds words typed in on the phone |
+| Convex backend | `packages/backend/convex` | Schema and functions mirroring `Store`, plus the phone's `study:snapshot` and `study:addReviews` (the phone adds words with `store:addWord`) |
 | Shared | `packages/shared` | Types, caption parsing, the `Store` interface, spaced-repetition scheduling, register diff |
 
 **Storage is local by default.** The app imports `store` from `apps/extension/lib/data` and never touches IndexedDB or Convex directly. Both backends implement the `Store` interface in `packages/shared/src/store.ts`. To share words with the phone from anywhere, connect a Convex deployment under Settings > Saved words; see [packages/backend/README.md](packages/backend/README.md).

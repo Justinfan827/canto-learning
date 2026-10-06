@@ -1,6 +1,6 @@
 # Convex backend
 
-Shared storage for the extension and the phone app. The extension's `Store` interface (`packages/shared/src/store.ts`) maps one to one onto `convex/store.ts`; the phone reads `study:snapshot` and sends flashcard answers to `study:addReviews` (`convex/study.ts`). Local storage stays the default until you connect a deployment in each app.
+Shared storage for the extension and the phone app. The extension's `Store` interface (`packages/shared/src/store.ts`) maps one to one onto `convex/store.ts`; the phone reads `study:snapshot` and sends flashcard answers to `study:addReviews` (`convex/study.ts`) and words typed in by hand to `store:addWord`. Local storage stays the default until you connect a deployment in each app.
 
 ## Set up a deployment
 
