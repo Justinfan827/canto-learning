@@ -158,7 +158,8 @@ export function WordSheet(props: {
   /** Asks the tutor for examples when the bundled ones have none; null without a model. */
   onAskExamples: (() => void) | null
   saved: boolean
-  fromMs: number
+  /** Where the word was heard: a timestamp, or a link back to the video when opened from Saved words. */
+  from: { ms: number; title?: string; onOpen?: () => void } | null
   onSave: () => void
   onHear: () => void
   onClose: () => void
@@ -235,9 +236,16 @@ export function WordSheet(props: {
             )}
           </section>
         )}
+        {props.from?.onOpen && (
+          <button className="from-link" onClick={props.from.onOpen} title="Open the video at this moment">
+            <Icon name="play" />
+            <span className="ft">{props.from.title || "Video"}</span>
+            <span className="fm">{formatTime(props.from.ms)}</span>
+          </button>
+        )}
         <div className="src">
           <span>{props.examples?.length ? `CC-Canto · examples ${props.examples[0].source} · offline` : "CC-Canto · offline"}</span>
-          <span>from {formatTime(props.fromMs)}</span>
+          {props.from && !props.from.onOpen && <span>from {formatTime(props.from.ms)}</span>}
         </div>
       </div>
     </>
