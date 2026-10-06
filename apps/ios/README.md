@@ -24,8 +24,9 @@ The project is generated from `project.yml` with [XcodeGen](https://github.com/y
 | The helper keeps the latest copy | `~/.cache/canto-learning/study.json` (`apps/transcriber/server.mjs`) |
 | The app pulls and caches it | `GET /study`, `HelperBackend` + `StudyStore` |
 | Flashcard answers go back | `POST /study/reviews` → `study-reviews.json` |
+| Words you add on the phone (Library > +) go back | `POST /study/words` → `study-words.json`; the extension adds them on its next sync, filling blank Jyutping and meaning from its dictionary, then clears them |
 
-Everything stays on your own machines. To sync from anywhere instead, pick **Convex** under Library > Settings and enter the same deployment URL and sync token as the extension. `ConvexBackend` calls `study:snapshot` and `study:addReviews` over Convex's HTTP API; views only ever talk to `StudyStore`, which picks the backend. The extension doesn't apply phone reviews yet; they're stored for when it does.
+Everything stays on your own machines. To sync from anywhere instead, pick **Convex** under Library > Settings and enter the same deployment URL and sync token as the extension. `ConvexBackend` calls `study:snapshot`, `study:addReviews` and `store:addWord` over Convex's HTTP API; views only ever talk to `StudyStore`, which picks the backend. The extension doesn't apply phone reviews yet; they're stored for when it does.
 
 ## Pieces
 
@@ -35,7 +36,8 @@ Everything stays on your own machines. To sync from anywhere instead, pick **Con
 | `Model/StudyBackend.swift`, `Model/ConvexBackend.swift` | The helper and Convex backends behind one protocol |
 | `Model/Scheduler.swift` | The same simplified SM-2 as `packages/shared/src/schedule.ts` |
 | `Views/LibraryView.swift` | Videos with their words, or all words with search |
-| `Views/WordDetailView.swift` | Characters, Jyutping with tone contours, meaning, written form, source lines with "watch at" links |
+| `Views/WordDetailView.swift` | Characters, Jyutping with tone contours, meaning, written form, example sentences, source lines with "watch at" links |
+| `Model/Examples.swift` | Example sentences from `Resources/examples.json` (Tatoeba, CC BY 2.0 FR), the same file the extension builds with `pnpm --filter extension dict` |
 | `Views/FlashcardSession.swift` | Tap to flip, swipe right if you knew it and left if you're still learning; misses come back a few cards later |
 | `Views/ListenView.swift`, `Audio/ListenSession.swift` | Word, meaning, then the source line, read aloud with lock-screen and headphone controls |
 | `Views/ToneMarks.swift` | Draws each syllable's pitch so tones read as shapes |
@@ -48,4 +50,4 @@ Speech uses the phone's built-in Cantonese voice (zh-HK). If none is installed, 
 cd apps/ios && xcodebuild test -project Canto.xcodeproj -scheme Canto -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
 
-Screenshot shortcuts (launch arguments): `-tab review`, `-tab listen`, `-autostart YES` (opens the review), `-flipped YES`, `-video <id>`, `-word <id>`, `-serverURL <url>`, `-backend convex -convexURL <url> -convexToken <token>`.
+Screenshot shortcuts (launch arguments): `-tab review`, `-tab listen`, `-autostart YES` (opens the review), `-flipped YES`, `-video <id>`, `-word <id>`, `-add YES` (opens Add a word), `-serverURL <url>`, `-backend convex -convexURL <url> -convexToken <token>`.

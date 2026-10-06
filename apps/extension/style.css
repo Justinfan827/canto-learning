@@ -178,6 +178,15 @@ rt { font: 400 9.5px/1 var(--f-ui); color: var(--muted); letter-spacing: 0; padd
 .senses li::marker { color: var(--muted); font: 11px var(--f-mono); }
 .senses .sj { font: 11px var(--f-mono); color: var(--muted); }
 .sheet .muted { margin: 0; }
+.examples { display: grid; gap: 8px; }
+.examples h3 { margin: 0; font: 600 11px var(--f-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.examples .ex { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start; }
+.examples p { margin: 0; }
+.examples .ex-yue { font: 15px/1.4 var(--f-zh); }
+.examples .ex-yue b { color: var(--jade); font-weight: 600; }
+.examples .ex-jp { font: 11px var(--f-mono); color: var(--muted); }
+.examples .ex-en { font-size: 13px; color: var(--muted); }
+.examples .act { justify-self: start; }
 .reg { display: flex; gap: 8px; font-size: 12.5px; flex-wrap: wrap; }
 .reg span { background: var(--soft); border-radius: var(--r-s); padding: 3px 8px; font-family: var(--f-ui); }
 .reg b { font-family: var(--f-zh); font-weight: 500; }
@@ -288,3 +297,17 @@ rt { font: 400 9.5px/1 var(--f-ui); color: var(--muted); letter-spacing: 0; padd
 .src-check { width: 14px; flex: none; }
 .src-text small { display: block; color: var(--muted); font-size: 11.5px; line-height: 1.3; }
 .srcopt.act-row { color: var(--amber); border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; margin-top: 2px; }
+
+/* ---------- add a word ---------- */
+.add { margin: 0 12px 10px; padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: var(--r-l); display: grid; gap: 8px; }
+.add-head { display: flex; align-items: center; justify-content: space-between; margin: -4px -6px -2px 0; }
+.add-head b { font-size: 13.5px; }
+.add label { display: grid; gap: 3px; font-size: 11.5px; color: var(--muted); min-width: 0; }
+.add input { width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); font: 13.5px var(--f-ui); }
+.add input.hz { font: 500 19px/1.2 var(--f-zh); }
+.add input:focus { outline: none; border-color: var(--jade); }
+.add input::placeholder { color: var(--faint); }
+.add-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 8px; }
+.add-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.add-note { margin: 0; font-size: 12px; }
+.add .primary:disabled { opacity: 0.45; filter: none; }

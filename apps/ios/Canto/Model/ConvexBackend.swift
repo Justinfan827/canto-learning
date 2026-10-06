@@ -1,7 +1,8 @@
 import Foundation
 
-/// A Convex deployment (packages/backend/convex): `study:snapshot` and
-/// `study:addReviews`, called over Convex's HTTP API so the app needs no SDK.
+/// A Convex deployment (packages/backend/convex): `study:snapshot`,
+/// `study:addReviews` and `store:addWord`, called over Convex's HTTP API so the
+/// app needs no SDK.
 nonisolated struct ConvexBackend: StudyBackend {
     var deploymentURL: URL
     var token: String
@@ -25,12 +26,33 @@ nonisolated struct ConvexBackend: StudyBackend {
         let _: Ignored = try await call(.mutation, "study:addReviews", args: ReviewArgs(token: token, reviews: reviews))
     }
 
+    func add(words: [StudyNewWord]) async throws {
+        for w in words {
+            let word = WordArg(colloquial: w.colloquial, jyutping: w.jyutping, meaning: w.meaning)
+            let _: Ignored = try await call(.mutation, "store:addWord", args: AddWordArgs(token: token, word: word))
+        }
+    }
+
     // MARK: HTTP API
 
     private enum Kind: String { case query, mutation }
 
     private struct TokenArgs: Encodable { var token: String }
     private struct ReviewArgs: Encodable { var token: String; var reviews: [StudyReview] }
+    private struct WordArg: Encodable {
+        var colloquial: String
+        var jyutping: String?
+        var meaning: String?
+        // Convex wants null, not a missing key, for an empty field.
+        func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encode(colloquial, forKey: .colloquial)
+            try c.encode(jyutping, forKey: .jyutping)
+            try c.encode(meaning, forKey: .meaning)
+        }
+        enum CodingKeys: String, CodingKey { case colloquial, jyutping, meaning }
+    }
+    private struct AddWordArgs: Encodable { var token: String; var word: WordArg }
     private struct Request<A: Encodable>: Encodable { var path: String; var args: A; var format = "json" }
     private struct Response<T: Decodable>: Decodable { var status: String; var value: T?; var errorMessage: String? }
     private struct Ignored: Decodable { init(from decoder: Decoder) throws {} }

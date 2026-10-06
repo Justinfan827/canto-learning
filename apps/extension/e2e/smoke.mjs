@@ -180,6 +180,7 @@ await panel.locator(".moment .chip-w").last().click()
 await panel.waitForSelector(".sheet")
 await panel.waitForTimeout(300) // let the sheet finish rising
 console.log("no-AI word sheet:", (await panel.locator(".sheet").innerText()).replace(/\n/g, " | "))
+if (await panel.locator(".sheet .examples").count()) throw new Error("examples section shown for a word with none and no model")
 await panel.screenshot({ path: SHOTS + "3-word.png" })
 await panel.click(".sheet .save")
 await panel.waitForSelector(".sheet .save.done", { timeout: 5000 })
@@ -216,6 +217,28 @@ await panel.screenshot({ path: SHOTS + "2-paused-no-tutor.png" })
   console.log("after undo:", await chips.allInnerTexts())
 }
 
+// Example sentences come from the bundled Tatoeba set, with Jyutping and English, no model needed.
+await yt.evaluate(async () => { const v = document.querySelector("video"); v.currentTime = 6.5; await v.play() })
+await panel.waitForSelector(".ln.now[data-idx='3']", { timeout: 5000 })
+await yt.evaluate(() => document.querySelector("video").pause())
+await panel.waitForFunction(() => document.querySelector(".moment .chip-w")?.textContent.startsWith("我"), null, { timeout: 5000 })
+await panel.locator(".moment .chip-w").first().click()
+await panel.waitForSelector(".sheet .examples .ex", { timeout: 5000 })
+{
+  const ex = panel.locator(".sheet .examples .ex").first()
+  console.log("examples for", await panel.locator(".sheet .dhead .hz").innerText(), ":", await panel.locator(".sheet .examples .ex").count(), "| first:", await ex.locator(".ex-yue").innerText(), "/", await ex.locator(".ex-jp").innerText(), "/", await ex.locator(".ex-en").innerText(), "| source:", await panel.locator(".sheet .src span").first().innerText())
+  if (!(await ex.locator(".ex-yue b").count()) || !(await ex.locator(".ex-jp").innerText()).trim()) throw new Error("example sentence missing the marked word or its Jyutping")
+}
+await panel.waitForTimeout(300)
+await panel.screenshot({ path: SHOTS + "3-examples.png" })
+await panel.keyboard.press("Escape")
+await panel.waitForSelector(".sheet", { state: "detached" })
+// Back to line 2 paused, where the rest of the test expects to be.
+await yt.evaluate(async () => { const v = document.querySelector("video"); v.currentTime = 4.5; await v.play() })
+await panel.waitForSelector(".ln.now[data-idx='2']", { timeout: 5000 })
+await yt.evaluate(() => document.querySelector("video").pause())
+await panel.waitForFunction(() => document.querySelector(".moment .chip-w")?.textContent.startsWith("這"), null, { timeout: 5000 })
+
 // Turn on Claude in settings.
 const setup = await ctx.newPage()
 await setup.goto(`chrome-extension://${extId}/tabs/setup.html`)
@@ -237,6 +260,12 @@ console.log("current line:", await text(".ln.now"))
 await yt.evaluate(() => document.querySelector("video").pause())
 await panel.waitForSelector(".moment .chip-w", { timeout: 10000 })
 console.log("card words:", await panel.locator(".moment .chip-w").allInnerTexts(), "| inferred:", await panel.locator(".moment .top").innerText())
+// With a model, a word with no bundled examples offers to ask the tutor for some.
+await panel.locator(".moment .chip-w").last().click()
+await panel.waitForSelector(".sheet .examples .act.ai", { timeout: 5000 })
+console.log("no-examples sheet:", await panel.locator(".sheet .examples").innerText())
+await panel.keyboard.press("Escape")
+await panel.waitForSelector(".sheet", { state: "detached" })
 await panel.click(".act.ai")
 await panel.waitForSelector(".answer .a >> text=gam3", { timeout: 10000 })
 console.log("answer:", await panel.locator(".answer .a").first().innerText())
@@ -272,6 +301,23 @@ await panel.click("button[aria-label='Saved words']")
 await panel.waitForSelector(".list .item")
 console.log("saved list:", (await panel.locator(".list .item").allInnerTexts()).map((t) => t.replace(/\n/g, " ")))
 await panel.screenshot({ path: SHOTS + "6-saved.png" })
+
+// Add a word by hand: the dictionary fills Jyutping and meaning, and it lands at the top tagged as added by hand.
+await panel.click(".bar .pill >> text=Add word")
+await panel.fill(".add input.hz", "傾偈")
+await panel.waitForFunction(() => document.querySelectorAll(".add input")[1]?.value, null, { timeout: 5000 })
+const filled = await panel.locator(".add input").evaluateAll((els) => els.map((e) => e.value))
+console.log("add word filled:", JSON.stringify(filled))
+if (!filled[1] || !filled[2]) throw new Error("dictionary didn't fill the new word")
+await panel.screenshot({ path: SHOTS + "8-add-word.png" })
+await panel.click(".add button[type=submit]")
+await panel.waitForSelector(".add-note.ok", { timeout: 5000 })
+const top = (await panel.locator(".list .item").first().innerText()).replace(/\n/g, " ")
+console.log("after add:", await panel.locator(".add-note").innerText(), "| top item:", top)
+if (!top.includes("傾偈") || !top.includes("Added by hand")) throw new Error("added word isn't at the top of the list")
+await panel.fill(".add input.hz", "古怪")
+console.log("duplicate hint:", await panel.locator(".add-note.warn").innerText())
+await panel.click(".add button[aria-label='Close']")
 await panel.click("text=Back to video")
 
 // Space plays; playing collapses the card.
@@ -313,6 +359,8 @@ console.log("back to YouTube:", await panel.locator(".bar .pill").innerText(), "
 const lastPush = convex ? await convexSnapshot() : studyPushes.at(-1)
 console.log(convex ? "convex snapshot:" : `study pushes: ${studyPushes.length} |`, "words:", lastPush?.words.map((w) => [w.colloquial, w.sources.length]), "| videos:", lastPush?.videos.map((v) => v.id))
 if (convex && studyPushes.length) throw new Error("pushed to the helper while on Convex")
-if (!lastPush?.words.length || !lastPush.words.every((w) => w.sources.length)) throw new Error("study snapshot missing saved words or their source lines")
+const fromVideos = lastPush?.words.filter((w) => w.source !== "manual") ?? []
+if (!fromVideos.length || !fromVideos.every((w) => w.sources.length)) throw new Error("study snapshot missing saved words or their source lines")
+if (!lastPush.words.some((w) => w.colloquial === "傾偈" && w.source === "manual" && w.jyutping)) throw new Error("study snapshot missing the word added by hand")
 console.log("errors:", logs.filter((l) => /error/i.test(l)).slice(0, 5))
 await ctx.close()

@@ -13,6 +13,15 @@ struct WordDetailView: View {
                     if word.formalIfDifferent != nil || word.notes != nil {
                         WordNotes(word: word)
                     }
+                    let examples = ExampleBank.bundled.examples(for: word.colloquial)
+                    if !examples.isEmpty {
+                        ExamplesSection(word: word, examples: examples)
+                    }
+                    if word.isManual && word.sources.isEmpty {
+                        Label("Added by hand on \(Date(ms: word.createdAt).formatted(date: .abbreviated, time: .omitted))", systemImage: "square.and.pencil")
+                            .font(.subheadline)
+                            .foregroundStyle(Palette.muted)
+                    }
                     if !word.sources.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
                             Text(word.sources.count == 1 ? "Where you saved it" : "Where you saved it, \(word.sources.count) times")
@@ -134,6 +143,43 @@ struct SourceCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Palette.line))
+    }
+}
+
+/// Everyday sentences that use the word, each with Jyutping and English, from the bundled set.
+struct ExamplesSection: View {
+    var word: StudyWord
+    var examples: [ExampleSentence]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Examples")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Palette.muted)
+            ForEach(examples, id: \.self) { example in
+                HStack(alignment: .top, spacing: 12) {
+                    SpeakButton(text: example.yue, size: 34)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(highlighted(example.yue, word.colloquial, size: 18))
+                            .font(Typeface.hanzi(18, relativeTo: .body))
+                            .cantonese()
+                        Text(example.jyutping)
+                            .font(.caption.monospaced())
+                            .foregroundStyle(Palette.muted)
+                        Text(example.english)
+                            .font(.subheadline)
+                            .foregroundStyle(Palette.ink.opacity(0.8))
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            if let source = examples.first?.source, !source.isEmpty {
+                Text("Examples from \(source)")
+                    .font(.caption2)
+                    .foregroundStyle(Palette.faint)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

@@ -61,6 +61,17 @@ describe.skipIf(!url)("convex store", () => {
     expect(snap.videos.map((v) => v.id)).toContain(video.id)
   })
 
+  it("adds words by hand, tagged manual, and sends them to the phone", async () => {
+    const colloquial = `傾偈${run}`
+    const { word, created } = await s().addWord({ colloquial: ` ${colloquial} `, jyutping: "king1 gai2", meaning: "" })
+    expect(created).toBe(true)
+    expect(word).toMatchObject({ colloquial, jyutping: "king1 gai2", meaning: null, source: "manual", timesAsked: 0 })
+    const again = await s().addWord({ colloquial, jyutping: "ignored", meaning: "to chat" })
+    expect(again).toMatchObject({ created: false, word: { id: word.id, jyutping: "king1 gai2", meaning: "to chat" } })
+    const snap = await s().exportStudy()
+    expect(snap.words.find((w) => w.id === word.id)).toMatchObject({ source: "manual", sources: [] })
+  })
+
   it("copies local data across, keeping word ids", async () => {
     const local = createLocalStore()
     const video = { id: `c-${run}`, title: "Copied" }

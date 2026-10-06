@@ -13,7 +13,9 @@ export function useSaved(store: Store) {
   const refresh = useCallback(async () => {
     const words = await store.listWords()
     const rows = await Promise.all(words.map(async (word) => ({ word, at: (await store.getWord(word.id))?.encounters[0] ?? null })))
-    rows.sort((a, b) => (b.at?.createdAt ?? 0) - (a.at?.createdAt ?? 0))
+    // Words added by hand have no moment, so they sort by when they were saved.
+    const when = (s: SavedWord) => s.at?.createdAt ?? s.word.createdAt ?? 0
+    rows.sort((a, b) => when(b) - when(a))
     setList(rows)
   }, [store])
   useEffect(() => {

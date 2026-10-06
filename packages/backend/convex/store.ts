@@ -1,4 +1,5 @@
 import { schedule } from "@pna/shared/src/schedule"
+import { cleanNewWord } from "@pna/shared/src/store"
 import { v } from "convex/values"
 
 import { mutation, query } from "./_generated/server"
@@ -160,6 +161,53 @@ export const logTaughtWord = mutation({
   }
 })
 
+export const addWord = mutation({
+  args: {
+    token,
+    word: v.object({ colloquial: v.string(), jyutping: nullable(v.string()), meaning: nullable(v.string()), formal: v.optional(nullable(v.string())), notes: v.optional(nullable(v.string())) })
+  },
+  handler: async (ctx, { token, word: input }) => {
+    checkToken(token)
+    const w = cleanNewWord(input)
+    if (!w) throw new Error("Enter the word in Cantonese")
+    const now = Date.now()
+    const existing = await ctx.db
+      .query("words")
+      .withIndex("by_colloquial", (q) => q.eq("colloquial", w.colloquial))
+      .unique()
+    if (existing) {
+      // Already saved: keep its schedule, fill in what was blank.
+      await ctx.db.patch(existing._id, {
+        formal: existing.formal ?? w.formal ?? null,
+        jyutping: existing.jyutping || w.jyutping,
+        meaning: existing.meaning || w.meaning,
+        notes: existing.notes ?? w.notes ?? null,
+        updatedAt: now
+      })
+      return { word: toWord((await ctx.db.get(existing._id))!), created: false }
+    }
+    const num = await nextNum(ctx, "words")
+    await ctx.db.insert("words", {
+      num,
+      colloquial: w.colloquial,
+      formal: w.formal ?? null,
+      jyutping: w.jyutping,
+      meaning: w.meaning,
+      notes: w.notes ?? null,
+      status: "learning",
+      timesAsked: 0,
+      timesMissed: 0,
+      intervalDays: 1,
+      ease: 2.5,
+      dueAt: now + DAY,
+      source: "manual",
+      createdAt: now,
+      updatedAt: now
+    })
+    return { word: toWord((await wordByNum(ctx, num))!), created: true }
+  }
+})
+
 export const listWords = query({
   args: { token, status: v.optional(wordStatus), sort: v.optional(v.union(v.literal("missed"), v.literal("due"))) },
   handler: async (ctx, { token, status, sort }) => {
@@ -189,7 +237,7 @@ export const getWord = query({
       .query("encounters")
       .withIndex("by_word", (q) => q.eq("wordNum", id))
       .collect()
-    encs.sort((a, b) => b.createdAt - a.createdAt)
+    encs.sort((a, b) => b.createdAt - a.createdAt || b.num - a.num)
     const encounters = await Promise.all(
       encs.map(async (e) => {
         const [video, line] = await Promise.all([videoById(ctx, e.videoId), lineAt(ctx, e.videoId, e.lineIdx)])

@@ -222,6 +222,8 @@ function startJob(videoId, engineId, fromMs) {
 // Kept as plain files so a remote backend can take over the same two routes later.
 const STUDY = path.join(CACHE, "study.json")
 const REVIEWS = path.join(CACHE, "study-reviews.json")
+// Words typed in on the phone, waiting for the extension to add them.
+const NEW_WORDS = path.join(CACHE, "study-words.json")
 const MAX_BODY = 20 * 1024 * 1024
 const readJson = (file, fallback) => {
   try {
@@ -266,6 +268,28 @@ async function handleStudy(req, res, url) {
     writeJson(REVIEWS, all)
     return json(res, 200, { ok: true, total: all.length })
   }
+  if (url.pathname === "/study/words" && req.method === "GET") return json(res, 200, { words: readJson(NEW_WORDS, []) })
+  if (url.pathname === "/study/words" && req.method === "POST") {
+    const { words } = JSON.parse(await readBody(req))
+    if (!Array.isArray(words)) return json(res, 400, { error: "bad words" })
+    const all = readJson(NEW_WORDS, [])
+    for (const w of words) {
+      if (typeof w?.colloquial !== "string" || !w.colloquial.trim() || typeof w.at !== "number") continue
+      // The phone retries a failed upload, so the same word can arrive twice.
+      if (!all.some((o) => o.at === w.at && o.colloquial === w.colloquial))
+        all.push({ colloquial: w.colloquial, jyutping: w.jyutping ?? null, meaning: w.meaning ?? null, at: w.at })
+    }
+    writeJson(NEW_WORDS, all)
+    return json(res, 200, { ok: true, total: all.length })
+  }
+  // The extension removes the words it has added, by their `at`.
+  if (url.pathname === "/study/words" && req.method === "DELETE") {
+    const { at } = JSON.parse(await readBody(req))
+    if (!Array.isArray(at)) return json(res, 400, { error: "bad at" })
+    const left = readJson(NEW_WORDS, []).filter((w) => !at.includes(w.at))
+    writeJson(NEW_WORDS, left)
+    return json(res, 200, { ok: true, left: left.length })
+  }
   return false
 }
 
@@ -278,7 +302,7 @@ const server = http.createServer(async (req, res) => {
   }
   res.setHeader("access-control-allow-origin", origin || "*")
   res.setHeader("access-control-allow-headers", "content-type")
-  res.setHeader("access-control-allow-methods", "GET, PUT, POST, OPTIONS")
+  res.setHeader("access-control-allow-methods", "GET, PUT, POST, DELETE, OPTIONS")
   if (req.method === "OPTIONS") return res.writeHead(204).end()
 
   const url = new URL(req.url, `http://localhost:${PORT}`)

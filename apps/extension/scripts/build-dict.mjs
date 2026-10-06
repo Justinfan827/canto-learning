@@ -36,7 +36,7 @@ function* entries(text) {
   for (const line of text.split("\n")) {
     if (line.startsWith("#")) continue
     const m = LINE.exec(line)
-    if (m) yield { trad: m[1], simp: m[2], pinyin: m[3].toLowerCase().replace(/\s+/g, ""), jp: m[4] ?? "", defs: m[5] ? m[5].split("/") : [] }
+    if (m) yield { trad: m[1], simp: m[2], pinyin: m[3].toLowerCase().replace(/\s+/g, "").replace(/u:/g, "v"), jp: m[4] ?? "", defs: m[5] ? m[5].split("/") : [] }
   }
 }
 
@@ -46,7 +46,7 @@ function gloss(defs) {
   let formal = ""
   const keep = []
   for (const d of defs) {
-    const eq = /^Mandarin equivalent: ([^\x00-\x7f\s]+?)[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]*\s/.exec(d + " ")
+    const eq = /^Mandarin equivalent: ([^\x00-\x7f\s[]+?)(?:\[[^\]]*\]|[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]*)\s/.exec(d + " ")
     if (eq) {
       formal ||= eq[1]
       continue
@@ -68,7 +68,8 @@ const add = (key, entry) => {
   const same = list.find((x) => x[0] === entry[0])
   if (same) {
     // Same reading: merge senses rather than listing the word twice.
-    if (entry[1] && !same[1].includes(entry[1])) same[1] = same[1] ? `${same[1]}; ${entry[1]}` : entry[1]
+    const have = same[1] ? same[1].split("; ") : []
+    same[1] = [...have, ...entry[1].split("; ").filter((g) => g && !have.includes(g))].join("; ")
     same[2] ||= entry[2]
     same[3] = (same[3] || entry[3]) ? 1 : 0
   } else list.push(entry)
@@ -108,6 +109,14 @@ const charJp = (c) => {
   const list = dict[c]
   if (!list) return null
   return [...list].sort((a, b) => (charReading.get(`${c}|${b[0]}`) ?? 0) - (charReading.get(`${c}|${a[0]}`) ?? 0))[0][0]
+}
+// Characters with no reading of their own (喺, 攰) take the one they have inside longer words.
+for (const e of noReading) {
+  if (dict[e.trad] || [...e.trad].length !== 1) continue
+  let best = null
+  for (const [k, n] of charReading) if (k.startsWith(`${e.trad}|`) && n > (best?.[1] ?? 0)) best = [k.split("|")[1], n]
+  const g = gloss(e.defs)
+  if (best) add(e.trad, [best[0], g.gloss.replace(/ \(Cantonese\)/g, ""), g.formal, e.defs.some((d) => d.includes("(Cantonese)")) ? 1 : 0])
 }
 for (const e of noReading) {
   if (dict[e.trad] || [...e.trad].length < 2) continue

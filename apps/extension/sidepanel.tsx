@@ -1,4 +1,4 @@
-import { alignByTime, lineAt, lookup, pickTrack, regroup, senses, trackLabel, transcriptCoverage, type LineWord, type TaughtWord } from "@pna/shared"
+import { alignByTime, examplesFor, lineAt, lookup, pickTrack, regroup, senses, trackLabel, transcriptCoverage, type Examples, type LineWord, type TaughtWord } from "@pna/shared"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { DisplayMenu, Header, type Pill, type SourceOption } from "~components/Header"
@@ -7,7 +7,7 @@ import { Dock, MomentCard, Thread, WordSheet } from "~components/Moment"
 import { formatTime } from "~components/Ruby"
 import { SavedList } from "~components/SavedList"
 import { Squads } from "~components/Squads"
-import { loadDict } from "~lib/dict"
+import { loadDict, loadExamples } from "~lib/dict"
 import "~lib/fonts"
 import { store } from "~lib/data"
 import { aiKey, loadSettings, saveSettings, type Settings } from "~lib/settings"
@@ -60,6 +60,10 @@ function SidePanel() {
   const [micError, setMicError] = useState<string | null>(null)
   const stopListening = useRef<(() => void) | null>(null)
 
+  const [examples, setExamples] = useState<Examples | null>(null)
+  useEffect(() => {
+    if (selWord !== null && !examples) loadExamples().then(setExamples, (e) => console.warn(e))
+  }, [selWord, examples])
   const hasAi = !!tutor?.hasAi
   // Written Chinese for each line from a second local transcript, when there is one.
   const written = useMemo(() => (tr.written ? alignByTime(state.lines, tr.written) : null), [state.lines, tr.written])
@@ -216,7 +220,13 @@ function SidePanel() {
         <SavedList
           list={saved.list}
           videoId={state.video?.id ?? null}
+          dict={dict}
           onBack={() => setView("video")}
+          onAdd={async (w) => {
+            const r = await store.addWord(w)
+            await saved.refresh()
+            return r
+          }}
           onOpen={(s: SavedWord) => {
             if (!s.at) return
             if (s.at.videoId === state.video?.id) seek(s.at.startMs)
@@ -227,8 +237,9 @@ function SidePanel() {
         />
       </div>
     )
-  if (!state.tabId) return <Empty text="Open a YouTube video in this window to start." />
-  if (!state.video) return <Empty text="Waiting for the video… if this doesn't change, reload the YouTube tab." />
+  const openSaved = () => setView("saved")
+  if (!state.tabId) return <Empty text="Open a YouTube video in this window to start." onSaved={openSaved} />
+  if (!state.video) return <Empty text="Waiting for the video… if this doesn't change, reload the YouTube tab." onSaved={openSaved} />
 
   const status = tr.status
   const job = status.kind === "running" ? status : null
@@ -358,6 +369,9 @@ function SidePanel() {
         <WordSheet
           word={word}
           senses={dict ? senses(word.text, dict) : []}
+          examples={examples ? examplesFor(typeof dict?.[word.text] === "string" ? (dict[word.text] as string) : word.text, examples) : null}
+          onHearExample={(text) => speak(text)}
+          onAskExamples={hasAi ? () => ask(`Give two short everyday example sentences that use ${word.colloquial ?? word.text}, each with Jyutping and English.`) : null}
           saved={saved.words.has(word.colloquial ?? word.text)}
           fromMs={focusLine.startMs}
           onSave={() => saveWord(word)}
@@ -496,8 +510,17 @@ function EmptyLyrics({ status, hasTrack, screen, onRetry }: { status: Transcribe
   )
 }
 
-function Empty({ text }: { text: string }) {
-  return <div className="empty">{text}</div>
+function Empty({ text, onSaved }: { text: string; onSaved: () => void }) {
+  return (
+    <div className="empty">
+      <div>
+        <p>{text}</p>
+        <button className="link" onClick={onSaved}>
+          Saved words
+        </button>
+      </div>
+    </div>
+  )
 }
 
 export default SidePanel

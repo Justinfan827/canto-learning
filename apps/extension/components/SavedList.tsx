@@ -1,7 +1,9 @@
+import type { Dict, NewWord, Word } from "@pna/shared"
 import { useState } from "react"
 
 import type { SavedWord } from "~lib/useSaved"
 
+import { AddWord } from "./AddWord"
 import { Icon } from "./Icon"
 import { formatTime } from "./Ruby"
 
@@ -13,9 +15,19 @@ function ago(ms: number) {
   return `${Math.floor(s / 86400)}d`
 }
 
+const when = (s: SavedWord) => s.at?.createdAt ?? s.word.createdAt
+
 /** Saved words, newest first, each linked back to the moment it came from. */
-export function SavedList(props: { list: SavedWord[]; videoId: string | null; onBack: () => void; onOpen: (w: SavedWord) => void }) {
+export function SavedList(props: {
+  list: SavedWord[]
+  videoId: string | null
+  dict: Dict | null
+  onBack: () => void
+  onOpen: (w: SavedWord) => void
+  onAdd: (w: NewWord) => Promise<{ word: Word; created: boolean }>
+}) {
   const [tab, setTab] = useState<"all" | "video">("all")
+  const [adding, setAdding] = useState(false)
   const shown = tab === "video" ? props.list.filter((s) => s.at?.videoId === props.videoId) : props.list
   return (
     <>
@@ -23,9 +35,15 @@ export function SavedList(props: { list: SavedWord[]; videoId: string | null; on
         <div className="grow">
           <button className="pill" onClick={props.onBack}>
             <Icon name="back" />
-            Back to video
+            {props.videoId ? "Back to video" : "Back"}
           </button>
         </div>
+        {!adding && (
+          <button className="pill" onClick={() => setAdding(true)}>
+            <Icon name="plus" />
+            Add word
+          </button>
+        )}
       </header>
       <div className="lh">
         <h1>Saved words</h1>
@@ -33,6 +51,18 @@ export function SavedList(props: { list: SavedWord[]; videoId: string | null; on
           {props.list.length} {props.list.length === 1 ? "word" : "words"}
         </span>
       </div>
+      {adding && (
+        <AddWord
+          dict={props.dict}
+          saved={new Set(props.list.map((s) => s.word.colloquial))}
+          onAdd={async (w) => {
+            const r = await props.onAdd(w)
+            setTab("all")
+            return r
+          }}
+          onClose={() => setAdding(false)}
+        />
+      )}
       <div className="tabs" role="tablist">
         <button role="tab" aria-selected={tab === "all"} className={tab === "all" ? "on" : ""} onClick={() => setTab("all")}>
           All
@@ -43,7 +73,7 @@ export function SavedList(props: { list: SavedWord[]; videoId: string | null; on
       </div>
       <ul className="list">
         {shown.length === 0 && (
-          <li className="muted list-empty">{tab === "video" ? "No words saved from this video yet." : "Tap a word in a paused line, then Save."}</li>
+          <li className="muted list-empty">{tab === "video" ? "No words saved from this video yet." : "Tap a word in a paused line, then Save, or add one with Add word."}</li>
         )}
         {shown.map((s) => (
           <li key={s.word.id}>
@@ -55,8 +85,10 @@ export function SavedList(props: { list: SavedWord[]; videoId: string | null; on
                 <i>{s.word.jyutping}</i>
                 {s.word.meaning}
               </span>
-              <span className="t">{s.at ? ago(s.at.createdAt) : ""}</span>
-              <span className="from">{s.at ? `${s.at.videoTitle || "Video"} · ${formatTime(s.at.startMs)}` : "From a tutor answer"}</span>
+              <span className="t">{when(s) ? ago(when(s)!) : ""}</span>
+              <span className="from">
+                {s.at ? `${s.at.videoTitle || "Video"} · ${formatTime(s.at.startMs)}` : s.word.source === "manual" ? "Added by hand" : "From a tutor answer"}
+              </span>
             </button>
           </li>
         ))}
