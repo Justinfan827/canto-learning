@@ -6,10 +6,10 @@ import { Lyrics, type LyricLine } from "~components/Lyrics"
 import { Dock, MomentCard, Thread, WordSheet } from "~components/Moment"
 import { formatTime } from "~components/Ruby"
 import { SavedList } from "~components/SavedList"
+import { Squads } from "~components/Squads"
 import { loadDict, loadExamples } from "~lib/dict"
 import "~lib/fonts"
-import { createLocalStore } from "~lib/localStore"
-import { withStudySync } from "~lib/studySync"
+import { store } from "~lib/data"
 import { aiKey, loadSettings, saveSettings, type Settings } from "~lib/settings"
 import { listen, speak, speechSupported } from "~lib/speech"
 import { aiFor, createTutor } from "~lib/tutor"
@@ -24,7 +24,6 @@ import { useTutor } from "~lib/useTutor"
 import "./style.css"
 
 const LISTEN_SILENCE_MS = 8000
-const store = withStudySync(createLocalStore())
 const openSetup = (hash = "") => chrome.tabs.create({ url: chrome.runtime.getURL("tabs/setup.html") + hash })
 
 function SidePanel() {
@@ -50,7 +49,7 @@ function SidePanel() {
   const saved = useSaved(store)
   const tr = useTranscriber(state, settings?.transcribeEngine ?? "auto", !!settings?.preferLocal, setLocalCaptions)
 
-  const [view, setView] = useState<"video" | "saved">("video")
+  const [view, setView] = useState<"video" | "saved" | "squads">("video")
   const [savedSel, setSavedSel] = useState<SavedWord | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [focusIdx, setFocusIdx] = useState<number | null>(null)
@@ -211,6 +210,12 @@ function SidePanel() {
   }
 
   if (!settings || !tutor) return null
+  if (view === "squads")
+    return (
+      <div className={"panel size-" + settings.textSize}>
+        <Squads defaultUrl={process.env.PLASMO_PUBLIC_SQUADS_URL || settings.convexUrl} onBack={() => setView("video")} />
+      </div>
+    )
   if (view === "saved") {
     const openSource = (s: SavedWord) => {
       if (!s.at) return
@@ -226,6 +231,12 @@ function SidePanel() {
         <SavedList
           list={saved.list}
           videoId={state.video?.id ?? null}
+          dict={dict}
+          onAdd={async (w) => {
+            const r = await store.addWord(w)
+            await saved.refresh()
+            return r
+          }}
           onBack={() => {
             setSavedSel(null)
             setView("video")
@@ -250,8 +261,9 @@ function SidePanel() {
       </div>
     )
   }
-  if (!state.tabId) return <Empty text="Open a YouTube video in this window to start." />
-  if (!state.video) return <Empty text="Waiting for the video… if this doesn't change, reload the YouTube tab." />
+  const openSaved = () => setView("saved")
+  if (!state.tabId) return <Empty text="Open a YouTube video in this window to start." onSaved={openSaved} />
+  if (!state.video) return <Empty text="Waiting for the video… if this doesn't change, reload the YouTube tab." onSaved={openSaved} />
 
   const status = tr.status
   const job = status.kind === "running" ? status : null
@@ -275,6 +287,7 @@ function SidePanel() {
       menuOpen={menuOpen}
       onMenu={setMenuOpen}
       onSaved={() => setView("saved")}
+      onSquads={() => setView("squads")}
       onMore={() => openSetup()}
       menu={<DisplayMenu s={settings} hasAi={hasAi} canFormal={canFormal} onChange={(p) => saveSettings(p)} />}
     />
@@ -531,8 +544,17 @@ function EmptyLyrics({ status, hasTrack, screen, onRetry }: { status: Transcribe
   )
 }
 
-function Empty({ text }: { text: string }) {
-  return <div className="empty">{text}</div>
+function Empty({ text, onSaved }: { text: string; onSaved: () => void }) {
+  return (
+    <div className="empty">
+      <div>
+        <p>{text}</p>
+        <button className="link" onClick={onSaved}>
+          Saved words
+        </button>
+      </div>
+    </div>
+  )
 }
 
 export default SidePanel

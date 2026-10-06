@@ -4,6 +4,7 @@
 // transcribes on its own. Screenshots of each state go to e2e/screenshots/.
 // Run: pnpm build && xvfb-run -a node e2e/smoke.mjs   (set CHROMIUM_PATH if needed)
 import { chromium } from "playwright-core"
+import { execSync } from "child_process"
 import fs from "fs"
 
 const EXT = new URL("../build/chrome-mv3-prod", import.meta.url).pathname
@@ -146,6 +147,15 @@ if (process.env.DEBUG) console.log("LOGS", logs, await yt.evaluate(() => [docume
 const opt = await yt.evaluate(() => window.__setOption)
 console.log("track enabled:", JSON.stringify(opt))
 const tabId = await sw.evaluate(async () => (await chrome.tabs.query({ url: "https://www.youtube.com/*" }))[0].id)
+// CONVEX_URL + CONVEX_TOKEN run the same flow with saved words on the local Convex deployment
+// from `pnpm --filter @pna/backend dev`. It starts by emptying that deployment.
+const convex = process.env.CONVEX_URL ? { url: process.env.CONVEX_URL, token: process.env.CONVEX_TOKEN ?? "" } : null
+if (convex) execSync("npx convex run admin:clearAll", { cwd: new URL("../../../packages/backend", import.meta.url).pathname, stdio: "ignore" })
+if (convex) await sw.evaluate((c) => chrome.storage.local.set({ dataBackend: "convex", convexUrl: c.url, convexToken: c.token }), convex)
+const convexSnapshot = async () => {
+  const r = await fetch(`${convex.url}/api/query`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path: "study:snapshot", args: { token: convex.token }, format: "json" }) })
+  return (await r.json()).value
+}
 
 const panel = await ctx.newPage()
 await panel.setViewportSize({ width: 380, height: 720 })
@@ -174,6 +184,12 @@ if (await panel.locator(".sheet .examples").count()) throw new Error("examples s
 await panel.screenshot({ path: SHOTS + "3-word.png" })
 await panel.click(".sheet .save")
 await panel.waitForSelector(".sheet .save.done", { timeout: 5000 })
+if (convex) {
+  const snap = await convexSnapshot()
+  const w = snap.words.find((x) => x.colloquial === "古怪")
+  console.log("convex word:", w?.colloquial, "| sources:", w?.sources.map((s) => `${s.videoId}#${s.lineIdx}`))
+  if (!w?.sources.some((s) => s.videoId === VID)) throw new Error("saved word didn't reach Convex")
+}
 await panel.keyboard.press("Escape")
 await panel.waitForSelector(".sheet", { state: "detached" })
 console.log("saved badge:", await panel.locator(".ib .n").innerText(), "| saved underline:", await panel.locator(".moment .chip-w.saved").allInnerTexts())
@@ -234,7 +250,7 @@ await setup.waitForSelector("text=Connected", { timeout: 10000 })
 console.log("setup: connected")
 await panel.bringToFront()
 await yt.evaluate(async () => { const v = document.querySelector("video"); v.currentTime = 2.5; await v.play() })
-await panel.waitForFunction(() => [...document.querySelectorAll(".ln[data-idx='1'] .w")].map((w) => w.firstChild?.textContent ?? "").join("").includes("佢") || document.querySelector(".ln[data-idx='1']")?.textContent.includes("佢"), null, { timeout: 10000 })
+await panel.waitForFunction(() => [...document.querySelectorAll(".ln[data-idx='1'] .w")].map((w) => w.firstChild?.textContent ?? "").join("").includes("佢") || document.querySelector(".ln[data-idx='1']")?.textContent.includes("佢"), null, { timeout: 10000, polling: 100 }) // poll on a timer: rAF stalls while another page has focus
 console.log("colloquial line 1:", await text(".ln[data-idx='1']"), "| english:", await panel.locator(".ln.now .en").count())
 
 // Play to 4.2s, then pause.
@@ -297,6 +313,23 @@ await panel.screenshot({ path: SHOTS + "6b-saved-detail.png" })
 await panel.keyboard.press("Escape")
 await panel.waitForSelector(".sheet", { state: "detached" })
 if (!(await panel.locator(".list button[aria-label^='Hear ']").count())) throw new Error("saved rows have no speaker button")
+
+// Add a word by hand: the dictionary fills Jyutping and meaning, and it lands at the top tagged as added by hand.
+await panel.click(".bar .pill >> text=Add word")
+await panel.fill(".add input.hz", "傾偈")
+await panel.waitForFunction(() => document.querySelectorAll(".add input")[1]?.value, null, { timeout: 5000 })
+const filled = await panel.locator(".add input").evaluateAll((els) => els.map((e) => e.value))
+console.log("add word filled:", JSON.stringify(filled))
+if (!filled[1] || !filled[2]) throw new Error("dictionary didn't fill the new word")
+await panel.screenshot({ path: SHOTS + "8-add-word.png" })
+await panel.click(".add button[type=submit]")
+await panel.waitForSelector(".add-note.ok", { timeout: 5000 })
+const top = (await panel.locator(".list .item").first().innerText()).replace(/\n/g, " ")
+console.log("after add:", await panel.locator(".add-note").innerText(), "| top item:", top)
+if (!top.includes("傾偈") || !top.includes("Added by hand")) throw new Error("added word isn't at the top of the list")
+await panel.fill(".add input.hz", "古怪")
+console.log("duplicate hint:", await panel.locator(".add-note.warn").innerText())
+await panel.click(".add button[aria-label='Close']")
 await panel.click("text=Back to video")
 
 // Space plays; playing collapses the card.
@@ -304,7 +337,7 @@ await panel.locator("body").click({ position: { x: 5, y: 700 } }).catch(() => {}
 await panel.keyboard.press("Space")
 await panel.waitForTimeout(400)
 console.log("after Space paused:", await yt.evaluate(() => document.querySelector("video").paused), "| card:", await panel.locator(".moment").count(), "| hint:", await panel.locator(".hint").innerText())
-const words = await panel.evaluate(() => new Promise((res) => { const r = indexedDB.open("pause-and-ask"); r.onsuccess = () => { const q = r.result.transaction("words").objectStore("words").getAll(); q.onsuccess = () => res(q.result) } }))
+const words = convex ? (await convexSnapshot()).words : await panel.evaluate(() => new Promise((res) => { const r = indexedDB.open("pause-and-ask"); r.onsuccess = () => { const q = r.result.transaction("words").objectStore("words").getAll(); q.onsuccess = () => res(q.result) } }))
 console.log("stored words:", JSON.stringify(words.map((w) => [w.colloquial, w.jyutping, w.timesAsked])))
 
 // A video with no Chinese captions transcribes on its own, from the playhead.
@@ -334,8 +367,12 @@ await panel.click(".src-menu .srcopt:has-text('YouTube captions')")
 await panel.waitForSelector(".pill >> text=YouTube captions", { timeout: 10000 })
 await panel.waitForSelector(".lyrics .ln[data-idx='3'], .moment", { timeout: 5000 }).catch(() => {})
 console.log("back to YouTube:", await panel.locator(".bar .pill").innerText(), "| lines:", await panel.locator(".lyrics .ln").count(), "| card:", await text(".moment .big").catch(() => "-"))
-const lastPush = studyPushes.at(-1)
-console.log("study pushes:", studyPushes.length, "| words:", lastPush?.words.map((w) => [w.colloquial, w.sources.length]), "| videos:", lastPush?.videos.map((v) => v.id))
-if (!lastPush?.words.length || !lastPush.words.every((w) => w.sources.length)) throw new Error("study snapshot missing saved words or their source lines")
+// With Convex the phone reads Convex, so nothing is pushed to the helper.
+const lastPush = convex ? await convexSnapshot() : studyPushes.at(-1)
+console.log(convex ? "convex snapshot:" : `study pushes: ${studyPushes.length} |`, "words:", lastPush?.words.map((w) => [w.colloquial, w.sources.length]), "| videos:", lastPush?.videos.map((v) => v.id))
+if (convex && studyPushes.length) throw new Error("pushed to the helper while on Convex")
+const fromVideos = lastPush?.words.filter((w) => w.source !== "manual") ?? []
+if (!fromVideos.length || !fromVideos.every((w) => w.sources.length)) throw new Error("study snapshot missing saved words or their source lines")
+if (!lastPush.words.some((w) => w.colloquial === "傾偈" && w.source === "manual" && w.jyutping)) throw new Error("study snapshot missing the word added by hand")
 console.log("errors:", logs.filter((l) => /error/i.test(l)).slice(0, 5))
 await ctx.close()

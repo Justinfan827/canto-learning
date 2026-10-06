@@ -1,4 +1,4 @@
-import type { Dict, Examples } from "@pna/shared"
+import { lookup, type Dict, type Examples, type NewWord } from "@pna/shared"
 import dictUrl from "url:~assets/dict.dat"
 import examplesUrl from "url:~assets/examples.dat"
 
@@ -22,4 +22,11 @@ export function loadExamples(): Promise<Examples> {
     return r.json()
   })
   return loadingExamples
+}
+
+/** Fills a word's blank Jyutping and meaning from the dictionary, when it knows the word. */
+export async function fillFromDict(w: NewWord): Promise<NewWord> {
+  const hit = lookup(w.colloquial.trim(), await loadDict().catch(() => ({}) as Dict))
+  const jyutping = hit.jyutping && !hit.jyutping.includes("?") ? hit.jyutping : null
+  return { ...w, jyutping: w.jyutping || jyutping, meaning: w.meaning || hit.meaning || null }
 }

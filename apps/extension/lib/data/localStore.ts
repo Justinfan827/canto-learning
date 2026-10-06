@@ -2,7 +2,9 @@ import {
   schedule,
   type CaptionKind,
   type CaptionLine,
+  cleanNewWord,
   type Encounter,
+  type NewWord,
   type QuestionRecord,
   type Store,
   type StoredLine,
@@ -61,7 +63,7 @@ function open(name: string) {
   })
 }
 
-const toWord = ({ createdAt: _c, updatedAt: _u, ...w }: WordRow): Word => w as Word
+const toWord = ({ updatedAt: _u, ...w }: WordRow): Word => w as Word
 const toLine = ({ videoId: _v, ...l }: LineRow): StoredLine => l
 
 /** IndexedDB-backed store, private to this browser profile. */
@@ -170,6 +172,45 @@ export function createLocalStore(name = "pause-and-ask"): Store {
       return toWord(row)
     },
 
+    async addWord(input: NewWord) {
+      const w = cleanNewWord(input)
+      if (!w) throw new Error("Enter the word in Cantonese")
+      const now = Date.now()
+      const tx = (await db()).transaction("words", "readwrite")
+      const existing = await tx.store.index("colloquial").get(w.colloquial)
+      let row: WordRow
+      if (existing) {
+        row = {
+          ...existing,
+          formal: existing.formal ?? w.formal ?? null,
+          jyutping: existing.jyutping || w.jyutping,
+          meaning: existing.meaning || w.meaning,
+          notes: existing.notes ?? w.notes ?? null,
+          updatedAt: now
+        }
+      } else {
+        row = {
+          colloquial: w.colloquial,
+          formal: w.formal ?? null,
+          jyutping: w.jyutping,
+          meaning: w.meaning,
+          notes: w.notes ?? null,
+          status: "learning",
+          timesAsked: 0,
+          timesMissed: 0,
+          intervalDays: 1,
+          ease: 2.5,
+          dueAt: now + DAY,
+          source: "manual",
+          createdAt: now,
+          updatedAt: now
+        }
+      }
+      row.id = await tx.store.put(row)
+      await tx.done
+      return { word: toWord(row), created: !existing }
+    },
+
     async listWords(opts = {}) {
       const d = await db()
       const rows = opts.status ? await d.getAllFromIndex("words", "status", opts.status) : await d.getAll("words")
@@ -185,7 +226,7 @@ export function createLocalStore(name = "pause-and-ask"): Store {
       const d = await db()
       const row = await d.get("words", id)
       if (!row) return null
-      const encs = (await d.getAllFromIndex("encounters", "word", id)).sort((a, b) => b.createdAt - a.createdAt)
+      const encs = (await d.getAllFromIndex("encounters", "word", id)).sort((a, b) => b.createdAt - a.createdAt || b.id! - a.id!)
       const encounters: Encounter[] = []
       for (const e of encs) {
         const [video, line] = await Promise.all([d.get("videos", e.videoId), d.get("lines", [e.videoId, e.lineIdx])])
@@ -270,4 +311,19 @@ export function createLocalStore(name = "pause-and-ask"): Store {
       }
     }
   }
+}
+
+/** Every row in the local database, for copying it to another backend. */
+export async function dumpLocalStore(name = "pause-and-ask") {
+  const d = await open(name)
+  const [videos, lines, words, encounters, questions, reviews] = await Promise.all([
+    d.getAll("videos"),
+    d.getAll("lines"),
+    d.getAll("words"),
+    d.getAll("encounters"),
+    d.getAll("questions"),
+    d.getAll("reviews")
+  ])
+  d.close()
+  return { videos, lines, words, encounters, questions, reviews }
 }

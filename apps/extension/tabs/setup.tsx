@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk"
 import { useEffect, useState } from "react"
 
+import { checkConvex, convexConfig, copyLocalToConvex } from "~lib/data"
 import "~lib/fonts"
 import { checkOpenAi, DEFAULT_FREE_MODEL, OPENROUTER_URL, ProviderError } from "~lib/openaiCompat"
 import { loadSettings, saveSettings, type Settings } from "~lib/settings"
@@ -19,6 +20,7 @@ function Setup() {
   const [mic, setMic] = useState<"unknown" | "granted" | "denied">("unknown")
   const [test, setTest] = useState<string | null>(null)
   const [voice, setVoice] = useState(false)
+  const [sync, setSync] = useState<string | null>(null)
 
   const [engines, setEngines] = useState<Engine[] | null | "loading">("loading")
   const checkHelper = () => {
@@ -76,6 +78,29 @@ function Setup() {
           ? "Saved, but this key was rejected."
           : `Saved, but the check failed: ${e instanceof Error ? e.message : e}`
       )
+    }
+  }
+
+  const cfg = convexConfig({ ...s, dataBackend: "convex" })
+  const saveConvex = async () => {
+    if (!cfg) return setSync("Enter the deployment URL and sync token.")
+    setSync("Checking…")
+    try {
+      await checkConvex(cfg)
+      await saveSettings({ dataBackend: "convex", convexUrl: cfg.url, convexToken: cfg.token })
+      setS({ ...s, dataBackend: "convex" })
+      setSync("Connected. New words now save to Convex.")
+    } catch (e) {
+      setSync(`Couldn't connect: ${e instanceof Error ? e.message : e}`)
+    }
+  }
+  const copyLocal = async () => {
+    if (!cfg) return
+    try {
+      const r = await copyLocalToConvex(cfg, (done, total) => setSync(`Copying ${done} of ${total}…`))
+      setSync(`Copied ${r.words} words.${r.alreadyOnConvex ? ` ${r.alreadyOnConvex} of them were already on Convex.` : ""}`)
+    } catch (e) {
+      setSync(`Copy failed: ${e instanceof Error ? e.message : e}`)
     }
   }
 
@@ -194,6 +219,38 @@ function Setup() {
           <input type="radio" checked={s.listenLang === "en-US"} onChange={() => setNow({ listenLang: "en-US" })} />
           English
         </label>
+      </section>
+
+      <section id="sync">
+        <h2>Saved words</h2>
+        <p className="muted">
+          Saved words and captions stay in this browser unless you connect a Convex deployment, which the phone app can read from anywhere.
+        </p>
+        <label className="row">
+          <input type="radio" checked={s.dataBackend === "local"} onChange={() => (setNow({ dataBackend: "local" }), setSync(null))} /> This browser
+        </label>
+        <label className="row">
+          <input type="radio" checked={s.dataBackend === "convex"} onChange={() => setS({ ...s, dataBackend: "convex" })} /> Convex
+        </label>
+        {s.dataBackend === "convex" && (
+          <>
+            <label>
+              Deployment URL
+              <input placeholder="https://your-deployment.convex.cloud" value={s.convexUrl} onChange={(e) => setS({ ...s, convexUrl: e.target.value.trim() })} />
+            </label>
+            <label>
+              Sync token
+              <input type="password" value={s.convexToken} onChange={(e) => setS({ ...s, convexToken: e.target.value.trim() })} />
+            </label>
+            <button className="primary" onClick={saveConvex}>
+              Connect
+            </button>{" "}
+            <button className="link" disabled={!cfg} onClick={copyLocal}>
+              Copy this browser&apos;s words to Convex
+            </button>
+          </>
+        )}
+        {sync && <p className="muted">{sync}</p>}
       </section>
 
       <section id="voice">

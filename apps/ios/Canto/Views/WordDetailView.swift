@@ -17,6 +17,11 @@ struct WordDetailView: View {
                     if !examples.isEmpty {
                         ExamplesSection(word: word, examples: examples)
                     }
+                    if word.isManual && word.sources.isEmpty {
+                        Label("Added by hand on \(Date(ms: word.createdAt).formatted(date: .abbreviated, time: .omitted))", systemImage: "square.and.pencil")
+                            .font(.subheadline)
+                            .foregroundStyle(Palette.muted)
+                    }
                     if !word.sources.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
                             Text(word.sources.count == 1 ? "Where you saved it" : "Where you saved it, \(word.sources.count) times")
