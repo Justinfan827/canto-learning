@@ -1,4 +1,4 @@
-import { alignByTime, lineAt, lookup, pickTrack, regroup, senses, trackLabel, transcriptCoverage, type LineWord, type TaughtWord } from "@pna/shared"
+import { alignByTime, examplesFor, lineAt, lookup, pickTrack, regroup, senses, trackLabel, transcriptCoverage, type Examples, type LineWord, type TaughtWord } from "@pna/shared"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { DisplayMenu, Header, type Pill, type SourceOption } from "~components/Header"
@@ -6,9 +6,10 @@ import { Lyrics, type LyricLine } from "~components/Lyrics"
 import { Dock, MomentCard, Thread, WordSheet } from "~components/Moment"
 import { formatTime } from "~components/Ruby"
 import { SavedList } from "~components/SavedList"
-import { loadDict } from "~lib/dict"
+import { loadDict, loadExamples } from "~lib/dict"
 import "~lib/fonts"
 import { createLocalStore } from "~lib/localStore"
+import { withStudySync } from "~lib/studySync"
 import { aiKey, loadSettings, saveSettings, type Settings } from "~lib/settings"
 import { listen, speak, speechSupported } from "~lib/speech"
 import { aiFor, createTutor } from "~lib/tutor"
@@ -23,7 +24,7 @@ import { useTutor } from "~lib/useTutor"
 import "./style.css"
 
 const LISTEN_SILENCE_MS = 8000
-const store = createLocalStore()
+const store = withStudySync(createLocalStore())
 const openSetup = (hash = "") => chrome.tabs.create({ url: chrome.runtime.getURL("tabs/setup.html") + hash })
 
 function SidePanel() {
@@ -60,6 +61,10 @@ function SidePanel() {
   const [micError, setMicError] = useState<string | null>(null)
   const stopListening = useRef<(() => void) | null>(null)
 
+  const [examples, setExamples] = useState<Examples | null>(null)
+  useEffect(() => {
+    if (selWord !== null && !examples) loadExamples().then(setExamples, (e) => console.warn(e))
+  }, [selWord, examples])
   const hasAi = !!tutor?.hasAi
   // Written Chinese for each line from a second local transcript, when there is one.
   const written = useMemo(() => (tr.written ? alignByTime(state.lines, tr.written) : null), [state.lines, tr.written])
@@ -351,6 +356,9 @@ function SidePanel() {
         <WordSheet
           word={word}
           senses={dict ? senses(word.text, dict) : []}
+          examples={examples ? examplesFor(typeof dict?.[word.text] === "string" ? (dict[word.text] as string) : word.text, examples) : null}
+          onHearExample={(text) => speak(text)}
+          onAskExamples={hasAi ? () => ask(`Give two short everyday example sentences that use ${word.colloquial ?? word.text}, each with Jyutping and English.`) : null}
           saved={saved.words.has(word.colloquial ?? word.text)}
           fromMs={focusLine.startMs}
           onSave={() => saveWord(word)}

@@ -6,9 +6,12 @@ import {
   type QuestionRecord,
   type Store,
   type StoredLine,
+  type StudySnapshot,
+  type StudySource,
   type TaughtWord,
   type VideoInfo,
-  type Word
+  type Word,
+  videoUrl
 } from "@pna/shared"
 import { openDB, type DBSchema, type IDBPDatabase } from "idb"
 
@@ -225,6 +228,46 @@ export function createLocalStore(name = "pause-and-ask"): Store {
       await tx.objectStore("reviews").add({ wordId, quizType, correct, createdAt: now })
       await tx.done
       return toWord(next)
+    },
+
+    async exportStudy(): Promise<StudySnapshot> {
+      const d = await db()
+      const tx = d.transaction(["words", "encounters", "videos", "lines"])
+      const [rows, encs, vids] = await Promise.all([
+        tx.objectStore("words").getAll(),
+        tx.objectStore("encounters").getAll(),
+        tx.objectStore("videos").getAll()
+      ])
+      const lines = tx.objectStore("lines")
+      const byWord = new Map<number, StudySource[]>()
+      const used = new Set<string>()
+      for (const e of encs.sort((a, b) => b.createdAt - a.createdAt)) {
+        const line = await lines.get([e.videoId, e.lineIdx])
+        if (!line) continue
+        used.add(e.videoId)
+        const list = byWord.get(e.wordId) ?? []
+        list.push({
+          videoId: e.videoId,
+          lineIdx: e.lineIdx,
+          startMs: line.startMs,
+          endMs: line.endMs,
+          text: line.text,
+          textColloquial: line.textColloquial,
+          textFormal: line.textFormal,
+          textEnglish: line.textEnglish ?? null,
+          createdAt: e.createdAt
+        })
+        byWord.set(e.wordId, list)
+      }
+      await tx.done
+      return {
+        version: 1,
+        exportedAt: Date.now(),
+        videos: vids
+          .filter((v) => used.has(v.id))
+          .map((v) => ({ id: v.id, title: v.title, channel: v.channel ?? null, url: videoUrl(v.id), firstSeenAt: v.createdAt })),
+        words: rows.map((r) => ({ ...toWord(r), createdAt: r.createdAt, updatedAt: r.updatedAt, sources: byWord.get(r.id!) ?? [] }))
+      }
     }
   }
 }
