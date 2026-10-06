@@ -35,7 +35,8 @@ Everything stays on your own machines. To sync from anywhere instead, pick **Con
 | `Model/StudyBackend.swift`, `Model/ConvexBackend.swift` | The helper and Convex backends behind one protocol |
 | `Model/Scheduler.swift` | The same simplified SM-2 as `packages/shared/src/schedule.ts` |
 | `Views/LibraryView.swift` | Videos with their words, or all words with search |
-| `Views/WordDetailView.swift` | Characters, Jyutping with tone contours, meaning, written form, source lines with "watch at" links |
+| `Views/WordDetailView.swift` | Characters, Jyutping with tone contours, meaning, written form, example sentences, source lines with "watch at" links |
+| `Model/Examples.swift` | Example sentences from `Resources/examples.json` (Tatoeba, CC BY 2.0 FR), the same file the extension builds with `pnpm --filter extension dict` |
 | `Views/FlashcardSession.swift` | Tap to flip, swipe right if you knew it and left if you're still learning; misses come back a few cards later |
 | `Views/ListenView.swift`, `Audio/ListenSession.swift` | Word, meaning, then the source line, read aloud with lock-screen and headphone controls |
 | `Views/ToneMarks.swift` | Draws each syllable's pitch so tones read as shapes |

@@ -59,6 +59,16 @@ struct SnapshotTests {
     }
 }
 
+struct ExampleTests {
+    @Test func bundledExamplesHaveJyutpingAndEnglish() {
+        let examples = ExampleBank.bundled.examples(for: "鍾意")
+        #expect(!examples.isEmpty)
+        #expect(examples.count <= 3)
+        #expect(examples.allSatisfy { $0.yue.contains("鍾意") && !$0.jyutping.isEmpty && !$0.english.isEmpty && $0.source == "Tatoeba" })
+        #expect(ExampleBank.bundled.examples(for: "唔存在嘅詞").isEmpty)
+    }
+}
+
 /// Answers every request with a canned Convex reply and remembers what was sent.
 nonisolated final class StubProtocol: URLProtocol, @unchecked Sendable {
     nonisolated(unsafe) static var reply = Data()

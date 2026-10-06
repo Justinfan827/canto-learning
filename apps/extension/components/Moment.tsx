@@ -1,4 +1,4 @@
-import type { LineWord, Sense, TaughtWord } from "@pna/shared"
+import type { Example, LineWord, Sense, TaughtWord } from "@pna/shared"
 import { useEffect, useRef, useState } from "react"
 
 import type { ChatMessage } from "~lib/useTutor"
@@ -148,10 +148,15 @@ export function MomentCard(props: {
   )
 }
 
-/** A bottom sheet with a word's dictionary senses and a Save button. */
+/** A bottom sheet with a word's dictionary senses, example sentences and a Save button. */
 export function WordSheet(props: {
   word: LineWord
   senses: Sense[]
+  /** Example sentences that use the word, or null while they load. */
+  examples: Example[] | null
+  onHearExample: (text: string) => void
+  /** Asks the tutor for examples when the bundled ones have none; null without a model. */
+  onAskExamples: (() => void) | null
   saved: boolean
   fromMs: number
   onSave: () => void
@@ -205,13 +210,44 @@ export function WordSheet(props: {
             </span>
           </div>
         )}
+        {props.examples && (props.examples.length > 0 || props.onAskExamples) && (
+          <section className="examples" aria-label="Examples">
+            <h3>Examples</h3>
+            {props.examples.map((ex) => (
+              <div className="ex" key={ex.yue}>
+                <button className="ib small" aria-label="Hear the example" title="Hear it" onClick={() => props.onHearExample(ex.yue)}>
+                  <Icon name="sound" />
+                </button>
+                <div>
+                  <p className="ex-yue" lang="yue-Hant">
+                    {markWord(ex.yue, head)}
+                  </p>
+                  <p className="ex-jp">{ex.jyutping}</p>
+                  <p className="ex-en">{ex.english}</p>
+                </div>
+              </div>
+            ))}
+            {!props.examples.length && props.onAskExamples && (
+              <button className="act ai" onClick={props.onAskExamples}>
+                <Icon name="spark" />
+                Ask the tutor for examples
+              </button>
+            )}
+          </section>
+        )}
         <div className="src">
-          <span>CC-Canto · offline</span>
+          <span>{props.examples?.length ? `CC-Canto · examples ${props.examples[0].source} · offline` : "CC-Canto · offline"}</span>
           <span>from {formatTime(props.fromMs)}</span>
         </div>
       </div>
     </>
   )
+}
+
+/** The sentence with each use of the word in bold. */
+function markWord(text: string, word: string) {
+  const parts = text.split(word)
+  return parts.flatMap((p, i) => (i ? [<b key={i}>{word}</b>, p] : [p]))
 }
 
 /** The tutor's answers for one paused line, with Save chips for the words they taught. */
