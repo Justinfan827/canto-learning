@@ -8,6 +8,8 @@ import os from "os"
 import path from "path"
 
 const PORT = Number(process.env.PORT ?? 8787)
+// Set HOST=0.0.0.0 to let a phone on the same Wi-Fi pull study data.
+const HOST = process.env.HOST ?? "127.0.0.1"
 const CACHE = path.join(os.homedir(), ".cache/canto-learning")
 const AUDIO = path.join(CACHE, "audio")
 const OUT = path.join(CACHE, "transcripts")
@@ -216,6 +218,81 @@ function startJob(videoId, engineId, fromMs) {
   return job
 }
 
+// Study sync: the extension PUTs its saved words here and the phone app GETs them.
+// Kept as plain files so a remote backend can take over the same two routes later.
+const STUDY = path.join(CACHE, "study.json")
+const REVIEWS = path.join(CACHE, "study-reviews.json")
+// Words typed in on the phone, waiting for the extension to add them.
+const NEW_WORDS = path.join(CACHE, "study-words.json")
+const MAX_BODY = 20 * 1024 * 1024
+const readJson = (file, fallback) => {
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8"))
+  } catch {
+    return fallback
+  }
+}
+const writeJson = (file, value) => {
+  fs.writeFileSync(`${file}.tmp`, JSON.stringify(value))
+  fs.renameSync(`${file}.tmp`, file)
+}
+const readBody = (req) =>
+  new Promise((resolve, reject) => {
+    let size = 0
+    const chunks = []
+    req.on("data", (c) => {
+      size += c.length
+      if (size > MAX_BODY) reject(new Error("too large"))
+      else chunks.push(c)
+    })
+    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")))
+    req.on("error", reject)
+  })
+const json = (res, status, value) => res.writeHead(status, { "content-type": "application/json", "cache-control": "no-store" }).end(JSON.stringify(value))
+
+async function handleStudy(req, res, url) {
+  if (url.pathname === "/study" && req.method === "GET")
+    return json(res, 200, readJson(STUDY, { version: 1, exportedAt: 0, videos: [], words: [] }))
+  if (url.pathname === "/study" && req.method === "PUT") {
+    const snap = JSON.parse(await readBody(req))
+    if (snap?.version !== 1 || !Array.isArray(snap.words) || !Array.isArray(snap.videos)) return json(res, 400, { error: "bad snapshot" })
+    writeJson(STUDY, snap)
+    return json(res, 200, { ok: true, words: snap.words.length })
+  }
+  if (url.pathname === "/study/reviews" && req.method === "GET") return json(res, 200, { reviews: readJson(REVIEWS, []) })
+  if (url.pathname === "/study/reviews" && req.method === "POST") {
+    const { reviews } = JSON.parse(await readBody(req))
+    if (!Array.isArray(reviews)) return json(res, 400, { error: "bad reviews" })
+    const all = readJson(REVIEWS, [])
+    all.push(...reviews.filter((r) => typeof r?.wordId === "number" && typeof r?.correct === "boolean"))
+    writeJson(REVIEWS, all)
+    return json(res, 200, { ok: true, total: all.length })
+  }
+  if (url.pathname === "/study/words" && req.method === "GET") return json(res, 200, { words: readJson(NEW_WORDS, []) })
+  if (url.pathname === "/study/words" && req.method === "POST") {
+    const { words } = JSON.parse(await readBody(req))
+    if (!Array.isArray(words)) return json(res, 400, { error: "bad words" })
+    const all = readJson(NEW_WORDS, [])
+    for (const w of words) {
+      if (typeof w?.colloquial !== "string" || !w.colloquial.trim() || typeof w.at !== "number") continue
+      // The phone retries a failed upload, so the same word can arrive twice.
+      if (!all.some((o) => o.at === w.at && o.colloquial === w.colloquial))
+        all.push({ colloquial: w.colloquial, jyutping: w.jyutping ?? null, meaning: w.meaning ?? null, at: w.at })
+    }
+    writeJson(NEW_WORDS, all)
+    return json(res, 200, { ok: true, total: all.length })
+  }
+  // The extension removes the words it has added, by their `at`.
+  if (url.pathname === "/study/words" && req.method === "DELETE") {
+    const { at } = JSON.parse(await readBody(req))
+    if (!Array.isArray(at)) return json(res, 400, { error: "bad at" })
+    const left = readJson(NEW_WORDS, []).filter((w) => !at.includes(w.at))
+    writeJson(NEW_WORDS, left)
+    return json(res, 200, { ok: true, left: left.length })
+  }
+  return false
+}
+
 const server = http.createServer(async (req, res) => {
   // Only the extension (and local tools) should call this.
   const origin = req.headers.origin ?? ""
@@ -225,9 +302,17 @@ const server = http.createServer(async (req, res) => {
   }
   res.setHeader("access-control-allow-origin", origin || "*")
   res.setHeader("access-control-allow-headers", "content-type")
+  res.setHeader("access-control-allow-methods", "GET, PUT, POST, DELETE, OPTIONS")
   if (req.method === "OPTIONS") return res.writeHead(204).end()
 
   const url = new URL(req.url, `http://localhost:${PORT}`)
+  if (url.pathname.startsWith("/study")) {
+    try {
+      if ((await handleStudy(req, res, url)) !== false) return
+    } catch (e) {
+      return json(res, 400, { error: e.message })
+    }
+  }
   if (req.method === "GET" && url.pathname === "/engines") {
     const engines = Object.entries(ENGINES).map(([id, e]) => ({ id, label: e.label, languages: e.languages, unavailable: e.available() }))
     return res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ engines }))
@@ -264,7 +349,7 @@ const server = http.createServer(async (req, res) => {
   res.writeHead(404).end()
 })
 
-server.listen(PORT, "127.0.0.1", () => {
-  console.log(`Pause & Ask transcriber on http://127.0.0.1:${PORT}`)
+server.listen(PORT, HOST, () => {
+  console.log(`Pause & Ask transcriber on http://${HOST}:${PORT}`)
   for (const [id, e] of Object.entries(ENGINES)) console.log(`  ${id.padEnd(18)} ${e.available() ?? "ready"}`)
 })

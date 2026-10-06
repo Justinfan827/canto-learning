@@ -4,15 +4,15 @@
  * when it shows and tells the host. Being an extension page, it shares the side panel's
  * dictionary, saved words and local database.
  */
-import { lineAt, lookup, regroup, senses, type LineWord } from "@pna/shared"
+import { examplesFor, lineAt, lookup, regroup, senses, type Examples, type LineWord } from "@pna/shared"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { Icon } from "~components/Icon"
 import { MomentCard, WordSheet } from "~components/Moment"
 import { formatTime } from "~components/Ruby"
-import { loadDict } from "~lib/dict"
+import { store } from "~lib/data"
+import { loadDict, loadExamples } from "~lib/dict"
 import "~lib/fonts"
-import { createLocalStore } from "~lib/localStore"
 import { loadSettings, type Settings } from "~lib/settings"
 import { speak } from "~lib/speech"
 import { createTutor } from "~lib/tutor"
@@ -25,7 +25,6 @@ import { useTutor } from "~lib/useTutor"
 
 import "../style.css"
 
-const store = createLocalStore()
 // No AI here: the popup is for quick lookups. Explanations live in the side panel.
 const tutor = createTutor(store, null, loadDict)
 const PANEL_CHECK_MS = 2000
@@ -105,6 +104,10 @@ function PausePopup() {
 
   const [focusIdx, setFocusIdx] = useState<number | null>(null)
   const [selWord, setSelWord] = useState<number | null>(null)
+  const [examples, setExamples] = useState<Examples | null>(null)
+  useEffect(() => {
+    if (selWord !== null && !examples) loadExamples().then(setExamples, (e) => console.warn(e))
+  }, [selWord, examples])
   const [loopIdx, setLoopIdx] = useState<number | null>(null)
   const [dismissed, setDismissed] = useState(false)
 
@@ -266,8 +269,11 @@ function PausePopup() {
           <WordSheet
             word={word}
             senses={dict ? senses(word.text, dict) : []}
+            examples={examples ? examplesFor(typeof dict?.[word.text] === "string" ? (dict[word.text] as string) : word.text, examples) : null}
+            onHearExample={(text) => speak(text)}
+            onAskExamples={null}
             saved={saved.words.has(word.colloquial ?? word.text)}
-            fromMs={line!.startMs}
+            from={{ ms: line!.startMs }}
             onSave={async () => {
               await t.saveWord(word, line!.idx)
               saved.refresh()

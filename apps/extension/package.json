@@ -5,30 +5,32 @@
   "description": "Pause a Cantonese YouTube video and ask a tutor about what was just said.",
   "private": true,
   "scripts": {
-    "dev": "node scripts/build-dict.mjs --if-missing && plasmo dev",
-    "build": "node scripts/build-dict.mjs --if-missing && plasmo build && node scripts/wrap-main-world.mjs",
+    "dev": "node scripts/build-dict.mjs --if-missing && node scripts/build-examples.mjs --if-missing && plasmo dev",
+    "build": "node scripts/build-dict.mjs --if-missing && node scripts/build-examples.mjs --if-missing && plasmo build && node scripts/wrap-main-world.mjs",
     "package": "pnpm build && plasmo package",
     "typecheck": "tsc --noEmit",
     "test": "vitest run lib",
     "smoke": "node e2e/smoke.mjs",
-    "dict": "node scripts/build-dict.mjs"
+    "dict": "node scripts/build-dict.mjs && node scripts/build-examples.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
+    "@pna/backend": "workspace:^",
     "@pna/shared": "workspace:*",
+    "convex": "^1.46.0",
+    "idb": "^8.0.0",
     "plasmo": "0.90.5",
     "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "@anthropic-ai/sdk": "^0.131.0",
-    "idb": "^8.0.0"
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
     "@types/chrome": "0.0.287",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
-    "typescript": "5.6.3",
     "fake-indexeddb": "^6.0.0",
-    "vitest": "^2.1.0",
-    "playwright-core": "1.56.1"
+    "playwright-core": "1.56.1",
+    "typescript": "5.6.3",
+    "vitest": "^2.1.0"
   },
   "manifest": {
     "permissions": [
@@ -41,7 +43,8 @@
       "https://api.anthropic.com/*",
       "https://openrouter.ai/*",
       "http://localhost/*",
-      "http://127.0.0.1/*"
+      "http://127.0.0.1/*",
+      "https://*.convex.cloud/*"
     ],
     "side_panel": {
       "default_path": "sidepanel.html"

@@ -4,6 +4,7 @@
 // transcribes on its own. Screenshots of each state go to e2e/screenshots/.
 // Run: pnpm build && xvfb-run -a node e2e/smoke.mjs   (set CHROMIUM_PATH if needed)
 import { chromium } from "playwright-core"
+import { execSync } from "child_process"
 import fs from "fs"
 
 const EXT = new URL("../build/chrome-mv3-prod", import.meta.url).pathname
@@ -75,9 +76,16 @@ await ctx.route("https://www.youtube.com/**", async (route) => {
 let releaseTranscript
 const transcriptHeld = new Promise((r) => (releaseTranscript = r))
 const transcribeCalls = []
+const studyPushes = []
 await ctx.route("http://127.0.0.1:8787/**", async (route) => {
   const url = new URL(route.request().url())
-  const cors = { "access-control-allow-origin": "*" }
+  const cors = { "access-control-allow-origin": "*", "access-control-allow-methods": "*", "access-control-allow-headers": "*" }
+  if (url.pathname === "/study") {
+    if (route.request().method() === "PUT") studyPushes.push(route.request().postDataJSON())
+    return route.fulfill({ status: route.request().method() === "OPTIONS" ? 204 : 200, contentType: "application/json", headers: cors, body: "{}" })
+  }
+  if (url.pathname === "/study/words")
+    return route.fulfill({ status: route.request().method() === "OPTIONS" ? 204 : 200, contentType: "application/json", headers: cors, body: JSON.stringify({ words: [] }) })
   if (url.pathname === "/engines")
     return route.fulfill({ contentType: "application/json", headers: cors, body: JSON.stringify({ engines: [
       { id: "whisper-cpp-turbo", label: "Whisper large-v3-turbo (whisper.cpp)", languages: "", unavailable: "not installed" },
@@ -141,6 +149,15 @@ if (process.env.DEBUG) console.log("LOGS", logs, await yt.evaluate(() => [docume
 const opt = await yt.evaluate(() => window.__setOption)
 console.log("track enabled:", JSON.stringify(opt))
 const tabId = await sw.evaluate(async () => (await chrome.tabs.query({ url: "https://www.youtube.com/*" }))[0].id)
+// CONVEX_URL + CONVEX_TOKEN run the same flow with saved words on the local Convex deployment
+// from `pnpm --filter @pna/backend dev`. It starts by emptying that deployment.
+const convex = process.env.CONVEX_URL ? { url: process.env.CONVEX_URL, token: process.env.CONVEX_TOKEN ?? "" } : null
+if (convex) execSync("npx convex run admin:clearAll", { cwd: new URL("../../../packages/backend", import.meta.url).pathname, stdio: "ignore" })
+if (convex) await sw.evaluate((c) => chrome.storage.local.set({ dataBackend: "convex", convexUrl: c.url, convexToken: c.token }), convex)
+const convexSnapshot = async () => {
+  const r = await fetch(`${convex.url}/api/query`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path: "study:snapshot", args: { token: convex.token }, format: "json" }) })
+  return (await r.json()).value
+}
 
 const panel = await ctx.newPage()
 await panel.setViewportSize({ width: 380, height: 720 })
@@ -165,17 +182,25 @@ await panel.locator(".moment .chip-w").last().click()
 await panel.waitForSelector(".sheet")
 await panel.waitForTimeout(300) // let the sheet finish rising
 console.log("no-AI word sheet:", (await panel.locator(".sheet").innerText()).replace(/\n/g, " | "))
+if (await panel.locator(".sheet .examples").count()) throw new Error("examples section shown for a word with none and no model")
 await panel.screenshot({ path: SHOTS + "3-word.png" })
 await panel.click(".sheet .save")
 await panel.waitForSelector(".sheet .save.done", { timeout: 5000 })
+if (convex) {
+  const snap = await convexSnapshot()
+  const w = snap.words.find((x) => x.colloquial === "古怪")
+  console.log("convex word:", w?.colloquial, "| sources:", w?.sources.map((s) => `${s.videoId}#${s.lineIdx}`))
+  if (!w?.sources.some((s) => s.videoId === VID)) throw new Error("saved word didn't reach Convex")
+}
 await panel.keyboard.press("Escape")
 await panel.waitForSelector(".sheet", { state: "detached" })
 console.log("saved badge:", await panel.locator(".ib .n").innerText(), "| saved underline:", await panel.locator(".moment .chip-w.saved").allInnerTexts())
 await panel.screenshot({ path: SHOTS + "2-paused-no-tutor.png" })
 
-// Drag across both words to regroup them, then undo.
+// Drag across the line's words to regroup them into one, then undo.
 {
   const chips = panel.locator(".moment .chip-w")
+  const split = await chips.count()
   const first = await chips.first().boundingBox()
   const last = await chips.last().boundingBox()
   await panel.mouse.move(first.x + 4, first.y + first.height / 2)
@@ -191,9 +216,31 @@ await panel.screenshot({ path: SHOTS + "2-paused-no-tutor.png" })
   const stored = await panel.evaluate(() => chrome.storage.local.get("groupings"))
   console.log("stored grouping:", JSON.stringify(stored.groupings))
   await panel.click(".regroup-hint .link")
-  await panel.waitForFunction(() => document.querySelectorAll(".moment .chip-w").length === 2)
+  await panel.waitForFunction((n) => document.querySelectorAll(".moment .chip-w").length === n, split)
   console.log("after undo:", await chips.allInnerTexts())
 }
+
+// Example sentences come from the bundled Tatoeba set, with Jyutping and English, no model needed.
+await yt.evaluate(async () => { const v = document.querySelector("video"); v.currentTime = 6.5; await v.play() })
+await panel.waitForSelector(".ln.now[data-idx='3']", { timeout: 5000 })
+await yt.evaluate(() => document.querySelector("video").pause())
+await panel.waitForFunction(() => document.querySelector(".moment .chip-w")?.textContent.startsWith("我"), null, { timeout: 5000 })
+await panel.locator(".moment .chip-w").first().click()
+await panel.waitForSelector(".sheet .examples .ex", { timeout: 5000 })
+{
+  const ex = panel.locator(".sheet .examples .ex").first()
+  console.log("examples for", await panel.locator(".sheet .dhead .hz").innerText(), ":", await panel.locator(".sheet .examples .ex").count(), "| first:", await ex.locator(".ex-yue").innerText(), "/", await ex.locator(".ex-jp").innerText(), "/", await ex.locator(".ex-en").innerText(), "| source:", await panel.locator(".sheet .src span").first().innerText())
+  if (!(await ex.locator(".ex-yue b").count()) || !(await ex.locator(".ex-jp").innerText()).trim()) throw new Error("example sentence missing the marked word or its Jyutping")
+}
+await panel.waitForTimeout(300)
+await panel.screenshot({ path: SHOTS + "3-examples.png" })
+await panel.keyboard.press("Escape")
+await panel.waitForSelector(".sheet", { state: "detached" })
+// Back to line 2 paused, where the rest of the test expects to be.
+await yt.evaluate(async () => { const v = document.querySelector("video"); v.currentTime = 4.5; await v.play() })
+await panel.waitForSelector(".ln.now[data-idx='2']", { timeout: 5000 })
+await yt.evaluate(() => document.querySelector("video").pause())
+await panel.waitForFunction(() => document.querySelector(".moment .chip-w")?.textContent.startsWith("這"), null, { timeout: 5000 })
 
 // Turn on Claude in settings.
 const setup = await ctx.newPage()
@@ -206,7 +253,7 @@ await setup.waitForSelector("text=Connected", { timeout: 10000 })
 console.log("setup: connected")
 await panel.bringToFront()
 await yt.evaluate(async () => { const v = document.querySelector("video"); v.currentTime = 2.5; await v.play() })
-await panel.waitForFunction(() => [...document.querySelectorAll(".ln[data-idx='1'] .w")].map((w) => w.firstChild?.textContent ?? "").join("").includes("佢") || document.querySelector(".ln[data-idx='1']")?.textContent.includes("佢"), null, { timeout: 10000 })
+await panel.waitForFunction(() => [...document.querySelectorAll(".ln[data-idx='1'] .w")].map((w) => w.firstChild?.textContent ?? "").join("").includes("佢") || document.querySelector(".ln[data-idx='1']")?.textContent.includes("佢"), null, { timeout: 10000, polling: 100 }) // poll on a timer: rAF stalls while another page has focus
 console.log("colloquial line 1:", await text(".ln[data-idx='1']"), "| english:", await panel.locator(".ln.now .en").count())
 
 // Play to 4.2s, then pause.
@@ -216,6 +263,12 @@ console.log("current line:", await text(".ln.now"))
 await yt.evaluate(() => document.querySelector("video").pause())
 await panel.waitForSelector(".moment .chip-w", { timeout: 10000 })
 console.log("card words:", await panel.locator(".moment .chip-w").allInnerTexts(), "| inferred:", await panel.locator(".moment .top").innerText())
+// With a model, a word with no bundled examples offers to ask the tutor for some.
+await panel.locator(".moment .chip-w").last().click()
+await panel.waitForSelector(".sheet .examples .act.ai", { timeout: 5000 })
+console.log("no-examples sheet:", await panel.locator(".sheet .examples").innerText())
+await panel.keyboard.press("Escape")
+await panel.waitForSelector(".sheet", { state: "detached" })
 await panel.click(".act.ai")
 await panel.waitForSelector(".answer .a >> text=gam3", { timeout: 10000 })
 console.log("answer:", await panel.locator(".answer .a").first().innerText())
@@ -251,6 +304,35 @@ await panel.click("button[aria-label='Saved words']")
 await panel.waitForSelector(".list .item")
 console.log("saved list:", (await panel.locator(".list .item").allInnerTexts()).map((t) => t.replace(/\n/g, " ")))
 await panel.screenshot({ path: SHOTS + "6-saved.png" })
+// A row opens the word's details in place, with a speaker and a link back to the video.
+const before = await yt.evaluate(() => document.querySelector("video").currentTime)
+await panel.click(".list .item >> nth=0")
+await panel.waitForSelector(".sheet")
+console.log("saved detail:", (await panel.locator(".sheet .dhead").innerText()).replace(/\n/g, " "), "| from:", (await panel.locator(".sheet .from-link").innerText()).replace(/\n/g, " "))
+if (!(await panel.locator(".sheet button[aria-label='Hear it']").count())) throw new Error("saved word detail has no speaker button")
+if (!(await panel.locator(".list").count())) throw new Error("clicking a saved word left the saved list")
+if ((await yt.evaluate(() => document.querySelector("video").currentTime)) !== before) throw new Error("clicking a saved word seeked the video")
+await panel.screenshot({ path: SHOTS + "6b-saved-detail.png" })
+await panel.keyboard.press("Escape")
+await panel.waitForSelector(".sheet", { state: "detached" })
+if (!(await panel.locator(".list button[aria-label^='Hear ']").count())) throw new Error("saved rows have no speaker button")
+
+// Add a word by hand: the dictionary fills Jyutping and meaning, and it lands at the top tagged as added by hand.
+await panel.click(".bar .pill >> text=Add word")
+await panel.fill(".add input.hz", "傾偈")
+await panel.waitForFunction(() => document.querySelectorAll(".add input")[1]?.value, null, { timeout: 5000 })
+const filled = await panel.locator(".add input").evaluateAll((els) => els.map((e) => e.value))
+console.log("add word filled:", JSON.stringify(filled))
+if (!filled[1] || !filled[2]) throw new Error("dictionary didn't fill the new word")
+await panel.screenshot({ path: SHOTS + "8-add-word.png" })
+await panel.click(".add button[type=submit]")
+await panel.waitForSelector(".add-note.ok", { timeout: 5000 })
+const top = (await panel.locator(".list .item").first().innerText()).replace(/\n/g, " ")
+console.log("after add:", await panel.locator(".add-note").innerText(), "| top item:", top)
+if (!top.includes("傾偈") || !top.includes("Added by hand")) throw new Error("added word isn't at the top of the list")
+await panel.fill(".add input.hz", "咁")
+console.log("duplicate hint:", await panel.locator(".add-note.warn").innerText())
+await panel.click(".add button[aria-label='Close']")
 await panel.click("text=Back to video")
 
 // Space plays; playing collapses the card.
@@ -258,7 +340,7 @@ await panel.locator("body").click({ position: { x: 5, y: 700 } }).catch(() => {}
 await panel.keyboard.press("Space")
 await panel.waitForTimeout(400)
 console.log("after Space paused:", await yt.evaluate(() => document.querySelector("video").paused), "| card:", await panel.locator(".moment").count(), "| hint:", await panel.locator(".hint").innerText())
-const words = await panel.evaluate(() => new Promise((res) => { const r = indexedDB.open("pause-and-ask"); r.onsuccess = () => { const q = r.result.transaction("words").objectStore("words").getAll(); q.onsuccess = () => res(q.result) } }))
+const words = convex ? (await convexSnapshot()).words : await panel.evaluate(() => new Promise((res) => { const r = indexedDB.open("pause-and-ask"); r.onsuccess = () => { const q = r.result.transaction("words").objectStore("words").getAll(); q.onsuccess = () => res(q.result) } }))
 console.log("stored words:", JSON.stringify(words.map((w) => [w.colloquial, w.jyutping, w.timesAsked])))
 
 // A video with no Chinese captions transcribes on its own, from the playhead.
@@ -288,5 +370,12 @@ await panel.click(".src-menu .srcopt:has-text('YouTube captions')")
 await panel.waitForSelector(".pill >> text=YouTube captions", { timeout: 10000 })
 await panel.waitForSelector(".lyrics .ln[data-idx='3'], .moment", { timeout: 5000 }).catch(() => {})
 console.log("back to YouTube:", await panel.locator(".bar .pill").innerText(), "| lines:", await panel.locator(".lyrics .ln").count(), "| card:", await text(".moment .big").catch(() => "-"))
+// With Convex the phone reads Convex, so nothing is pushed to the helper.
+const lastPush = convex ? await convexSnapshot() : studyPushes.at(-1)
+console.log(convex ? "convex snapshot:" : `study pushes: ${studyPushes.length} |`, "words:", lastPush?.words.map((w) => [w.colloquial, w.sources.length]), "| videos:", lastPush?.videos.map((v) => v.id))
+if (convex && studyPushes.length) throw new Error("pushed to the helper while on Convex")
+const fromVideos = lastPush?.words.filter((w) => w.source !== "manual") ?? []
+if (!fromVideos.length || !fromVideos.every((w) => w.sources.length)) throw new Error("study snapshot missing saved words or their source lines")
+if (!lastPush.words.some((w) => w.colloquial === "傾偈" && w.source === "manual" && w.jyutping)) throw new Error("study snapshot missing the word added by hand")
 console.log("errors:", logs.filter((l) => /error/i.test(l)).slice(0, 5))
 await ctx.close()

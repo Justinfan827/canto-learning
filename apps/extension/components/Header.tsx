@@ -30,6 +30,7 @@ export function Header(props: {
   savedCount: number
   menuOpen: boolean
   onSaved: () => void
+  onSquads: () => void
   onMenu: (open: boolean) => void
   onMore: () => void
   menu: ReactNode
@@ -108,6 +109,9 @@ export function Header(props: {
       <button className="ib" aria-label="Saved words" title="Saved words" onClick={props.onSaved}>
         <Icon name="star" />
         {props.savedCount > 0 && <span className="n">{props.savedCount > 99 ? "99+" : props.savedCount}</span>}
+      </button>
+      <button className="ib" aria-label="Squads" title="Squads" onClick={props.onSquads}>
+        <Icon name="people" />
       </button>
       <div className="menu-anchor" ref={menuRef}>
         <button
