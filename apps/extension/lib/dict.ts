@@ -1,5 +1,6 @@
-import type { Dict } from "@pna/shared"
+import type { Dict, Examples } from "@pna/shared"
 import dictUrl from "url:~assets/dict.dat"
+import examplesUrl from "url:~assets/examples.dat"
 
 let loading: Promise<Dict> | null = null
 
@@ -10,4 +11,15 @@ export function loadDict(): Promise<Dict> {
     return r.json()
   })
   return loading
+}
+
+let loadingExamples: Promise<Examples> | null = null
+
+/** The bundled example sentences, fetched when the first word sheet opens. */
+export function loadExamples(): Promise<Examples> {
+  loadingExamples ??= fetch(examplesUrl).then((r) => {
+    if (!r.ok) throw new Error(`Couldn't load the example sentences (${r.status})`)
+    return r.json()
+  })
+  return loadingExamples
 }

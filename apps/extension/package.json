@@ -5,13 +5,13 @@
   "description": "Pause a Cantonese YouTube video and ask a tutor about what was just said.",
   "private": true,
   "scripts": {
-    "dev": "node scripts/build-dict.mjs --if-missing && plasmo dev",
-    "build": "node scripts/build-dict.mjs --if-missing && plasmo build && node scripts/wrap-main-world.mjs",
+    "dev": "node scripts/build-dict.mjs --if-missing && node scripts/build-examples.mjs --if-missing && plasmo dev",
+    "build": "node scripts/build-dict.mjs --if-missing && node scripts/build-examples.mjs --if-missing && plasmo build && node scripts/wrap-main-world.mjs",
     "package": "pnpm build && plasmo package",
     "typecheck": "tsc --noEmit",
     "test": "vitest run lib",
     "smoke": "node e2e/smoke.mjs",
-    "dict": "node scripts/build-dict.mjs"
+    "dict": "node scripts/build-dict.mjs && node scripts/build-examples.mjs"
   },
   "dependencies": {
     "@pna/shared": "workspace:*",

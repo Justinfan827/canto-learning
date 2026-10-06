@@ -58,3 +58,13 @@ struct SnapshotTests {
         #expect(StudyStore(directory: dir).cards[due[0].id]?.reviews == 1)
     }
 }
+
+struct ExampleTests {
+    @Test func bundledExamplesHaveJyutpingAndEnglish() {
+        let examples = ExampleBank.bundled.examples(for: "鍾意")
+        #expect(!examples.isEmpty)
+        #expect(examples.count <= 3)
+        #expect(examples.allSatisfy { $0.yue.contains("鍾意") && !$0.jyutping.isEmpty && !$0.english.isEmpty && $0.source == "Tatoeba" })
+        #expect(ExampleBank.bundled.examples(for: "唔存在嘅詞").isEmpty)
+    }
+}
