@@ -1,21 +1,31 @@
 import Foundation
 
-/// Where study data comes from. Today that's the Pause & Ask helper on your
-/// computer; a hosted backend can implement the same two calls later.
+/// Where study data comes from: the Pause & Ask helper on your computer, or a
+/// Convex deployment. Only `StudyStore` talks to a backend; views never do.
 nonisolated protocol StudyBackend: Sendable {
     func fetchSnapshot() async throws -> StudySnapshot
     func upload(reviews: [StudyReview]) async throws
 }
 
+/// Which backend to sync with, chosen in Settings. The helper is the default.
+nonisolated enum BackendKind: String, CaseIterable, Sendable {
+    case computer
+    case convex
+}
+
 nonisolated enum BackendError: LocalizedError {
     case badURL
+    case convexNotSetUp
     case http(Int)
+    case server(String)
     case unsupported(Int)
 
     var errorDescription: String? {
         switch self {
         case .badURL: "The computer address isn't a valid URL."
-        case .http(let code): "The helper answered with HTTP \(code)."
+        case .convexNotSetUp: "Enter your Convex deployment URL and sync token."
+        case .http(let code): "The server answered with HTTP \(code)."
+        case .server(let message): message
         case .unsupported(let v): "The helper sent study data version \(v), which this app doesn't read yet."
         }
     }

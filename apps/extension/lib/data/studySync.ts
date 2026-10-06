@@ -1,6 +1,6 @@
 import type { Store } from "@pna/shared"
 
-import { TRANSCRIBER_URL } from "./transcriber"
+import { TRANSCRIBER_URL } from "../transcriber"
 
 const PUSH_DELAY_MS = 1500
 

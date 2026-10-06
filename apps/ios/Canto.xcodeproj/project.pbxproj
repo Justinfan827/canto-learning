@@ -28,6 +28,7 @@
 		AAD694E18D9CD9FD919F50B6 /* Scheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDCB53DCD4B75F867D101039 /* Scheduler.swift */; };
 		BC45C01261C588E4EA609A7C /* StudyBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25120545AF4F98F1B284304A /* StudyBackend.swift */; };
 		C34B050C1361D1829257A2CD /* Jyutping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94CFDAECDC4498E02A274B8E /* Jyutping.swift */; };
+		D0CF705C94C215994C8B07B5 /* ConvexBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD8A130CAA3BFFF56A3C7D0 /* ConvexBackend.swift */; };
 		DE313B5E301949C6AB097125 /* VideoDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FAA336BD85E7CBE0B2CAC31 /* VideoDetailView.swift */; };
 /* End PBXBuildFile section */
 
@@ -58,6 +59,7 @@
 		91E92C14E21C34E4B5ECFAC0 /* examples.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = examples.json; sourceTree = "<group>"; };
 		94CFDAECDC4498E02A274B8E /* Jyutping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Jyutping.swift; sourceTree = "<group>"; };
 		94D75235BBD4F201D107A1E0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		9BD8A130CAA3BFFF56A3C7D0 /* ConvexBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvexBackend.swift; sourceTree = "<group>"; };
 		9DEF59EF16D41AA9AC62A049 /* ToneMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToneMarks.swift; sourceTree = "<group>"; };
 		A72CD5CA716378311D6565E9 /* Study.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Study.swift; sourceTree = "<group>"; };
 		AD052DD7EDFF2F09A3D8F61F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -108,6 +110,7 @@
 			isa = PBXGroup;
 			children = (
 				1B723653B5D7CF61E6C6CF4B /* Examples.swift */,
+				9BD8A130CAA3BFFF56A3C7D0 /* ConvexBackend.swift */,
 				94CFDAECDC4498E02A274B8E /* Jyutping.swift */,
 				FDCB53DCD4B75F867D101039 /* Scheduler.swift */,
 				A72CD5CA716378311D6565E9 /* Study.swift */,
@@ -255,6 +258,7 @@
 			files = (
 				836022555801767C3681139E /* CantoApp.swift in Sources */,
 				39CEEFE3683761C6A4172B45 /* Examples.swift in Sources */,
+				D0CF705C94C215994C8B07B5 /* ConvexBackend.swift in Sources */,
 				631E32A209239735CE5EA643 /* FlashcardSession.swift in Sources */,
 				C34B050C1361D1829257A2CD /* Jyutping.swift in Sources */,
 				16928C912D13295ACE1A5C27 /* LibraryView.swift in Sources */,

@@ -3,7 +3,7 @@ import "fake-indexeddb/auto"
 import type { Dict } from "@pna/shared"
 import { expect, it } from "vitest"
 
-import { createLocalStore } from "./localStore"
+import { createLocalStore } from "./data/localStore"
 import { createTutor, type TutorAi } from "./tutor"
 
 const dict = async () => ({ 這麼: [["ze2 mo1", "so", "", 0]], 古怪: [["gu2 gwaai3", "strange", "", 0]] }) as Dict

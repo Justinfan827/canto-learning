@@ -25,13 +25,14 @@ The project is generated from `project.yml` with [XcodeGen](https://github.com/y
 | The app pulls and caches it | `GET /study`, `HelperBackend` + `StudyStore` |
 | Flashcard answers go back | `POST /study/reviews` → `study-reviews.json` |
 
-Everything stays on your own machines. To move to a hosted database later, serve the same two routes (or implement `StudyBackend` in `Canto/Model/StudyBackend.swift`); nothing else in the app changes. The extension doesn't apply phone reviews yet; they're stored for when it does.
+Everything stays on your own machines. To sync from anywhere instead, pick **Convex** under Library > Settings and enter the same deployment URL and sync token as the extension. `ConvexBackend` calls `study:snapshot` and `study:addReviews` over Convex's HTTP API; views only ever talk to `StudyStore`, which picks the backend. The extension doesn't apply phone reviews yet; they're stored for when it does.
 
 ## Pieces
 
 | File | Job |
 |---|---|
-| `Model/StudyStore.swift` | Cached snapshot, the phone's review schedule, the upload queue |
+| `Model/StudyStore.swift` | Cached snapshot, the phone's review schedule, the upload queue, which backend to sync with |
+| `Model/StudyBackend.swift`, `Model/ConvexBackend.swift` | The helper and Convex backends behind one protocol |
 | `Model/Scheduler.swift` | The same simplified SM-2 as `packages/shared/src/schedule.ts` |
 | `Views/LibraryView.swift` | Videos with their words, or all words with search |
 | `Views/WordDetailView.swift` | Characters, Jyutping with tone contours, meaning, written form, example sentences, source lines with "watch at" links |
@@ -48,4 +49,4 @@ Speech uses the phone's built-in Cantonese voice (zh-HK). If none is installed, 
 cd apps/ios && xcodebuild test -project Canto.xcodeproj -scheme Canto -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
 
-Screenshot shortcuts (launch arguments): `-tab review`, `-tab listen`, `-autostart YES` (opens the review), `-flipped YES`, `-video <id>`, `-word <id>`, `-serverURL <url>`.
+Screenshot shortcuts (launch arguments): `-tab review`, `-tab listen`, `-autostart YES` (opens the review), `-flipped YES`, `-video <id>`, `-word <id>`, `-serverURL <url>`, `-backend convex -convexURL <url> -convexToken <token>`.

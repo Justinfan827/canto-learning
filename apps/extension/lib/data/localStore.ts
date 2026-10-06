@@ -271,3 +271,18 @@ export function createLocalStore(name = "pause-and-ask"): Store {
     }
   }
 }
+
+/** Every row in the local database, for copying it to another backend. */
+export async function dumpLocalStore(name = "pause-and-ask") {
+  const d = await open(name)
+  const [videos, lines, words, encounters, questions, reviews] = await Promise.all([
+    d.getAll("videos"),
+    d.getAll("lines"),
+    d.getAll("words"),
+    d.getAll("encounters"),
+    d.getAll("questions"),
+    d.getAll("reviews")
+  ])
+  d.close()
+  return { videos, lines, words, encounters, questions, reviews }
+}

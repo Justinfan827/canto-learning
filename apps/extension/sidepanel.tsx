@@ -8,8 +8,7 @@ import { formatTime } from "~components/Ruby"
 import { SavedList } from "~components/SavedList"
 import { loadDict, loadExamples } from "~lib/dict"
 import "~lib/fonts"
-import { createLocalStore } from "~lib/localStore"
-import { withStudySync } from "~lib/studySync"
+import { store } from "~lib/data"
 import { aiKey, loadSettings, saveSettings, type Settings } from "~lib/settings"
 import { listen, speak, speechSupported } from "~lib/speech"
 import { aiFor, createTutor } from "~lib/tutor"
@@ -24,7 +23,6 @@ import { useTutor } from "~lib/useTutor"
 import "./style.css"
 
 const LISTEN_SILENCE_MS = 8000
-const store = withStudySync(createLocalStore())
 const openSetup = (hash = "") => chrome.tabs.create({ url: chrome.runtime.getURL("tabs/setup.html") + hash })
 
 function SidePanel() {
