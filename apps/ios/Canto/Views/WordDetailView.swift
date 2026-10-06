@@ -166,15 +166,18 @@ struct ExamplesSection: View {
                         Text(example.jyutping)
                             .font(.caption.monospaced())
                             .foregroundStyle(Palette.muted)
-                        Text(example.english)
-                            .font(.subheadline)
-                            .foregroundStyle(Palette.ink.opacity(0.8))
+                        if !example.english.isEmpty {
+                            Text(example.english)
+                                .font(.subheadline)
+                                .foregroundStyle(Palette.ink.opacity(0.8))
+                        }
                     }
                     .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            if let source = examples.first?.source, !source.isEmpty {
-                Text("Examples from \(source)")
+            let sources = examples.map(\.source).filter { !$0.isEmpty }.reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
+            if !sources.isEmpty {
+                Text("Examples from \(sources.joined(separator: ", "))")
                     .font(.caption2)
                     .foregroundStyle(Palette.faint)
             }

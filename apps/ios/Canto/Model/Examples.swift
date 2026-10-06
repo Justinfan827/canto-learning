@@ -48,8 +48,13 @@ nonisolated struct ExampleBank: Decodable, Sendable {
         return bank
     }()
 
+    /// Falls back to sentences that contain the word when the index doesn't list it, as the extension does.
     func examples(for word: String, max: Int = 3) -> [ExampleSentence] {
-        (words[word] ?? []).prefix(max).compactMap { i in
+        var ids = words[word] ?? []
+        if ids.isEmpty && word.count > 1 {
+            ids = Array(sentences.indices.lazy.filter { sentences[$0].yue.contains(word) }.prefix(max))
+        }
+        return ids.prefix(max).compactMap { i in
             guard sentences.indices.contains(i) else { return nil }
             let r = sentences[i]
             return ExampleSentence(yue: r.yue, jyutping: r.jyutping, english: r.english, source: sources.indices.contains(r.source) ? sources[r.source].name : "")

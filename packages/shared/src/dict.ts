@@ -115,9 +115,13 @@ export interface Sense {
   formal: string | null
 }
 
-/** Numbered senses for the word sheet: one per entry, or the parts of a single entry's gloss. */
+/**
+ * Numbered senses for the word sheet: one per entry, or the parts of a single entry's gloss. A phrase
+ * the dictionary doesn't have (時尚新女性) gets one sense per word in it instead ("時尚: fashion").
+ */
 export function senses(word: string, dict: Dict, max = 4): Sense[] {
   const entries = entriesFor(word, dict) ?? []
+  if (!entries.length) return [...word].length > 1 ? breakdown(word, dict).slice(0, max) : []
   const out: Sense[] = []
   for (const [jyutping, gloss, formal, canto] of entries) {
     const f = canto && formal && formal !== word ? formal : null
@@ -125,6 +129,17 @@ export function senses(word: string, dict: Dict, max = 4): Sense[] {
     for (const g of parts) if (g && !out.some((s) => s.gloss === g)) out.push({ jyutping, gloss: g, formal: f })
   }
   return out.slice(0, max)
+}
+
+function breakdown(word: string, dict: Dict): Sense[] {
+  const parts = segment(word, dict)
+  if (parts.length < 2) return []
+  return parts.flatMap((p) => {
+    const e = entriesFor(p, dict)?.[0]
+    if (!e?.[1]) return []
+    const [jyutping, gloss] = e
+    return [{ jyutping, gloss: `${p}: ${gloss.split(/\s*;\s*/).slice(0, 2).join("; ")}`, formal: null }]
+  })
 }
 
 /**

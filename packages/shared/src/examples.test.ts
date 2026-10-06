@@ -25,3 +25,10 @@ describe("examplesFor", () => {
     expect(examplesFor("返工", examples)).toEqual([])
   })
 })
+
+describe("examplesFor fallback", () => {
+  it("finds sentences containing a phrase the index doesn't list", () => {
+    expect(examplesFor("睇書", examples).map((e) => e.yue)).toEqual(["我鍾意睇書。"])
+    expect(examplesFor("睇", examples)).toEqual([])
+  })
+})

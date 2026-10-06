@@ -18,9 +18,17 @@ export interface Example {
   source: string
 }
 
-/** Example sentences that use `word`, best first. */
+/**
+ * Example sentences that use `word`, best first. A word the index doesn't list (the sentence split
+ * it differently, or it's a phrase someone grouped by hand) falls back to sentences that contain it.
+ */
 export function examplesFor(word: string, examples: Examples, max = 3): Example[] {
-  return (examples.words[word] ?? []).slice(0, max).map((i) => {
+  let ids = examples.words[word] ?? []
+  if (!ids.length && [...word].length > 1) {
+    ids = []
+    for (let i = 0; i < examples.sentences.length && ids.length < max; i++) if (examples.sentences[i][0].includes(word)) ids.push(i)
+  }
+  return ids.slice(0, max).map((i) => {
     const [yue, jyutping, english, source] = examples.sentences[i]
     return { yue, jyutping, english, source: examples.sources[source]?.name ?? "" }
   })

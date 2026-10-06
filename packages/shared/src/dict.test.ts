@@ -1,6 +1,6 @@
 import { expect, it } from "vitest"
 
-import { lookup, regroup, segment, type Dict } from "./dict"
+import { lookup, regroup, segment, senses, type Dict } from "./dict"
 
 const dict: Dict = {
   佢: [["keoi5", "he; she; it", "他", 1]],
@@ -35,4 +35,13 @@ it("regroups a line by character range", () => {
   expect(regroup(words, 4, 5)).toEqual(["也不", "知道", "為", "什麼"]) // split a word
   expect(regroup(words, 0, 7)).toEqual(["也不知道為什麼"])
   expect(regroup(words, 2, 2)).toEqual(words)
+})
+
+it("breaks a phrase the dictionary doesn't have into its words' senses", () => {
+  expect(senses("古怪", dict)).toEqual([{ jyutping: "gu2 gwaai3", gloss: "strange", formal: null }])
+  expect(senses("佢睇到", dict)).toEqual([
+    { jyutping: "keoi5", gloss: "佢: he; she", formal: null },
+    { jyutping: "tai2 dou2", gloss: "睇到: to see", formal: null }
+  ])
+  expect(senses("喺", dict)).toEqual([])
 })

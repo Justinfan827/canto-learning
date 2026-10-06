@@ -1,4 +1,4 @@
-import type { Dict, NewWord, Word } from "@pna/shared"
+import { senses, type Dict, type NewWord, type Word } from "@pna/shared"
 import { useState } from "react"
 
 import type { SavedWord } from "~lib/useSaved"
@@ -84,7 +84,7 @@ export function SavedList(props: {
               </span>
               <span className="m">
                 <i>{s.word.jyutping}</i>
-                {s.word.meaning}
+                {s.word.meaning || (props.dict ? senses(s.word.colloquial, props.dict, 3).map((x) => x.gloss).join("; ") : "")}
               </span>
               <span className="t">{when(s) ? ago(when(s)!) : ""}</span>
               <span className="from">

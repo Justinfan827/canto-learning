@@ -224,7 +224,7 @@ export function WordSheet(props: {
                     {markWord(ex.yue, head)}
                   </p>
                   <p className="ex-jp">{ex.jyutping}</p>
-                  <p className="ex-en">{ex.english}</p>
+                  {ex.english && <p className="ex-en">{ex.english}</p>}
                 </div>
               </div>
             ))}
@@ -244,7 +244,7 @@ export function WordSheet(props: {
           </button>
         )}
         <div className="src">
-          <span>{props.examples?.length ? `CC-Canto · examples ${props.examples[0].source} · offline` : "CC-Canto · offline"}</span>
+          <span>{props.examples?.length ? `CC-Canto · examples ${[...new Set(props.examples.map((e) => e.source))].join(", ")} · offline` : "CC-Canto · offline"}</span>
           {props.from && !props.from.onOpen && <span>from {formatTime(props.from.ms)}</span>}
         </div>
       </div>
