@@ -40,14 +40,16 @@ export function useTranscriber(
   player: PlayerState,
   engineSetting: string,
   preferLocal: boolean,
-  setLocalCaptions: (videoId: string, lines: CaptionLine[]) => void
+  setLocalCaptions: (videoId: string, lines: CaptionLine[]) => void,
+  /** False while another page (the side panel) is already transcribing this video. */
+  enabled = true
 ) {
   const [status, setStatus] = useState<TranscriberStatus>({ kind: "off" })
   const [attempt, setAttempt] = useState(0)
   /** A second, written-Chinese transcript of the same audio, for the 書面語 view. */
   const [written, setWritten] = useState<CaptionLine[] | null>(null)
   const videoId = player.video?.id ?? null
-  const needed = !!videoId && (preferLocal || (!pickTrack(player.tracks) && player.captionSource !== "track" && player.captionSource !== "screen"))
+  const needed = enabled && !!videoId && (preferLocal || (!pickTrack(player.tracks) && player.captionSource !== "track" && player.captionSource !== "screen"))
   /** The helper's engines, for the caption-source menu; null when the helper isn't running. */
   const [engines, setEngines] = useState<Engine[] | null>(null)
   useEffect(() => {

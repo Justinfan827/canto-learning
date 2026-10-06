@@ -177,6 +177,12 @@ export function DisplayMenu({
         </div>
         <Toggle on={s.showEnglish && hasAi} disabled={!hasAi} onChange={(v) => onChange({ showEnglish: v })} label="English" />
       </label>
+      <label className="row">
+        <div>
+          Pop up when paused<small>The paused line over YouTube's sidebar, while this panel is closed</small>
+        </div>
+        <Toggle on={s.pausePopup} onChange={(v) => onChange({ pausePopup: v })} label="Pop up when paused" />
+      </label>
       <div className="row">
         <div>Text size</div>
         <Seg

@@ -23,20 +23,28 @@ const EMPTY: PlayerState = {
   timeMs: 0
 }
 
-async function activeYouTubeTab() {
+async function activeYouTubeTab(own: boolean) {
   // ?tab=<id> pins the panel to one tab when it's opened as a page (used by the smoke test).
   const pinned = Number(new URLSearchParams(location.search).get("tab"))
-  const [tab] = pinned ? [await chrome.tabs.get(pinned)] : await chrome.tabs.query({ active: true, currentWindow: true })
+  // A page framed inside the YouTube tab (the pause popup) follows that tab, active or not.
+  const [tab] = pinned
+    ? [await chrome.tabs.get(pinned)]
+    : own
+      ? [(await chrome.tabs.getCurrent()) ?? (await chrome.tabs.query({ active: true, currentWindow: true }))[0]]
+      : await chrome.tabs.query({ active: true, currentWindow: true })
   return tab?.id != null && tab.url?.startsWith("https://www.youtube.com/") ? tab : null
 }
 
-/** Mirrors the state of the YouTube tab in this window and exposes player controls. */
-export function usePlayer() {
+/**
+ * Mirrors the state of the YouTube tab in this window and exposes player controls.
+ * With `ownTab`, follows the tab this page is framed in instead of the active one.
+ */
+export function usePlayer({ ownTab = false } = {}) {
   const [state, setState] = useState<PlayerState>(EMPTY)
   const tabRef = useRef<number | null>(null)
 
   const sync = useCallback(async () => {
-    const tab = await activeYouTubeTab()
+    const tab = await activeYouTubeTab(ownTab)
     tabRef.current = tab?.id ?? null
     if (!tab?.id) return setState(EMPTY)
     try {
@@ -55,7 +63,7 @@ export function usePlayer() {
       // Content script not injected yet (tab opened before install); a reload fixes it.
       setState({ ...EMPTY, tabId: tab.id })
     }
-  }, [])
+  }, [ownTab])
 
   useEffect(() => {
     sync()
@@ -90,7 +98,8 @@ export function usePlayer() {
       })
     }
     chrome.runtime.onMessage.addListener(onMsg)
-    const onActivated = () => sync()
+    // The framed popup's tab never changes, so switching tabs needn't re-sync it.
+    const onActivated = () => !ownTab && sync()
     // Also re-check when any tab finishes loading or changes URL: the panel may have opened
     // on another page before this tab went to YouTube, so tabRef can still be empty.
     const onUpdated = (_id: number, info: chrome.tabs.TabChangeInfo) => {
@@ -103,7 +112,7 @@ export function usePlayer() {
       chrome.tabs.onActivated.removeListener(onActivated)
       chrome.tabs.onUpdated.removeListener(onUpdated)
     }
-  }, [sync])
+  }, [sync, ownTab])
 
   const command = useCallback((msg: Record<string, unknown>) => {
     if (tabRef.current != null) chrome.tabs.sendMessage(tabRef.current, msg).catch(() => {})

@@ -21,6 +21,8 @@ In Chrome, open `chrome://extensions`, turn on Developer mode, and **Load unpack
 - **AI tutor**: a free OpenRouter key (openrouter.ai/keys), a local server URL, or a Claude API key. Keys are stored only in this browser profile.
 - **Microphone**: allow it here (the side panel can't show Chrome's mic prompt itself), and choose whether spoken questions are in Cantonese or English.
 
+**Pause popup.** With the side panel closed, pausing a video shows the paused line in a small card over YouTube's sidebar (or over the player's right edge in theater mode). Tap a word for its meaning and save it, step to the previous or next line with ↑ ↓, and press Space to carry on watching. The panel icon in the card opens the full transcript. Turn it off in the Aa menu or in settings.
+
 Open a YouTube video and click the toolbar icon to open the side panel. The panel header shows where the captions came from; the star opens saved words, **Aa** has display options (Jyutping, 口語 / 書面語, English, text size) and **⋯** opens settings. Press Space in the panel to play or pause.
 
 ## Videos without captions

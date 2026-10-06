@@ -84,6 +84,8 @@ await ctx.route("http://127.0.0.1:8787/**", async (route) => {
     if (route.request().method() === "PUT") studyPushes.push(route.request().postDataJSON())
     return route.fulfill({ status: route.request().method() === "OPTIONS" ? 204 : 200, contentType: "application/json", headers: cors, body: "{}" })
   }
+  if (url.pathname === "/study/words")
+    return route.fulfill({ status: route.request().method() === "OPTIONS" ? 204 : 200, contentType: "application/json", headers: cors, body: JSON.stringify({ words: [] }) })
   if (url.pathname === "/engines")
     return route.fulfill({ contentType: "application/json", headers: cors, body: JSON.stringify({ engines: [
       { id: "whisper-cpp-turbo", label: "Whisper large-v3-turbo (whisper.cpp)", languages: "", unavailable: "not installed" },
@@ -195,9 +197,10 @@ await panel.waitForSelector(".sheet", { state: "detached" })
 console.log("saved badge:", await panel.locator(".ib .n").innerText(), "| saved underline:", await panel.locator(".moment .chip-w.saved").allInnerTexts())
 await panel.screenshot({ path: SHOTS + "2-paused-no-tutor.png" })
 
-// Drag across both words to regroup them, then undo.
+// Drag across the line's words to regroup them into one, then undo.
 {
   const chips = panel.locator(".moment .chip-w")
+  const split = await chips.count()
   const first = await chips.first().boundingBox()
   const last = await chips.last().boundingBox()
   await panel.mouse.move(first.x + 4, first.y + first.height / 2)
@@ -213,7 +216,7 @@ await panel.screenshot({ path: SHOTS + "2-paused-no-tutor.png" })
   const stored = await panel.evaluate(() => chrome.storage.local.get("groupings"))
   console.log("stored grouping:", JSON.stringify(stored.groupings))
   await panel.click(".regroup-hint .link")
-  await panel.waitForFunction(() => document.querySelectorAll(".moment .chip-w").length === 2)
+  await panel.waitForFunction((n) => document.querySelectorAll(".moment .chip-w").length === n, split)
   console.log("after undo:", await chips.allInnerTexts())
 }
 
@@ -327,7 +330,7 @@ await panel.waitForSelector(".add-note.ok", { timeout: 5000 })
 const top = (await panel.locator(".list .item").first().innerText()).replace(/\n/g, " ")
 console.log("after add:", await panel.locator(".add-note").innerText(), "| top item:", top)
 if (!top.includes("傾偈") || !top.includes("Added by hand")) throw new Error("added word isn't at the top of the list")
-await panel.fill(".add input.hz", "古怪")
+await panel.fill(".add input.hz", "咁")
 console.log("duplicate hint:", await panel.locator(".add-note.warn").innerText())
 await panel.click(".add button[aria-label='Close']")
 await panel.click("text=Back to video")

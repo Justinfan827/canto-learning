@@ -292,6 +292,36 @@ rt { font: 400 9.5px/1 var(--f-ui); color: var(--muted); letter-spacing: 0; padd
 .regroup-hint b { color: var(--fg); font-weight: 500; }
 .regroup-hint.muted-hint { color: var(--faint); }
 
+/* ---------- pause popup (tabs/passive) ---------- */
+/* YouTube's own theme wins over the system one: the host passes it in. */
+:root[data-theme="light"] {
+  --bg: #ffffff; --fg: #17201c; --muted: #7b8682; --faint: #b5bdb9; --line: #e8ecea; --soft: #f3f5f4;
+  --jade: #0b7a5c; --jade-soft: #e2f2ec; --amber: #b45309; --amber-soft: #fdf1df; --red: #b42318; --on-accent: #ffffff;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #1a1f1d; --fg: #eef2ef; --muted: #8f9a96; --faint: #55605b; --line: #2c3330; --soft: #232927;
+  --jade: #4cc29b; --jade-soft: #173229; --amber: #f0a64a; --amber-soft: #33240f; --red: #f0796d; --on-accent: #0f1412;
+  color-scheme: dark;
+}
+html:has(.pp), html:has(.pp) body { height: auto; min-height: 0; background: transparent; overflow: hidden; }
+.pp { padding: 6px; display: grid; gap: 6px; background: var(--bg); }
+.pp .moment .acts { display: none; }
+.pp-more { display: grid; gap: 6px; animation: fade 0.18s ease-out; }
+.pp-bar { display: flex; align-items: center; gap: 2px; padding: 0 2px; }
+.pp-bar .ib.on { color: var(--jade); }
+.pp-time { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; margin-left: 6px; }
+.pp .ib:disabled { opacity: 0.35; background: none; }
+.pp .moment { margin: 0; gap: 10px; }
+.pp .moment .top, .pp .regroup-hint.muted-hint { display: none; }
+.pp .moment .regroup-hint { margin-top: -4px; }
+/* The word sheet sits under the line instead of sliding over it. */
+.pp .scrim { display: none; }
+.pp .sheet { position: static; max-height: none; overflow: visible; border: 0; box-shadow: none; border-radius: 0; padding: 2px 10px 0; animation: none; gap: 8px; }
+.pp .sheet .grab { display: none; }
+.pp-empty { padding: 4px 10px 2px; font-size: 13px; color: var(--muted); display: grid; gap: 8px; justify-items: start; }
+.pp-empty p { margin: 0; }
+
 /* caption source menu, from the pill */
 .menu-anchor.left { min-width: 0; }
 .pop.src-menu { left: 0; right: auto; top: 30px; width: 270px; gap: 2px; }

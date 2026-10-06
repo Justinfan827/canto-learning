@@ -119,8 +119,8 @@
 		55E29A63D79AA6C020166808 /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				1B723653B5D7CF61E6C6CF4B /* Examples.swift */,
 				9BD8A130CAA3BFFF56A3C7D0 /* ConvexBackend.swift */,
+				1B723653B5D7CF61E6C6CF4B /* Examples.swift */,
 				94CFDAECDC4498E02A274B8E /* Jyutping.swift */,
 				FDCB53DCD4B75F867D101039 /* Scheduler.swift */,
 				97162D03C9D7005F5E12A28D /* Squads.swift */,
@@ -270,8 +270,8 @@
 			files = (
 				835159046A61EA875ABA7644 /* AddWordView.swift in Sources */,
 				836022555801767C3681139E /* CantoApp.swift in Sources */,
-				39CEEFE3683761C6A4172B45 /* Examples.swift in Sources */,
 				D0CF705C94C215994C8B07B5 /* ConvexBackend.swift in Sources */,
+				39CEEFE3683761C6A4172B45 /* Examples.swift in Sources */,
 				631E32A209239735CE5EA643 /* FlashcardSession.swift in Sources */,
 				C34B050C1361D1829257A2CD /* Jyutping.swift in Sources */,
 				16928C912D13295ACE1A5C27 /* LibraryView.swift in Sources */,

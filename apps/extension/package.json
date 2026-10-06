@@ -51,6 +51,16 @@
     },
     "action": {
       "default_title": "Open Pause & Ask"
-    }
+    },
+    "web_accessible_resources": [
+      {
+        "resources": [
+          "tabs/passive.html"
+        ],
+        "matches": [
+          "https://www.youtube.com/*"
+        ]
+      }
+    ]
   }
 }
