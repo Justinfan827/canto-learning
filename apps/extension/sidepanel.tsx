@@ -6,6 +6,7 @@ import { Lyrics, type LyricLine } from "~components/Lyrics"
 import { Dock, MomentCard, Thread, WordSheet } from "~components/Moment"
 import { formatTime } from "~components/Ruby"
 import { SavedList } from "~components/SavedList"
+import { Squads } from "~components/Squads"
 import { loadDict, loadExamples } from "~lib/dict"
 import "~lib/fonts"
 import { store } from "~lib/data"
@@ -48,7 +49,7 @@ function SidePanel() {
   const saved = useSaved(store)
   const tr = useTranscriber(state, settings?.transcribeEngine ?? "auto", !!settings?.preferLocal, setLocalCaptions)
 
-  const [view, setView] = useState<"video" | "saved">("video")
+  const [view, setView] = useState<"video" | "saved" | "squads">("video")
   const [menuOpen, setMenuOpen] = useState(false)
   const [focusIdx, setFocusIdx] = useState<number | null>(null)
   const [selWord, setSelWord] = useState<number | null>(null)
@@ -207,6 +208,12 @@ function SidePanel() {
   }
 
   if (!settings || !tutor) return null
+  if (view === "squads")
+    return (
+      <div className={"panel size-" + settings.textSize}>
+        <Squads defaultUrl={process.env.PLASMO_PUBLIC_SQUADS_URL || settings.convexUrl} onBack={() => setView("video")} />
+      </div>
+    )
   if (view === "saved")
     return (
       <div className={"panel size-" + settings.textSize}>
@@ -256,6 +263,7 @@ function SidePanel() {
       menuOpen={menuOpen}
       onMenu={setMenuOpen}
       onSaved={() => setView("saved")}
+      onSquads={() => setView("squads")}
       onMore={() => openSetup()}
       menu={<DisplayMenu s={settings} hasAi={hasAi} canFormal={canFormal} onChange={(p) => saveSettings(p)} />}
     />

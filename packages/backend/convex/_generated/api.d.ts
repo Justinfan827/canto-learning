@@ -11,6 +11,7 @@
 import type * as admin from "../admin.js";
 import type * as importLocal from "../importLocal.js";
 import type * as lib from "../lib.js";
+import type * as squads from "../squads.js";
 import type * as store from "../store.js";
 import type * as study from "../study.js";
 
@@ -24,6 +25,7 @@ declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   importLocal: typeof importLocal;
   lib: typeof lib;
+  squads: typeof squads;
   store: typeof store;
   study: typeof study;
 }>;
