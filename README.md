@@ -1,6 +1,6 @@
 # Pause & Ask
 
-A Chrome extension that turns Cantonese YouTube videos into lessons. While the video plays, the side panel shows the captions like lyrics, with Jyutping over the current line. Pause, tap any word for its meaning from a bundled offline dictionary, and save the words you don't know with the moment they came from. No API key needed for that.
+A Chrome extension that turns Cantonese YouTube videos into lessons. While the video plays, the side panel shows the captions like lyrics, with Jyutping over the current line. Pause, tap any word for its meaning and example sentences from a bundled offline dictionary, and save the words you don't know with the moment they came from. No API key needed for that.
 
 AI is an add-on: with a model set up, the paused line gets an English translation and an Explain button, the tutor answers questions by voice or text right under the line, and the Aa menu can switch the captions between spoken (口語) and written (書面語) Chinese. The model can be a free one on OpenRouter (default `qwen/qwen3.8-27b:free`), a local OpenAI-compatible server such as Ollama, or Claude.
 
@@ -53,6 +53,7 @@ curl -LO https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sile
 | Side panel | `apps/extension/sidepanel.tsx`, `apps/extension/components/` | Read-along transcript (`Lyrics`), paused card, word sheet and tutor answers (`Moment`), saved words (`SavedList`), header and Aa menu (`Header`) |
 | Tutor | `apps/extension/lib/tutor.ts` | App logic: save captions, convert registers, split lines into words, stream answers, log taught words |
 | Dictionary | `packages/shared/src/dict.ts`, `apps/extension/scripts/build-dict.mjs` | Longest-match word splitting and lookups over CC-Canto + CC-CEDICT with Cantonese readings, built into `assets/dict.dat` |
+| Example sentences | `packages/shared/src/examples.ts`, `apps/extension/scripts/build-examples.mjs` | Tatoeba's Cantonese sentences with English, Jyutping filled in from the dictionary, indexed by the words they use; built into `assets/examples.dat` and `apps/ios/Canto/Resources/examples.json` |
 | Claude calls | `apps/extension/lib/ai.ts` | Prompts and schemas; Haiku 4.5 for conversion and word extraction (structured outputs), Sonnet 5.5 for streamed answers |
 | Other models | `apps/extension/lib/openaiCompat.ts` | The same prompts over any OpenAI-compatible endpoint (OpenRouter, Ollama, LM Studio) |
 | Transcriber | `apps/transcriber/server.mjs`, `apps/extension/lib/useTranscriber.ts` | Local speech-to-text for videos without captions, started automatically from the playhead; lines go to the bridge as `local` captions |
@@ -79,4 +80,4 @@ The smoke test loads the built extension in Chromium against a mock YouTube page
 
 ## Dictionary data
 
-The dictionary is built from [CC-Canto](https://cantonese.org) and its Cantonese readings for CC-CEDICT (© Pleco Inc.), and [CC-CEDICT](https://www.mdbg.net/chinese/dictionary?page=cc-cedict) (© MDBG), all under [CC BY-SA](https://creativecommons.org/licenses/by-sa/3.0/). `pnpm --filter extension dict` rebuilds it.
+The dictionary is built from [CC-Canto](https://cantonese.org) and its Cantonese readings for CC-CEDICT (© Pleco Inc.), and [CC-CEDICT](https://www.mdbg.net/chinese/dictionary?page=cc-cedict) (© MDBG), all under [CC BY-SA](https://creativecommons.org/licenses/by-sa/3.0/). Example sentences are Cantonese sentences from [Tatoeba](https://tatoeba.org) with their English translations, under [CC BY 2.0 FR](https://creativecommons.org/licenses/by/2.0/fr/); about 6,000 sentences covering 5,000 words. Their Jyutping is built word by word from the dictionary, so a character with several readings can occasionally get the wrong one. Words with no bundled example get an "Ask the tutor for examples" button when a model is set up. `pnpm --filter extension dict` rebuilds both.

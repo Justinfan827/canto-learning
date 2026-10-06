@@ -178,6 +178,15 @@ rt { font: 400 9.5px/1 var(--f-ui); color: var(--muted); letter-spacing: 0; padd
 .senses li::marker { color: var(--muted); font: 11px var(--f-mono); }
 .senses .sj { font: 11px var(--f-mono); color: var(--muted); }
 .sheet .muted { margin: 0; }
+.examples { display: grid; gap: 8px; }
+.examples h3 { margin: 0; font: 600 11px var(--f-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.examples .ex { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start; }
+.examples p { margin: 0; }
+.examples .ex-yue { font: 15px/1.4 var(--f-zh); }
+.examples .ex-yue b { color: var(--jade); font-weight: 600; }
+.examples .ex-jp { font: 11px var(--f-mono); color: var(--muted); }
+.examples .ex-en { font-size: 13px; color: var(--muted); }
+.examples .act { justify-self: start; }
 .reg { display: flex; gap: 8px; font-size: 12.5px; flex-wrap: wrap; }
 .reg span { background: var(--soft); border-radius: var(--r-s); padding: 3px 8px; font-family: var(--f-ui); }
 .reg b { font-family: var(--f-zh); font-weight: 500; }
