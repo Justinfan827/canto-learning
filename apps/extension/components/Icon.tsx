@@ -46,6 +46,7 @@ const PATHS = {
   spark: (
     <path fill="currentColor" d="M12 2.5l1.9 6.1 6.1 1.9-6.1 1.9L12 18.5l-1.9-6.1L4 10.5l6.1-1.9zM18.5 15l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z" />
   ),
+  play: <path fill="currentColor" d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" />,
   pause: (
     <g fill="currentColor">
       <rect x="6" y="5" width="4" height="14" rx="1" />

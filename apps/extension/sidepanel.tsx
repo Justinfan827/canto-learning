@@ -1,4 +1,4 @@
-import { alignByTime, examplesFor, lineAt, lookup, pickTrack, regroup, senses, trackLabel, transcriptCoverage, type Examples, type LineWord, type TaughtWord } from "@pna/shared"
+import { alignByTime, examplesFor, lineAt, lookup, pickTrack, regroup, senses, trackLabel, transcriptCoverage, type Examples, type LineWord, type Sense, type TaughtWord, type Dict } from "@pna/shared"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { DisplayMenu, Header, type Pill, type SourceOption } from "~components/Header"
@@ -50,6 +50,7 @@ function SidePanel() {
   const tr = useTranscriber(state, settings?.transcribeEngine ?? "auto", !!settings?.preferLocal, setLocalCaptions)
 
   const [view, setView] = useState<"video" | "saved" | "squads">("video")
+  const [savedSel, setSavedSel] = useState<SavedWord | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [focusIdx, setFocusIdx] = useState<number | null>(null)
   const [selWord, setSelWord] = useState<number | null>(null)
@@ -62,8 +63,8 @@ function SidePanel() {
 
   const [examples, setExamples] = useState<Examples | null>(null)
   useEffect(() => {
-    if (selWord !== null && !examples) loadExamples().then(setExamples, (e) => console.warn(e))
-  }, [selWord, examples])
+    if ((selWord !== null || savedSel) && !examples) loadExamples().then(setExamples, (e) => console.warn(e))
+  }, [selWord, savedSel, examples])
   const hasAi = !!tutor?.hasAi
   // Written Chinese for each line from a second local transcript, when there is one.
   const written = useMemo(() => (tr.written ? alignByTime(state.lines, tr.written) : null), [state.lines, tr.written])
@@ -175,7 +176,8 @@ function SidePanel() {
     const onKey = (e: KeyboardEvent) => {
       const typing = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement
       if (e.key === "Escape") {
-        if (selWord != null) setSelWord(null)
+        if (savedSel) setSavedSel(null)
+        else if (selWord != null) setSelWord(null)
         else setMenuOpen(false)
       } else if (e.code === "Space" && !typing && view === "video") {
         e.preventDefault()
@@ -185,7 +187,7 @@ function SidePanel() {
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [selWord, state.paused, play, pause, view])
+  }, [selWord, savedSel, state.paused, play, pause, view])
 
   const onSeek = useCallback(
     (l: { idx: number; startMs: number }) => {
@@ -214,29 +216,51 @@ function SidePanel() {
         <Squads defaultUrl={process.env.PLASMO_PUBLIC_SQUADS_URL || settings.convexUrl} onBack={() => setView("video")} />
       </div>
     )
-  if (view === "saved")
+  if (view === "saved") {
+    const openSource = (s: SavedWord) => {
+      if (!s.at) return
+      if (s.at.videoId === state.video?.id) seek(s.at.startMs)
+      else if (state.tabId != null)
+        chrome.tabs.update(state.tabId, { url: `https://www.youtube.com/watch?v=${s.at.videoId}&t=${Math.floor(s.at.startMs / 1000)}s` })
+      setSavedSel(null)
+      setView("video")
+    }
+    const sel = savedSel ? savedDetail(savedSel, dict) : null
     return (
       <div className={"panel size-" + settings.textSize}>
         <SavedList
           list={saved.list}
           videoId={state.video?.id ?? null}
           dict={dict}
-          onBack={() => setView("video")}
           onAdd={async (w) => {
             const r = await store.addWord(w)
             await saved.refresh()
             return r
           }}
-          onOpen={(s: SavedWord) => {
-            if (!s.at) return
-            if (s.at.videoId === state.video?.id) seek(s.at.startMs)
-            else if (state.tabId != null)
-              chrome.tabs.update(state.tabId, { url: `https://www.youtube.com/watch?v=${s.at.videoId}&t=${Math.floor(s.at.startMs / 1000)}s` })
+          onBack={() => {
+            setSavedSel(null)
             setView("video")
           }}
+          onOpen={setSavedSel}
+          onHear={(s) => speak(s.word.colloquial)}
         />
+        {savedSel && sel && (
+          <WordSheet
+            word={sel.word}
+            senses={sel.senses}
+            examples={examples ? examplesFor(typeof dict?.[sel.word.text] === "string" ? (dict[sel.word.text] as string) : sel.word.text, examples) : null}
+            onHearExample={(text) => speak(text)}
+            onAskExamples={null}
+            saved
+            from={savedSel.at ? { ms: savedSel.at.startMs, title: savedSel.at.videoTitle, onOpen: () => openSource(savedSel) } : null}
+            onSave={() => {}}
+            onHear={() => speak(sel.word.text)}
+            onClose={() => setSavedSel(null)}
+          />
+        )}
       </div>
     )
+  }
   const openSaved = () => setView("saved")
   if (!state.tabId) return <Empty text="Open a YouTube video in this window to start." onSaved={openSaved} />
   if (!state.video) return <Empty text="Waiting for the video… if this doesn't change, reload the YouTube tab." onSaved={openSaved} />
@@ -373,7 +397,7 @@ function SidePanel() {
           onHearExample={(text) => speak(text)}
           onAskExamples={hasAi ? () => ask(`Give two short everyday example sentences that use ${word.colloquial ?? word.text}, each with Jyutping and English.`) : null}
           saved={saved.words.has(word.colloquial ?? word.text)}
-          fromMs={focusLine.startMs}
+          from={{ ms: focusLine.startMs }}
           onSave={() => saveWord(word)}
           onHear={() => speak(word.colloquial ?? word.text)}
           onClose={() => setSelWord(null)}
@@ -397,6 +421,16 @@ function SidePanel() {
       />
     </div>
   )
+}
+
+/** A saved word as the word sheet shows it: dictionary senses when there are any, else the meaning it was saved with. */
+function savedDetail(s: SavedWord, dict: Dict | null): { word: LineWord; senses: Sense[] } {
+  const w = s.word
+  const fromDict = dict ? senses(w.colloquial, dict) : []
+  return {
+    word: { text: w.colloquial, colloquial: w.colloquial, formal: w.formal && w.formal !== w.colloquial ? w.formal : null, jyutping: w.jyutping || (dict ? lookup(w.colloquial, dict).jyutping : ""), meaning: w.meaning ?? "", likelyError: null },
+    senses: fromDict.length ? fromDict : w.meaning ? [{ jyutping: w.jyutping ?? "", gloss: w.meaning, formal: null }] : []
+  }
 }
 
 /** The caption-source pill: which source is in use, and what to do when there is none. */

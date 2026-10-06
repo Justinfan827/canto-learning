@@ -301,6 +301,18 @@ await panel.click("button[aria-label='Saved words']")
 await panel.waitForSelector(".list .item")
 console.log("saved list:", (await panel.locator(".list .item").allInnerTexts()).map((t) => t.replace(/\n/g, " ")))
 await panel.screenshot({ path: SHOTS + "6-saved.png" })
+// A row opens the word's details in place, with a speaker and a link back to the video.
+const before = await yt.evaluate(() => document.querySelector("video").currentTime)
+await panel.click(".list .item >> nth=0")
+await panel.waitForSelector(".sheet")
+console.log("saved detail:", (await panel.locator(".sheet .dhead").innerText()).replace(/\n/g, " "), "| from:", (await panel.locator(".sheet .from-link").innerText()).replace(/\n/g, " "))
+if (!(await panel.locator(".sheet button[aria-label='Hear it']").count())) throw new Error("saved word detail has no speaker button")
+if (!(await panel.locator(".list").count())) throw new Error("clicking a saved word left the saved list")
+if ((await yt.evaluate(() => document.querySelector("video").currentTime)) !== before) throw new Error("clicking a saved word seeked the video")
+await panel.screenshot({ path: SHOTS + "6b-saved-detail.png" })
+await panel.keyboard.press("Escape")
+await panel.waitForSelector(".sheet", { state: "detached" })
+if (!(await panel.locator(".list button[aria-label^='Hear ']").count())) throw new Error("saved rows have no speaker button")
 
 // Add a word by hand: the dictionary fills Jyutping and meaning, and it lands at the top tagged as added by hand.
 await panel.click(".bar .pill >> text=Add word")

@@ -191,6 +191,11 @@ rt { font: 400 9.5px/1 var(--f-ui); color: var(--muted); letter-spacing: 0; padd
 .reg span { background: var(--soft); border-radius: var(--r-s); padding: 3px 8px; font-family: var(--f-ui); }
 .reg b { font-family: var(--f-zh); font-weight: 500; }
 .src { display: flex; justify-content: space-between; font: 11px/1 var(--f-mono); color: var(--muted); padding-top: 2px; }
+.from-link { display: flex; align-items: center; gap: 6px; justify-self: start; max-width: 100%; font-size: 12.5px; color: var(--muted); background: var(--soft); border-radius: 999px; padding: 5px 10px 5px 8px; }
+.from-link:hover { color: var(--fg); }
+.from-link .i { width: 12px; height: 12px; flex: none; }
+.from-link .ft { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.from-link .fm { font: 11px var(--f-mono); flex: none; }
 
 /* tutor answers */
 .answer { margin: 0 12px; padding: 12px 4px 0; display: grid; gap: 8px; font-size: 13.5px; }
@@ -227,7 +232,8 @@ rt { font: 400 9.5px/1 var(--f-ui); color: var(--muted); letter-spacing: 0; padd
 .tabs button.on { background: var(--fg); color: var(--bg); }
 .list { flex: 1; overflow-y: auto; padding: 0 12px; margin: 0; list-style: none; }
 .list-empty { padding: 16px 4px; font-size: 13px; }
-.item { width: 100%; text-align: left; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 12px; padding: 10px 4px; border-top: 1px solid var(--line); align-items: center; border-radius: 0; }
+.row-w { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px; border-top: 1px solid var(--line); }
+.item { width: 100%; text-align: left; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 12px; padding: 10px 4px; align-items: center; border-radius: 0; }
 .item:hover:not(:disabled) { background: var(--soft); }
 .item .hz { font: 500 20px/1.1 var(--f-zh); grid-row: span 2; min-width: 52px; }
 .item .m { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

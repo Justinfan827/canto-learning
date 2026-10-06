@@ -17,13 +17,14 @@ function ago(ms: number) {
 
 const when = (s: SavedWord) => s.at?.createdAt ?? s.word.createdAt
 
-/** Saved words, newest first, each linked back to the moment it came from. */
+/** Saved words, newest first. A row opens the word's details; the speaker plays it. */
 export function SavedList(props: {
   list: SavedWord[]
   videoId: string | null
   dict: Dict | null
   onBack: () => void
   onOpen: (w: SavedWord) => void
+  onHear: (w: SavedWord) => void
   onAdd: (w: NewWord) => Promise<{ word: Word; created: boolean }>
 }) {
   const [tab, setTab] = useState<"all" | "video">("all")
@@ -76,8 +77,8 @@ export function SavedList(props: {
           <li className="muted list-empty">{tab === "video" ? "No words saved from this video yet." : "Tap a word in a paused line, then Save, or add one with Add word."}</li>
         )}
         {shown.map((s) => (
-          <li key={s.word.id}>
-            <button className="item" onClick={() => props.onOpen(s)} disabled={!s.at}>
+          <li key={s.word.id} className="row-w">
+            <button className="item" onClick={() => props.onOpen(s)}>
               <span className="hz" lang="yue-Hant">
                 {s.word.colloquial}
               </span>
@@ -89,6 +90,9 @@ export function SavedList(props: {
               <span className="from">
                 {s.at ? `${s.at.videoTitle || "Video"} · ${formatTime(s.at.startMs)}` : s.word.source === "manual" ? "Added by hand" : "From a tutor answer"}
               </span>
+            </button>
+            <button className="ib small" aria-label={`Hear ${s.word.colloquial}`} title="Hear it" onClick={() => props.onHear(s)}>
+              <Icon name="sound" />
             </button>
           </li>
         ))}
