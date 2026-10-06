@@ -170,6 +170,7 @@ await panel.locator(".moment .chip-w").last().click()
 await panel.waitForSelector(".sheet")
 await panel.waitForTimeout(300) // let the sheet finish rising
 console.log("no-AI word sheet:", (await panel.locator(".sheet").innerText()).replace(/\n/g, " | "))
+if (await panel.locator(".sheet .examples").count()) throw new Error("examples section shown for a word with none and no model")
 await panel.screenshot({ path: SHOTS + "3-word.png" })
 await panel.click(".sheet .save")
 await panel.waitForSelector(".sheet .save.done", { timeout: 5000 })
@@ -200,6 +201,28 @@ await panel.screenshot({ path: SHOTS + "2-paused-no-tutor.png" })
   console.log("after undo:", await chips.allInnerTexts())
 }
 
+// Example sentences come from the bundled Tatoeba set, with Jyutping and English, no model needed.
+await yt.evaluate(async () => { const v = document.querySelector("video"); v.currentTime = 6.5; await v.play() })
+await panel.waitForSelector(".ln.now[data-idx='3']", { timeout: 5000 })
+await yt.evaluate(() => document.querySelector("video").pause())
+await panel.waitForFunction(() => document.querySelector(".moment .chip-w")?.textContent.startsWith("我"), null, { timeout: 5000 })
+await panel.locator(".moment .chip-w").first().click()
+await panel.waitForSelector(".sheet .examples .ex", { timeout: 5000 })
+{
+  const ex = panel.locator(".sheet .examples .ex").first()
+  console.log("examples for", await panel.locator(".sheet .dhead .hz").innerText(), ":", await panel.locator(".sheet .examples .ex").count(), "| first:", await ex.locator(".ex-yue").innerText(), "/", await ex.locator(".ex-jp").innerText(), "/", await ex.locator(".ex-en").innerText(), "| source:", await panel.locator(".sheet .src span").first().innerText())
+  if (!(await ex.locator(".ex-yue b").count()) || !(await ex.locator(".ex-jp").innerText()).trim()) throw new Error("example sentence missing the marked word or its Jyutping")
+}
+await panel.waitForTimeout(300)
+await panel.screenshot({ path: SHOTS + "3-examples.png" })
+await panel.keyboard.press("Escape")
+await panel.waitForSelector(".sheet", { state: "detached" })
+// Back to line 2 paused, where the rest of the test expects to be.
+await yt.evaluate(async () => { const v = document.querySelector("video"); v.currentTime = 4.5; await v.play() })
+await panel.waitForSelector(".ln.now[data-idx='2']", { timeout: 5000 })
+await yt.evaluate(() => document.querySelector("video").pause())
+await panel.waitForFunction(() => document.querySelector(".moment .chip-w")?.textContent.startsWith("這"), null, { timeout: 5000 })
+
 // Turn on Claude in settings.
 const setup = await ctx.newPage()
 await setup.goto(`chrome-extension://${extId}/tabs/setup.html`)
@@ -221,6 +244,12 @@ console.log("current line:", await text(".ln.now"))
 await yt.evaluate(() => document.querySelector("video").pause())
 await panel.waitForSelector(".moment .chip-w", { timeout: 10000 })
 console.log("card words:", await panel.locator(".moment .chip-w").allInnerTexts(), "| inferred:", await panel.locator(".moment .top").innerText())
+// With a model, a word with no bundled examples offers to ask the tutor for some.
+await panel.locator(".moment .chip-w").last().click()
+await panel.waitForSelector(".sheet .examples .act.ai", { timeout: 5000 })
+console.log("no-examples sheet:", await panel.locator(".sheet .examples").innerText())
+await panel.keyboard.press("Escape")
+await panel.waitForSelector(".sheet", { state: "detached" })
 await panel.click(".act.ai")
 await panel.waitForSelector(".answer .a >> text=gam3", { timeout: 10000 })
 console.log("answer:", await panel.locator(".answer .a").first().innerText())
