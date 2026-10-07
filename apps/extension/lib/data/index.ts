@@ -2,6 +2,7 @@ import type { Store } from "@pna/shared"
 
 import { CONVEX_URL, convexToken, getAccount } from "../auth"
 import { fillFromDict } from "../dict"
+import { LOCAL_HELPER } from "../features"
 import { copyLocalToConvex as copyTo, createConvexStore, type ConvexConfig } from "./convexStore"
 import { withDiskBackup } from "./diskBackup"
 import { createLocalStore, restoreLocalStore } from "./localStore"
@@ -39,7 +40,7 @@ const BACKEND_KEYS = ["account"] as const
 let local: Store | null = null
 // The local helper relays local data to the phone (with Convex the phone reads Convex itself)
 // and keeps a backup of the whole database on disk.
-const localStore = () => (local ??= withStudySync(withDiskBackup(createLocalStore()), { fill: fillFromDict }))
+const localStore = () => (local ??= LOCAL_HELPER ? withStudySync(withDiskBackup(createLocalStore()), { fill: fillFromDict }) : createLocalStore())
 
 async function pick(): Promise<Store> {
   const cfg = convexConfig()

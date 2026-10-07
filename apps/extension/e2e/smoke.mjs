@@ -5,7 +5,7 @@
 import { chromium } from "playwright-core"
 import fs from "fs"
 
-// BUILD=prod checks the release build, which has no local transcription (lib/features.ts).
+// BUILD=prod checks the release build, which doesn't use the local helper (lib/features.ts).
 const BUILD = process.env.BUILD ?? "dev"
 const TRANSCRIBES = BUILD === "dev"
 const EXT = new URL(`../build/chrome-mv3-${BUILD}`, import.meta.url).pathname
@@ -308,10 +308,16 @@ if (!TRANSCRIBES) {
   await panel.waitForSelector(".lyrics .ln[data-idx='3'], .moment", { timeout: 5000 }).catch(() => {})
   console.log("back to YouTube:", await panel.locator(".bar .pill").innerText(), "| lines:", await panel.locator(".lyrics .ln").count(), "| card:", await text(".moment .big").catch(() => "-"))
 }
-const lastPush = studyPushes.at(-1)
-console.log(`study pushes: ${studyPushes.length} |`, "words:", lastPush?.words.map((w) => [w.colloquial, w.sources.length]), "| videos:", lastPush?.videos.map((v) => v.id))
-const fromVideos = lastPush?.words.filter((w) => w.source !== "manual") ?? []
-if (!fromVideos.length || !fromVideos.every((w) => w.sources.length)) throw new Error("study snapshot missing saved words or their source lines")
-if (!lastPush.words.some((w) => w.colloquial === "傾偈" && w.source === "manual" && w.jyutping)) throw new Error("study snapshot missing the word added by hand")
+if (!TRANSCRIBES) {
+  // The release build doesn't use the local helper at all, so nothing goes to the phone relay.
+  console.log("study pushes:", studyPushes.length)
+  if (studyPushes.length) throw new Error("the release build pushed to the local helper")
+} else {
+  const lastPush = studyPushes.at(-1)
+  console.log(`study pushes: ${studyPushes.length} |`, "words:", lastPush?.words.map((w) => [w.colloquial, w.sources.length]), "| videos:", lastPush?.videos.map((v) => v.id))
+  const fromVideos = lastPush?.words.filter((w) => w.source !== "manual") ?? []
+  if (!fromVideos.length || !fromVideos.every((w) => w.sources.length)) throw new Error("study snapshot missing saved words or their source lines")
+  if (!lastPush.words.some((w) => w.colloquial === "傾偈" && w.source === "manual" && w.jyutping)) throw new Error("study snapshot missing the word added by hand")
+}
 console.log("errors:", logs.filter((l) => /error/i.test(l)).slice(0, 5))
 await ctx.close()

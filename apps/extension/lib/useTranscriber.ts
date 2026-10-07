@@ -1,7 +1,7 @@
 import { pickTrack, sortLines, type CaptionLine } from "@pna/shared"
 import { useEffect, useRef, useState } from "react"
 
-import { TRANSCRIPTION } from "./features"
+import { LOCAL_HELPER } from "./features"
 import { listEngines, pickEngine, transcribe, type Engine } from "./transcriber"
 import type { PlayerState } from "./usePlayer"
 
@@ -56,7 +56,7 @@ export function useTranscriber(
   /** The helper's engines, for the caption-source menu; null when the helper isn't running. */
   const [engines, setEngines] = useState<Engine[] | null>(null)
   useEffect(() => {
-    if (!TRANSCRIPTION) return
+    if (!LOCAL_HELPER) return
     let live = true
     listEngines().then((e) => live && setEngines(e))
     return () => {
@@ -79,7 +79,7 @@ export function useTranscriber(
       return
     }
     let timer: number | undefined
-    if (!TRANSCRIPTION) {
+    if (!LOCAL_HELPER) {
       timer = window.setTimeout(() => setStatus({ kind: "no-captions" }), SETTLE_MS)
       return () => clearTimeout(timer)
     }

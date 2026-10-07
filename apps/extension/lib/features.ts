@@ -1,7 +1,8 @@
 // Build-time feature flags, set per build in .env.dev / .env.prod.
 
 /**
- * Local transcription through the helper (apps/transcriber), for videos without captions.
+ * Everything that talks to the local helper (apps/transcriber): transcribing videos without
+ * captions, backups of the local database on disk, and relaying saved words to the phone.
  * On in dev builds; off in release builds, which use YouTube's captions only.
  */
-export const TRANSCRIPTION = process.env.PLASMO_PUBLIC_TRANSCRIPTION === "1"
+export const LOCAL_HELPER = process.env.PLASMO_PUBLIC_LOCAL_HELPER === "1"

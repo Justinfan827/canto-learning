@@ -5,7 +5,7 @@ import { copyLocalToConvex, restoreBackup } from "~lib/data"
 import "~lib/fonts"
 import { loadSettings, saveSettings, type Settings } from "~lib/settings"
 import { hasCantoneseVoice, speak } from "~lib/speech"
-import { TRANSCRIPTION } from "~lib/features"
+import { LOCAL_HELPER } from "~lib/features"
 import { listEngines, pickEngine, type Engine } from "~lib/transcriber"
 
 import "../style.css"
@@ -27,7 +27,7 @@ function Setup() {
   }
 
   useEffect(() => {
-    if (TRANSCRIPTION) checkHelper()
+    if (LOCAL_HELPER) checkHelper()
     loadSettings().then(setS)
     getAccount().then(setAccount)
     const onAccount = (changes: Record<string, chrome.storage.StorageChange>) => {
@@ -106,9 +106,9 @@ function Setup() {
         <h2>Captions</h2>
         <p className="muted">
           The panel uses the video&apos;s Cantonese captions, then Chinese captions.
-          {TRANSCRIPTION && " When a video has neither, a small helper app transcribes the audio on this computer. Audio never leaves it."}
+          {LOCAL_HELPER && " When a video has neither, a small helper app transcribes the audio on this computer. Audio never leaves it."}
         </p>
-        {!TRANSCRIPTION ? null : engines === "loading" ? (
+        {!LOCAL_HELPER ? null : engines === "loading" ? (
           <p className="muted">Looking for the transcriber helper…</p>
         ) : engines ? (
           <>
@@ -173,11 +173,15 @@ function Setup() {
             )}
           </>
         )}
-        <label className="row">
-          Restore a backup into this browser{" "}
-          <input type="file" accept="application/json,.json" onChange={(e) => restore(e.target.files?.[0])} />
-        </label>
-        <p className="muted">Adds the backup&apos;s words to the ones here; nothing is replaced.</p>
+        {LOCAL_HELPER && (
+          <>
+            <label className="row">
+              Restore a backup into this browser{" "}
+              <input type="file" accept="application/json,.json" onChange={(e) => restore(e.target.files?.[0])} />
+            </label>
+            <p className="muted">Adds the backup&apos;s words to the ones here; nothing is replaced.</p>
+          </>
+        )}
         {sync && <p className="muted">{sync}</p>}
       </section>
 

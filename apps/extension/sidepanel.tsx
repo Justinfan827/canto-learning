@@ -8,7 +8,7 @@ import { formatTime } from "~components/Ruby"
 import { SavedList } from "~components/SavedList"
 import { Squads } from "~components/Squads"
 import { CONVEX_URL } from "~lib/auth"
-import { TRANSCRIPTION } from "~lib/features"
+import { LOCAL_HELPER } from "~lib/features"
 import { loadExamples } from "~lib/dict"
 import "~lib/fonts"
 import { store } from "~lib/data"
@@ -344,7 +344,7 @@ const shortName = (label: string) => label.replace(/\s*\(.*\)$/, "")
 /** The pill's menu: YouTube's captions first, then each local speech model. */
 function sourceOptions(state: PlayerState, engines: Engine[] | null, s: Settings, status: TranscriberStatus): SourceOption[] {
   const track = pickTrack(state.tracks)
-  if (!TRANSCRIPTION) return [{ id: "youtube", label: trackLabel(track), note: track ? undefined : "None in Chinese on this video", active: !!track, disabled: !track }]
+  if (!LOCAL_HELPER) return [{ id: "youtube", label: trackLabel(track), note: track ? undefined : "None in Chinese on this video", active: !!track, disabled: !track }]
   const local = status.kind !== "off" || state.captionSource === "local"
   const chosen = engines ? pickEngine(engines, s.transcribeEngine) : null
   const out: SourceOption[] = [
