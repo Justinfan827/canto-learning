@@ -51,6 +51,7 @@ export function MomentCard(props: {
       </div>
       <div
         className="big"
+        data-anchor
         lang="yue-Hant"
         onPointerDown={(e) => {
           const c = charAt(e.clientX, e.clientY)

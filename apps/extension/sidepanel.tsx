@@ -241,52 +241,6 @@ function SidePanel() {
       )}
       {(status.kind === "running" || status.kind === "checking") && !lines.length ? (
         <TranscribeLoading job={job} />
-      ) : focusLine ? (
-        <div className="paused">
-          <div className="ctx">{lines[focusLine.idx - 1] && <CtxLine line={lines[focusLine.idx - 1]} past onSeek={onSeek} />}</div>
-          <MomentCard
-            words={focusLine.words}
-            startMs={focusLine.startMs}
-            showJyutping={settings.showJyutping}
-            saved={saved.words}
-            selected={selWord}
-            looping={loopIdx === focusLine.idx}
-            onWord={(i) => setSelWord(selWord === i ? null : i)}
-            regrouped={focusLine.regrouped}
-            onRegroup={(a, b) => {
-              const next = regroup(
-                focusLine.words.map((w) => w.text),
-                a,
-                b
-              )
-              groupings.set(focusLine.text, next)
-              // Open the new word: the one starting at the drag's first character.
-              let at = 0
-              setSelWord(next.findIndex((w) => (at += [...w].length) > Math.min(a, b)))
-            }}
-            onResetGrouping={() => {
-              groupings.clear(focusLine.text)
-              setSelWord(null)
-            }}
-            onHear={(slow) => speak(focusLine.text, { slow })}
-            onLoop={() => {
-              if (loopIdx === focusLine.idx) {
-                setLoop(null)
-                pause()
-              } else {
-                setLoop(focusLine.idx)
-                setFocusIdx(focusLine.idx)
-                seek(focusLine.startMs)
-                play()
-              }
-            }}
-          />
-          <div className="ctx after">
-            {lines.slice(focusLine.idx + 1, focusLine.idx + 3).map((l) => (
-              <CtxLine key={l.idx} line={l} onSeek={onSeek} />
-            ))}
-          </div>
-        </div>
       ) : (
         <Lyrics
           lines={lines}
@@ -306,6 +260,49 @@ function SidePanel() {
             ) : null
           }
           empty={<EmptyLyrics status={status} hasTrack={!!pickTrack(state.tracks)} screen={state.captionSource === "screen"} onRetry={tr.retry} />}
+          focus={focusLine ? focusLine.idx : null}
+          raised={!!word}
+          card={
+            focusLine && (
+              <MomentCard
+                words={focusLine.words}
+                startMs={focusLine.startMs}
+                showJyutping={settings.showJyutping}
+                saved={saved.words}
+                selected={selWord}
+                looping={loopIdx === focusLine.idx}
+                onWord={(i) => setSelWord(selWord === i ? null : i)}
+                regrouped={focusLine.regrouped}
+                onRegroup={(a, b) => {
+                  const next = regroup(
+                    focusLine.words.map((w) => w.text),
+                    a,
+                    b
+                  )
+                  groupings.set(focusLine.text, next)
+                  // Open the new word: the one starting at the drag's first character.
+                  let at = 0
+                  setSelWord(next.findIndex((w) => (at += [...w].length) > Math.min(a, b)))
+                }}
+                onResetGrouping={() => {
+                  groupings.clear(focusLine.text)
+                  setSelWord(null)
+                }}
+                onHear={(slow) => speak(focusLine.text, { slow })}
+                onLoop={() => {
+                  if (loopIdx === focusLine.idx) {
+                    setLoop(null)
+                    pause()
+                  } else {
+                    setLoop(focusLine.idx)
+                    setFocusIdx(focusLine.idx)
+                    seek(focusLine.startMs)
+                    play()
+                  }
+                }}
+              />
+            )
+          }
         />
       )}
 
@@ -377,18 +374,6 @@ function pillFor(state: PlayerState, status: TranscriberStatus, retry: () => voi
       return { text: "Transcription failed", tone: "warn", action: { label: "Retry", run: retry } }
   }
   return { text: pickTrack(state.tracks) ? "Loading captions…" : "Finding captions…", tone: "idle" }
-}
-
-function CtxLine({ line, past, onSeek }: { line: LyricLine; past?: boolean; onSeek: (l: LyricLine) => void }) {
-  return (
-    <div className={"ln " + (past ? "past" : "next")} data-idx={line.idx} role="button" tabIndex={-1} onClick={() => onSeek(line)} lang="yue-Hant">
-      {line.words.map((w, i) => (
-        <span key={i} className="w">
-          {w.text}
-        </span>
-      ))}
-    </div>
-  )
 }
 
 function TranscribingEdge({ text }: { text: string }) {

@@ -149,12 +149,9 @@ rt { font: 400 9.5px/1 var(--f-ui); color: var(--muted); letter-spacing: 0; padd
 @keyframes indef { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
 
 /* ---------- paused ---------- */
-.paused { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; padding-bottom: 8px; }
-.ctx { padding: 10px 18px 0; display: grid; gap: 8px; }
-.ctx:empty { display: none; }
-.ctx .ln { font-size: 15px; }
-.ctx.after { padding-top: 14px; }
-.paused > .ctx:first-child { padding-bottom: 10px; }
+/* The paused line opens in place in the transcript; its text lines up with the other lines'. */
+.ln-card { flex: none; margin: 0 -14px; }
+.ln-card .moment { margin: 0; }
 .moment { margin: 2px 12px 0; border-radius: var(--r-l); background: var(--soft); padding: 14px 14px 12px; display: grid; gap: 12px; flex: none; }
 .moment > * { min-width: 0; }
 .moment .top { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }

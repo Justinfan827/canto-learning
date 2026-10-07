@@ -139,9 +139,14 @@ await panel.waitForSelector(".ln.now[data-idx='2']", { timeout: 5000 })
 console.log("lines:", await panel.locator(".lyrics .ln").count(), "| now line:", await text(".ln.now"), "| ruby:", await panel.locator(".ln.now rt").allInnerTexts(), "| word highlights:", await panel.locator(".ln .w.cur").count())
 await panel.screenshot({ path: SHOTS + "1-watching.png" })
 
-// Pausing opens the card with dictionary lookups and saving.
+// Pausing opens the card with dictionary lookups and saving, in place: the line's text doesn't move.
+await panel.waitForTimeout(800)
+const lineTop = await panel.$eval(".ln.now", (el) => el.getBoundingClientRect().top)
 await yt.evaluate(() => document.querySelector("video").pause())
 await panel.waitForSelector(".moment .chip-w", { timeout: 10000 })
+const cardTop = await panel.$eval(".moment .big", (el) => el.getBoundingClientRect().top)
+console.log("pause shift:", Math.round(cardTop - lineTop), "px")
+if (Math.abs(cardTop - lineTop) > 3) throw new Error(`pausing moved the line by ${Math.round(cardTop - lineTop)}px`)
 console.log("card words:", await panel.locator(".moment .chip-w").allInnerTexts(), "| card actions:", await panel.locator(".moment .act").allInnerTexts())
 if (await panel.locator(".dock form, .dock input, .answer").count()) throw new Error("tutor UI still shown on pause")
 await panel.locator(".moment .chip-w").last().click()
@@ -230,7 +235,7 @@ await panel.click(".pop button[aria-label='Jyutping']")
 await panel.keyboard.press("Escape")
 
 // Click a context line seeks.
-await panel.click(".paused .ctx .ln >> nth=0")
+await panel.click(".lyrics .ln:has(+ .ln-card)")
 await panel.waitForTimeout(300)
 console.log("after seek time:", await yt.evaluate(() => document.querySelector("video").currentTime))
 

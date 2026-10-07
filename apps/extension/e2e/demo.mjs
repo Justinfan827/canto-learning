@@ -76,7 +76,7 @@ await pauseMs(1500)
 await panel.keyboard.press("Escape")
 
 step("Clicking the previous line to jump back, then playing on")
-await panel.locator(".paused .ctx .ln").first().click()
+await panel.locator(".lyrics .ln:has(+ .ln-card)").click()
 await pauseMs(1500)
 await yt.evaluate(() => { document.querySelector("video")?.play().catch(() => {}) })
 await pauseMs(8000)
