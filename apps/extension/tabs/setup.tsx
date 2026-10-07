@@ -5,6 +5,7 @@ import { copyLocalToConvex, restoreBackup } from "~lib/data"
 import "~lib/fonts"
 import { loadSettings, saveSettings, type Settings } from "~lib/settings"
 import { hasCantoneseVoice, speak } from "~lib/speech"
+import { TRANSCRIPTION } from "~lib/features"
 import { listEngines, pickEngine, type Engine } from "~lib/transcriber"
 
 import "../style.css"
@@ -26,7 +27,7 @@ function Setup() {
   }
 
   useEffect(() => {
-    checkHelper()
+    if (TRANSCRIPTION) checkHelper()
     loadSettings().then(setS)
     getAccount().then(setAccount)
     const onAccount = (changes: Record<string, chrome.storage.StorageChange>) => {
@@ -104,10 +105,10 @@ function Setup() {
       <section id="captions">
         <h2>Captions</h2>
         <p className="muted">
-          The panel uses the video&apos;s Cantonese captions, then Chinese captions. When a video has neither, a small helper app transcribes the audio on this
-          computer. Audio never leaves it.
+          The panel uses the video&apos;s Cantonese captions, then Chinese captions.
+          {TRANSCRIPTION && " When a video has neither, a small helper app transcribes the audio on this computer. Audio never leaves it."}
         </p>
-        {engines === "loading" ? (
+        {!TRANSCRIPTION ? null : engines === "loading" ? (
           <p className="muted">Looking for the transcriber helper…</p>
         ) : engines ? (
           <>

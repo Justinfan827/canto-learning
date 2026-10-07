@@ -8,6 +8,7 @@ import { formatTime } from "~components/Ruby"
 import { SavedList } from "~components/SavedList"
 import { Squads } from "~components/Squads"
 import { CONVEX_URL } from "~lib/auth"
+import { TRANSCRIPTION } from "~lib/features"
 import { loadExamples } from "~lib/dict"
 import "~lib/fonts"
 import { store } from "~lib/data"
@@ -343,6 +344,7 @@ const shortName = (label: string) => label.replace(/\s*\(.*\)$/, "")
 /** The pill's menu: YouTube's captions first, then each local speech model. */
 function sourceOptions(state: PlayerState, engines: Engine[] | null, s: Settings, status: TranscriberStatus): SourceOption[] {
   const track = pickTrack(state.tracks)
+  if (!TRANSCRIPTION) return [{ id: "youtube", label: trackLabel(track), note: track ? undefined : "None in Chinese on this video", active: !!track, disabled: !track }]
   const local = status.kind !== "off" || state.captionSource === "local"
   const chosen = engines ? pickEngine(engines, s.transcribeEngine) : null
   const out: SourceOption[] = [
@@ -367,6 +369,8 @@ function pillFor(state: PlayerState, status: TranscriberStatus, retry: () => voi
       return { text: `Transcribing · ${shortName(status.engine)}`, tone: "work" }
     case "done":
       return { text: `${shortName(status.engine)} · this computer`, tone: "ok" }
+    case "no-captions":
+      return { text: "No Chinese captions", tone: "warn" }
     case "missing":
       return { text: "No captions", tone: "warn", action: { label: "Set up transcriber", run: () => openSetup("#captions") } }
     case "no-engine":
@@ -436,6 +440,8 @@ function TranscribeLoading({ job }: { job: (TranscribeJob & { kind: "running" })
 function EmptyLyrics({ status, hasTrack, screen, onRetry }: { status: TranscriberStatus; hasTrack: boolean; screen: boolean; onRetry: () => void }) {
   if (screen) return <p className="lyrics-note">Reading captions from the video as they appear. Play the video to start.</p>
   switch (status.kind) {
+    case "no-captions":
+      return <p className="lyrics-note">This video has no Cantonese or Chinese captions.</p>
     case "missing":
       return (
         <div className="lyrics-note">

@@ -24,6 +24,8 @@ Open a YouTube video and click the toolbar icon to open the side panel. The pane
 
 ## Videos without captions
 
+Dev builds only: release builds turn local transcription off and show "No Chinese captions" instead.
+
 The panel picks captions in this order: the video's Cantonese track, then a Chinese track, then the captions YouTube draws on screen, then local transcription. When a video has no Chinese track it starts transcribing on its own, from where you are in the video; it then fills in the start. The pill says "Transcribing on this computer" and a thin bar shows progress.
 
 Transcription runs in a small local helper. Start it with `pnpm transcriber` (port 8787) and leave it running; if it isn't running, the pill offers to set it up. It downloads the audio with `yt-dlp`, converts it with `ffmpeg`, and streams lines back as the model produces them. Results are cached in `~/.cache/canto-learning`. The engine is set in settings under Captions; Auto uses the first one installed of:
@@ -62,7 +64,7 @@ curl -LO https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sile
 
 **Storage is local by default.** The app imports `store` from `apps/extension/lib/data` and never touches IndexedDB or Convex directly. Both backends implement the `Store` interface in `packages/shared/src/store.ts`. Signing in (Settings > Saved words) switches to Convex; see [packages/backend/README.md](packages/backend/README.md).
 
-**Builds and accounts.** Each build points at a Convex deployment through public settings in `apps/extension/.env.dev` and `.env.prod`. `pnpm dev:ext` and `pnpm build:ext:dev` (into `build/chrome-mv3-dev`) use the dev deployment and show a **Sign in as dev user** button, whose password comes from a gitignored `apps/extension/.env.dev.local` (`PLASMO_PUBLIC_DEV_LOGIN_PASSWORD=…`); `pnpm build:ext` is the release build and stays local until `.env.prod` names a production deployment. Nothing secret ships in the extension: sign-in gives each browser its own session, and the backend only returns that user's rows. `node apps/extension/e2e/auth.mjs` checks signing in on a dev build.
+**Builds and accounts.** Each build points at a Convex deployment through public settings in `apps/extension/.env.dev` and `.env.prod`. `pnpm dev:ext` and `pnpm build:ext:dev` (into `build/chrome-mv3-dev`) use the dev deployment and show a **Sign in as dev user** button, whose password comes from a gitignored `apps/extension/.env.dev.local` (`PLASMO_PUBLIC_DEV_LOGIN_PASSWORD=…`); `pnpm build:ext` is the release build and stays local until `.env.prod` names a production deployment. Local transcription is behind a feature flag (`PLASMO_PUBLIC_TRANSCRIPTION`, `lib/features.ts`): on in dev builds, off in release builds, which use YouTube's captions only. Nothing secret ships in the extension: sign-in gives each browser its own session, and the backend only returns that user's rows. `node apps/extension/e2e/auth.mjs` checks signing in on a dev build.
 
 ## Phone study app
 
