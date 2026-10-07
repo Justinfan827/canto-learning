@@ -30,7 +30,7 @@ Transcription runs in a small local helper. Start it with `pnpm transcriber` (po
 
 | Engine | Needs | Notes |
 |---|---|---|
-| SenseVoice Small (sherpa-onnx) | `uv`, plus the model and VAD in `~/.cache/canto-learning/models` (see below) | Writes spoken Cantonese (佢哋, 嘅, 咗); about 60× real time on an M2 |
+| SenseVoice Small (sherpa-onnx) | The model and VAD in `~/.cache/canto-learning/models` (see below); runs in Node through `sherpa-onnx-node`, no Python | Writes spoken Cantonese (佢哋, 嘅, 咗); about 30× real time on an M2 |
 | Whisper large-v3-turbo (whisper.cpp) | `brew install whisper-cpp` and `ggml-large-v3-turbo.bin` (found in OpenSuperWhisper's model folder, or set `WHISPER_CPP_MODEL`) | Fastest on Apple Silicon; Cantonese (`yue`) |
 
 SenseVoice writes spoken Cantonese (口語) and Whisper writes the same speech as formal written Chinese (書面語), so with both installed the Aa menu switches between them. Both are converted to Hong Kong Traditional characters with OpenCC. Auto prefers SenseVoice. To install SenseVoice's model (about 240 MB):
