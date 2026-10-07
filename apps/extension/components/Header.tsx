@@ -135,17 +135,14 @@ export function Header(props: {
 /** The Aa menu: each option says what it changes. */
 export function DisplayMenu({
   s,
-  hasAi,
   canFormal,
   onChange
 }: {
   s: Settings
-  hasAi: boolean
-  /** True when 書面語 is available: from the tutor, or from a second local transcript. */
+  /** True when 書面語 is available, from a second local transcript. */
   canFormal: boolean
   onChange: (p: Partial<Settings>) => void
 }) {
-  const needsTutor = <small className="needs">Needs an AI tutor</small>
   return (
     <div className="pop" role="dialog" aria-label="Display options">
       <label className="row">
@@ -157,7 +154,7 @@ export function DisplayMenu({
       <div className={"row" + (canFormal ? "" : " off")}>
         <div>
           Chinese<small>As spoken, or as written in Chinese</small>
-          {!canFormal && needsTutor}
+          {!canFormal && <small className="needs">Only on videos transcribed on this computer</small>}
         </div>
         <Seg
           value={canFormal ? s.register : "colloquial"}
@@ -170,13 +167,6 @@ export function DisplayMenu({
           zh
         />
       </div>
-      <label className={"row" + (hasAi ? "" : " off")}>
-        <div>
-          English<small>Translation under the current line</small>
-          {!hasAi && needsTutor}
-        </div>
-        <Toggle on={s.showEnglish && hasAi} disabled={!hasAi} onChange={(v) => onChange({ showEnglish: v })} label="English" />
-      </label>
       <label className="row">
         <div>
           Pop up when paused<small>The paused line over YouTube's sidebar, while this panel is closed</small>

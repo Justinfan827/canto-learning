@@ -1,7 +1,6 @@
-// Smoke test: loads the built extension in Chromium against a mock YouTube page,
-// a mock Claude API and a mock transcriber helper. Reads along, pauses, looks up and
-// saves a word, asks the tutor, then opens a video with no captions and checks it
-// transcribes on its own. Screenshots of each state go to e2e/screenshots/.
+// Smoke test: loads the built extension in Chromium against a mock YouTube page and
+// a mock transcriber helper. Reads along, pauses, looks up and saves a word, then opens
+// a video with no captions and checks it transcribes on its own. Screenshots of each state go to e2e/screenshots/.
 // Run: pnpm build && xvfb-run -a node e2e/smoke.mjs   (set CHROMIUM_PATH if needed)
 import { chromium } from "playwright-core"
 import { execSync } from "child_process"
@@ -99,40 +98,6 @@ await ctx.route("http://127.0.0.1:8787/**", async (route) => {
     { type: "done" }]
   return route.fulfill({ contentType: "application/x-ndjson", headers: cors, body: ev.map((e) => JSON.stringify(e)).join("\n") + "\n" })
 })
-// Mock the Claude API with real response shapes.
-const claudeCalls = []
-await ctx.route("https://api.anthropic.com/**", async (route) => {
-  const req = route.request()
-  const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*" }
-  if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: { ...cors, "access-control-allow-methods": "*" } })
-  const url = new URL(req.url())
-  if (url.pathname.startsWith("/v1/models")) return route.fulfill({ contentType: "application/json", headers: cors, body: JSON.stringify({ data: [], has_more: false, first_id: null, last_id: null }) })
-  const body = req.postDataJSON()
-  const sys = typeof body.system === "string" ? body.system : body.system.map((b) => b.text).join("")
-  const user = typeof body.messages.at(-1).content === "string" ? body.messages.at(-1).content : JSON.stringify(body.messages.at(-1).content)
-  claudeCalls.push({ model: body.model, kind: sys.slice(0, 40), stream: !!body.stream, fmt: !!body.output_config?.format, fallbacks: body.fallbacks, beta: req.headers()["anthropic-beta"] })
-  const msg = (text) => ({ id: "msg_1", type: "message", role: "assistant", model: body.model, content: [{ type: "text", text }], stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 } })
-  let out
-  if (sys.startsWith("You convert")) {
-    const idxs = [...user.split("Convert these lines:\n")[1].matchAll(/^(\d+): (.*)$/gm)].map((m) => [+m[1], m[2]])
-    const conv = { "他沒有看到": "佢冇睇到", "這麼古怪": "咁古怪", "我們走吧": "我哋走啦" }
-    out = { lines: idxs.map(([idx, t]) => ({ idx, source_register: conv[t] ? "formal" : "colloquial", formal: t, colloquial: conv[t] ?? t, colloquial_inferred: !!conv[t] })) }
-  } else if (sys.startsWith("Split")) {
-    out = { words: [{ text: "這麼", jyutping: "ze5 mo1", meaning: "so", formal: null, colloquial: "咁", likely_error: null }, { text: "古怪", jyutping: "gu2 gwaai3", meaning: "strange", formal: null, colloquial: null, likely_error: null }] }
-  } else if (sys.startsWith("From a tutoring")) {
-    out = { words: [{ colloquial: "咁", formal: "這麼", jyutping: "gam3", meaning: "so, that much", notes: null }] }
-  }
-  if (out) return route.fulfill({ contentType: "application/json", headers: cors, body: JSON.stringify(msg(JSON.stringify(out))) })
-  globalThis.__askUser = user
-  const chunks = ["**咁** (gam3) means *so*. ", "It's 口語; the 書面語 form is 這麼."]
-  const ev = (type, data) => `event: ${type}\ndata: ${JSON.stringify({ type, ...data })}\n\n`
-  const m = msg(""); m.content = []
-  const sse = ev("message_start", { message: m }) + ev("content_block_start", { index: 0, content_block: { type: "text", text: "" } }) +
-    chunks.map((t) => ev("content_block_delta", { index: 0, delta: { type: "text_delta", text: t } })).join("") +
-    ev("content_block_stop", { index: 0 }) + ev("message_delta", { delta: { stop_reason: "end_turn", stop_sequence: null }, usage: { output_tokens: 10 } }) + ev("message_stop", {})
-  return route.fulfill({ contentType: "text/event-stream", headers: cors, body: sse })
-})
-
 // Find the extension id from its service worker.
 let [sw] = ctx.serviceWorkers()
 if (!sw) sw = await ctx.waitForEvent("serviceworker")
@@ -173,17 +138,17 @@ await panel.waitForSelector(".ln.now[data-idx='2']", { timeout: 5000 })
 console.log("lines:", await panel.locator(".lyrics .ln").count(), "| now line:", await text(".ln.now"), "| ruby:", await panel.locator(".ln.now rt").allInnerTexts(), "| word highlights:", await panel.locator(".ln .w.cur").count())
 await panel.screenshot({ path: SHOTS + "1-watching.png" })
 
-// No model set up: pausing opens the card; dictionary lookups and saving still work.
+// Pausing opens the card with dictionary lookups and saving.
 await yt.evaluate(() => document.querySelector("video").pause())
 await panel.waitForSelector(".moment .chip-w", { timeout: 10000 })
-console.log("no-AI words:", await panel.locator(".moment .chip-w").allInnerTexts())
-console.log("no-AI dock:", await panel.locator(".offnote").innerText(), "| explain button:", await panel.locator(".act.ai").count())
+console.log("card words:", await panel.locator(".moment .chip-w").allInnerTexts(), "| card actions:", await panel.locator(".moment .act").allInnerTexts())
+if (await panel.locator(".dock form, .dock input, .answer").count()) throw new Error("tutor UI still shown on pause")
 await panel.locator(".moment .chip-w").last().click()
 await panel.waitForSelector(".sheet")
 await panel.waitForTimeout(300) // let the sheet finish rising
-console.log("no-AI word sheet:", (await panel.locator(".sheet").innerText()).replace(/\n/g, " | "))
-// Without a model there's no "ask the tutor" button, so a word with no examples shows no section at all.
-if ((await panel.locator(".sheet .examples").count()) && !(await panel.locator(".sheet .examples .ex").count())) throw new Error("empty examples section shown with no model")
+console.log("word sheet:", (await panel.locator(".sheet").innerText()).replace(/\n/g, " | "))
+// A word with no examples shows no examples section at all.
+if ((await panel.locator(".sheet .examples").count()) && !(await panel.locator(".sheet .examples .ex").count())) throw new Error("empty examples section shown")
 await panel.screenshot({ path: SHOTS + "3-word.png" })
 await panel.click(".sheet .save")
 await panel.waitForSelector(".sheet .save.done", { timeout: 5000 })
@@ -196,7 +161,7 @@ if (convex) {
 await panel.keyboard.press("Escape")
 await panel.waitForSelector(".sheet", { state: "detached" })
 console.log("saved badge:", await panel.locator(".ib .n").innerText(), "| saved underline:", await panel.locator(".moment .chip-w.saved").allInnerTexts())
-await panel.screenshot({ path: SHOTS + "2-paused-no-tutor.png" })
+await panel.screenshot({ path: SHOTS + "2-paused.png" })
 
 // Drag across the line's words to regroup them into one, then undo.
 {
@@ -243,67 +208,23 @@ await panel.waitForSelector(".ln.now[data-idx='2']", { timeout: 5000 })
 await yt.evaluate(() => document.querySelector("video").pause())
 await panel.waitForFunction(() => document.querySelector(".moment .chip-w")?.textContent.startsWith("這"), null, { timeout: 5000 })
 
-// Turn on Claude in settings.
+// Settings have no tutor or microphone sections.
 const setup = await ctx.newPage()
 await setup.goto(`chrome-extension://${extId}/tabs/setup.html`)
-console.log("settings sections:", await setup.locator("section h2").allInnerTexts(), "| transcriber:", await setup.locator("#captions select option").first().innerText())
-await setup.click("text=Claude (paid")
-await setup.fill('input[type=password]', "sk-ant-test")
-await setup.click("button:has-text(\"Save\")")
-await setup.waitForSelector("text=Connected", { timeout: 10000 })
-console.log("setup: connected")
+const sections = await setup.locator("section h2").allInnerTexts()
+console.log("settings sections:", sections, "| transcriber:", await setup.locator("#captions select option").first().innerText())
+if (sections.some((h) => /tutor|microphone/i.test(h))) throw new Error("settings still show the tutor")
+await setup.close()
 await panel.bringToFront()
-await yt.evaluate(async () => { const v = document.querySelector("video"); v.currentTime = 2.5; await v.play() })
-await panel.waitForFunction(() => [...document.querySelectorAll(".ln[data-idx='1'] .w")].map((w) => w.firstChild?.textContent ?? "").join("").includes("佢") || document.querySelector(".ln[data-idx='1']")?.textContent.includes("佢"), null, { timeout: 10000, polling: 100 }) // poll on a timer: rAF stalls while another page has focus
-console.log("colloquial line 1:", await text(".ln[data-idx='1']"), "| english:", await panel.locator(".ln.now .en").count())
 
-// Play to 4.2s, then pause.
-await yt.evaluate(async () => { const v = document.querySelector("video"); v.currentTime = 4.2; await v.play() })
-await panel.waitForTimeout(800)
-console.log("current line:", await text(".ln.now"))
-await yt.evaluate(() => document.querySelector("video").pause())
-await panel.waitForSelector(".moment .chip-w", { timeout: 10000 })
-console.log("card words:", await panel.locator(".moment .chip-w").allInnerTexts(), "| inferred:", await panel.locator(".moment .top").innerText())
-// With a model, a word with no bundled examples offers to ask the tutor for some. Regrouping the
-// whole line makes a phrase no example sentence contains.
-{
-  const chips = panel.locator(".moment .chip-w")
-  const split = await chips.count()
-  const first = await chips.first().boundingBox()
-  const last = await chips.last().boundingBox()
-  await panel.mouse.move(first.x + 4, first.y + first.height / 2)
-  await panel.mouse.down()
-  await panel.mouse.move(last.x + last.width - 4, last.y + last.height / 2, { steps: 6 })
-  await panel.mouse.up()
-  await panel.waitForSelector(".sheet .examples .act.ai", { timeout: 5000 })
-  console.log("no-examples sheet:", await panel.locator(".sheet .dhead .hz").innerText(), "|", await panel.locator(".sheet .examples").innerText())
-  await panel.keyboard.press("Escape")
-  await panel.waitForSelector(".sheet", { state: "detached" })
-  await panel.click(".regroup-hint .link")
-  await panel.waitForFunction((n) => document.querySelectorAll(".moment .chip-w").length === n, split)
-}
-await panel.click(".act.ai")
-await panel.waitForSelector(".answer .a >> text=gam3", { timeout: 10000 })
-console.log("answer:", await panel.locator(".answer .a").first().innerText())
-console.log("ask prompt:", globalThis.__askUser)
-await panel.waitForSelector(".answer .follow >> text=Save", { timeout: 10000 })
-console.log("follow chips:", await panel.locator(".answer .follow .act").allInnerTexts())
-await panel.screenshot({ path: SHOTS + "4-tutor.png" })
-await panel.emulateMedia({ colorScheme: "dark" })
-await panel.screenshot({ path: SHOTS + "4-tutor-dark.png" })
-await panel.emulateMedia({ colorScheme: "light" })
-await panel.click(".answer .follow .act >> nth=0")
-await panel.waitForSelector(".answer .follow .act.done", { timeout: 5000 })
-console.log("claude calls:", JSON.stringify(claudeCalls, null, 0))
-
-// Display menu: written Chinese, no Jyutping.
+// Display menu: no Jyutping. Written Chinese needs a local transcript, so it's off here.
 await panel.click("button[aria-label='Display options']")
 await panel.screenshot({ path: SHOTS + "5-display.png" })
-await panel.click(".pop >> text=書面語")
+console.log("display options:", (await panel.locator(".pop").innerText()).replace(/\n/g, " | "))
+if (/English|tutor/i.test(await panel.locator(".pop").innerText())) throw new Error("display menu still offers tutor options")
 await panel.click(".pop button[aria-label='Jyutping']")
 await panel.waitForTimeout(200)
-console.log("formal card:", (await panel.locator(".moment .big").innerText()).replace(/\s+/g, ""), "| rt count:", await panel.locator(".moment rt").count())
-await panel.click(".pop >> text=口語")
+console.log("card rt count:", await panel.locator(".moment rt").count())
 await panel.click(".pop button[aria-label='Jyutping']")
 await panel.keyboard.press("Escape")
 
@@ -343,7 +264,7 @@ await panel.waitForSelector(".add-note.ok", { timeout: 5000 })
 const top = (await panel.locator(".list .item").first().innerText()).replace(/\n/g, " ")
 console.log("after add:", await panel.locator(".add-note").innerText(), "| top item:", top)
 if (!top.includes("傾偈") || !top.includes("Added by hand")) throw new Error("added word isn't at the top of the list")
-await panel.fill(".add input.hz", "咁")
+await panel.fill(".add input.hz", "古怪")
 console.log("duplicate hint:", await panel.locator(".add-note.warn").innerText())
 await panel.click(".add button[aria-label='Close']")
 await panel.click("text=Back to video")

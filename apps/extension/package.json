@@ -2,7 +2,7 @@
   "name": "extension",
   "displayName": "Pause & Ask",
   "version": "0.1.0",
-  "description": "Pause a Cantonese YouTube video and ask a tutor about what was just said.",
+  "description": "Pause a Cantonese YouTube video and look up what was just said.",
   "private": true,
   "scripts": {
     "dev": "node scripts/build-dict.mjs --if-missing && node scripts/build-examples.mjs --if-missing && plasmo dev",
@@ -14,7 +14,6 @@
     "dict": "node scripts/build-dict.mjs && node scripts/build-examples.mjs"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.131.0",
     "@pna/backend": "workspace:^",
     "@pna/shared": "workspace:*",
     "convex": "^1.46.0",
@@ -40,8 +39,6 @@
     ],
     "host_permissions": [
       "https://www.youtube.com/*",
-      "https://api.anthropic.com/*",
-      "https://openrouter.ai/*",
       "http://localhost/*",
       "http://127.0.0.1/*",
       "https://*.convex.cloud/*"

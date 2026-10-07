@@ -11,22 +11,21 @@ import { Icon } from "~components/Icon"
 import { MomentCard, WordSheet } from "~components/Moment"
 import { formatTime } from "~components/Ruby"
 import { store } from "~lib/data"
-import { loadDict, loadExamples } from "~lib/dict"
+import { loadExamples } from "~lib/dict"
 import "~lib/fonts"
 import { loadSettings, type Settings } from "~lib/settings"
 import { speak } from "~lib/speech"
-import { createTutor } from "~lib/tutor"
 import { useDict } from "~lib/useDict"
 import { useGroupings } from "~lib/useGroupings"
 import { usePlayer } from "~lib/usePlayer"
 import { useSaved } from "~lib/useSaved"
+import { useSaveWord } from "~lib/useSaveWord"
 import { useTranscriber, type TranscriberStatus } from "~lib/useTranscriber"
-import { useTutor } from "~lib/useTutor"
+import { createWords } from "~lib/words"
 
 import "../style.css"
 
-// No AI here: the popup is for quick lookups. Explanations live in the side panel.
-const tutor = createTutor(store, null, loadDict)
+const wordLog = createWords(store)
 const PANEL_CHECK_MS = 2000
 /** Scroll distance per line step, and the pause after which a new scroll starts fresh. */
 const WHEEL_STEP = 60
@@ -95,7 +94,7 @@ function PausePopup() {
   }, [state.tabId])
   const [panelOpen, setPanelOpen] = usePanelOpen(windowId)
 
-  const t = useTutor(tutor, state)
+  const t = useSaveWord(wordLog, state)
   const { dict, split } = useDict()
   const groupings = useGroupings()
   const saved = useSaved(store)
@@ -234,8 +233,6 @@ function PausePopup() {
         <MomentCard
           words={words}
           startMs={line.startMs}
-          english={null}
-          inferred={false}
           showJyutping={settings.showJyutping}
           saved={saved.words}
           selected={selWord}
@@ -258,7 +255,6 @@ function PausePopup() {
           }}
           onHear={() => {}}
           onLoop={() => {}}
-          onExplain={null}
         />
       ) : (
         <NoLine status={tr.status} hasLines={state.lines.length > 0} onOpen={openPanel} />
@@ -271,7 +267,6 @@ function PausePopup() {
             senses={dict ? senses(word.text, dict) : []}
             examples={examples ? examplesFor(typeof dict?.[word.text] === "string" ? (dict[word.text] as string) : word.text, examples) : null}
             onHearExample={(text) => speak(text)}
-            onAskExamples={null}
             saved={saved.words.has(word.colloquial ?? word.text)}
             from={{ ms: line!.startMs }}
             onSave={async () => {

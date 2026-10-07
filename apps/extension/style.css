@@ -117,7 +117,6 @@ button.pill:hover { color: var(--fg); }
 .ln:hover { color: var(--fg); }
 .ln.now { color: var(--fg); font-size: var(--now); font-weight: 500; }
 .ln .w { margin-right: 0.18em; }
-.ln .en { display: block; font: 13px/1.4 var(--f-ui); color: var(--muted); margin-top: 4px; }
 ruby { ruby-position: over; ruby-align: center; margin: 0 0.04em; }
 rt { font: 400 9.5px/1 var(--f-ui); color: var(--muted); letter-spacing: 0; padding-bottom: 2px; }
 .ln.now rt { font-size: 10px; }
@@ -151,15 +150,12 @@ rt { font: 400 9.5px/1 var(--f-ui); color: var(--muted); letter-spacing: 0; padd
 .chip-w.tap:hover { border-bottom-color: var(--jade); }
 .chip-w.sel { background: var(--jade-soft); border-bottom-color: var(--jade); color: var(--jade); }
 .chip-w.saved { border-bottom: 2px dotted var(--amber); }
-.moment .en { font-size: 13.5px; color: var(--muted); }
 .acts, .follow { display: flex; gap: 6px; flex-wrap: wrap; }
 .act { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); border-radius: 999px; padding: 4px 10px; }
 .act:hover { border-color: var(--faint); }
 .act .i { width: 13px; height: 13px; color: var(--muted); }
 .act.on { border-color: var(--jade); color: var(--jade); }
 .act.on .i { color: var(--jade); }
-.act.ai { border-color: transparent; background: var(--jade-soft); color: var(--jade); }
-.act.ai .i { color: var(--jade); }
 .act.done { background: var(--amber-soft); border-color: transparent; color: var(--amber); }
 .act.done .i { color: var(--amber); }
 
@@ -197,30 +193,9 @@ rt { font: 400 9.5px/1 var(--f-ui); color: var(--muted); letter-spacing: 0; padd
 .from-link .ft { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .from-link .fm { font: 11px var(--f-mono); flex: none; }
 
-/* tutor answers */
-.answer { margin: 0 12px; padding: 12px 4px 0; display: grid; gap: 8px; font-size: 13.5px; }
-.q { justify-self: end; background: var(--soft); border-radius: 12px 12px 4px 12px; padding: 6px 10px; font-size: 13px; max-width: 90%; }
-.a p { margin: 0; }
-.a p + p, .a p + ul, .a ul + p { margin-top: 6px; }
-.a ul { margin: 0; padding-left: 18px; }
-.a strong { font-family: var(--f-zh); font-weight: 600; }
-.a code { font: 11px var(--f-mono); color: var(--jade); }
-.a.error { color: var(--red); }
-.a .follow { margin-top: 8px; }
-.typing { display: inline-block; width: 24px; height: 8px; background: radial-gradient(circle, var(--muted) 2px, transparent 2.5px) 0 0 / 8px 8px repeat-x; animation: blink 1s infinite; }
-
 /* dock */
 .dock { flex: none; padding: 10px 12px 12px; display: grid; gap: 8px; }
 .hint { text-align: center; font-size: 12px; color: var(--muted); display: flex; justify-content: center; align-items: center; gap: 6px; }
-.ask { display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 12px; padding: 5px 5px 5px 12px; background: var(--bg); }
-.ask.focus { border-color: var(--jade); }
-.ask input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--fg); font: 13.5px var(--f-ui); }
-.ask input::placeholder { color: var(--muted); }
-.mic { width: 32px; height: 32px; border-radius: 9px; background: var(--jade); color: var(--on-accent); display: grid; place-items: center; flex: none; }
-.mic .i { width: 16px; height: 16px; }
-.mic.live { animation: pulse 1.2s infinite; }
-@keyframes pulse { 50% { box-shadow: 0 0 0 5px var(--jade-soft); } }
-.offnote { font-size: 12.5px; color: var(--muted); display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px; border: 1px dashed var(--line); border-radius: 12px; text-align: center; }
 .inline-error { font-size: 12.5px; color: var(--red); text-align: left; padding: 6px 10px; background: var(--soft); border-radius: var(--r-m); }
 
 /* ---------- saved words ---------- */

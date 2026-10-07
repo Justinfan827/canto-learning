@@ -88,7 +88,7 @@ export function SavedList(props: {
               </span>
               <span className="t">{when(s) ? ago(when(s)!) : ""}</span>
               <span className="from">
-                {s.at ? `${s.at.videoTitle || "Video"} · ${formatTime(s.at.startMs)}` : s.word.source === "manual" ? "Added by hand" : "From a tutor answer"}
+                {s.at ? `${s.at.videoTitle || "Video"} · ${formatTime(s.at.startMs)}` : s.word.source === "manual" ? "Added by hand" : "From a video"}
               </span>
             </button>
             <button className="ib small" aria-label={`Hear ${s.word.colloquial}`} title="Hear it" onClick={() => props.onHear(s)}>

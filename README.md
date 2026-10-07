@@ -1,8 +1,6 @@
 # Pause & Ask
 
-A Chrome extension that turns Cantonese YouTube videos into lessons. While the video plays, the side panel shows the captions like lyrics, with Jyutping over the current line. Pause, tap any word for its meaning and example sentences from a bundled offline dictionary, and save the words you don't know with the moment they came from. No API key needed for that.
-
-AI is an add-on: with a model set up, the paused line gets an English translation and an Explain button, the tutor answers questions by voice or text right under the line, and the Aa menu can switch the captions between spoken (口語) and written (書面語) Chinese. The model can be a free one on OpenRouter (default `qwen/qwen3.8-27b:free`), a local OpenAI-compatible server such as Ollama, or Claude.
+A Chrome extension that turns Cantonese YouTube videos into lessons. While the video plays, the side panel shows the captions like lyrics, with Jyutping over the current line. Pause, tap any word for its meaning and example sentences from a bundled offline dictionary, and save the words you don't know with the moment they came from. Everything runs offline, with no API key.
 
 Spec and plan: [Pause & Ask: YouTube Cantonese Tutor](https://claude.ai/code/artifact/8b284da8-9709-463c-a14f-6a596a41abc0) · [MVP Implementation Plan](https://claude.ai/code/artifact/2d241c97-a195-4fe1-9e23-553a541ec742)
 
@@ -18,12 +16,11 @@ pnpm build:ext        # production build in apps/extension/build/chrome-mv3-prod
 In Chrome, open `chrome://extensions`, turn on Developer mode, and **Load unpacked** the build folder. The settings page opens on install; everything on it is optional:
 
 - **Captions**: whether the local transcriber helper is running, and its quality (Auto picks the best installed engine).
-- **AI tutor**: a free OpenRouter key (openrouter.ai/keys), a local server URL, or a Claude API key. Keys are stored only in this browser profile.
-- **Microphone**: allow it here (the side panel can't show Chrome's mic prompt itself), and choose whether spoken questions are in Cantonese or English.
+- **Saved words**: keep them in this browser, or connect a Convex deployment the phone app can read.
 
 **Pause popup.** With the side panel closed, pausing a video shows the paused line in a small card over YouTube's sidebar (or over the player's right edge in theater mode). Tap a word for its meaning and save it, step to the previous or next line with ↑ ↓, and press Space to carry on watching. The panel icon in the card opens the full transcript. Turn it off in the Aa menu or in settings.
 
-Open a YouTube video and click the toolbar icon to open the side panel. The panel header shows where the captions came from; the star opens saved words, **Aa** has display options (Jyutping, 口語 / 書面語, English, text size) and **⋯** opens settings. Press Space in the panel to play or pause.
+Open a YouTube video and click the toolbar icon to open the side panel. The panel header shows where the captions came from; the star opens saved words, **Aa** has display options (Jyutping, 口語 / 書面語 for locally transcribed videos, text size) and **⋯** opens settings. Press Space in the panel to play or pause.
 
 ## Videos without captions
 
@@ -52,12 +49,10 @@ curl -LO https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sile
 |---|---|---|
 | Caption hook | `apps/extension/contents/caption-hook.ts` | Runs in the page (MAIN world); copies every `/api/timedtext` caption file the player downloads and reports the caption tracks |
 | Player bridge | `apps/extension/contents/bridge.ts` | Picks the best Cantonese track and turns it on, watches play/pause/seek, falls back to reading on-screen captions |
-| Side panel | `apps/extension/sidepanel.tsx`, `apps/extension/components/` | Read-along transcript (`Lyrics`), paused card, word sheet and tutor answers (`Moment`), saved words (`SavedList`), header and Aa menu (`Header`) |
-| Tutor | `apps/extension/lib/tutor.ts` | App logic: save captions, convert registers, split lines into words, stream answers, log taught words |
+| Side panel | `apps/extension/sidepanel.tsx`, `apps/extension/components/` | Read-along transcript (`Lyrics`), paused card, and word sheet (`Moment`), saved words (`SavedList`), header and Aa menu (`Header`) |
+| Saving words | `apps/extension/lib/words.ts`, `apps/extension/lib/useSaveWord.ts` | Stores the video's captions, then each saved word with the moment it came from |
 | Dictionary | `packages/shared/src/dict.ts`, `apps/extension/scripts/build-dict.mjs` | Longest-match word splitting and lookups over CC-Canto + CC-CEDICT with Cantonese readings, built into `assets/dict.dat` |
 | Example sentences | `packages/shared/src/examples.ts`, `apps/extension/scripts/build-examples.mjs` | Tatoeba's Cantonese sentences with English, Jyutping filled in from the dictionary, indexed by the words they use; built into `assets/examples.dat` and `apps/ios/Canto/Resources/examples.json` |
-| Claude calls | `apps/extension/lib/ai.ts` | Prompts and schemas; Haiku 4.5 for conversion and word extraction (structured outputs), Sonnet 5.5 for streamed answers |
-| Other models | `apps/extension/lib/openaiCompat.ts` | The same prompts over any OpenAI-compatible endpoint (OpenRouter, Ollama, LM Studio) |
 | Transcriber | `apps/transcriber/server.mjs`, `apps/extension/lib/useTranscriber.ts` | Local speech-to-text for videos without captions, started automatically from the playhead; lines go to the bridge as `local` captions |
 | Data layer | `apps/extension/lib/data` | The one `store` the app uses; settings pick the backend. `localStore.ts` (IndexedDB, the default) or `convexStore.ts` (Convex) |
 | Local database | `apps/extension/lib/data/localStore.ts` | IndexedDB: videos, caption lines, words, encounters, questions, reviews |
@@ -78,8 +73,8 @@ pnpm test                                   # unit tests (shared + extension)
 pnpm build:ext && pnpm --filter extension smoke     # headless; HEADED=1 to watch
 ```
 
-The smoke test loads the built extension in Chromium against a mock YouTube page, a mock Claude API and a mock transcriber helper. It reads along, pauses, looks up and saves a word with no model, then with Claude asks a question and saves a taught word, tries the display options and saved words list, and finally opens a video with no Chinese captions to check it transcribes on its own. Screenshots of each state are written to `apps/extension/e2e/screenshots/`. It runs headless (set `HEADED=1` to see the window); set `CHROMIUM_PATH` to a Chromium or Chrome for Testing binary.
+The smoke test loads the built extension in Chromium against a mock YouTube page and a mock transcriber helper. It reads along, pauses, looks up and saves a word, checks the settings page, tries the display options and saved words list, and finally opens a video with no Chinese captions to check it transcribes on its own. Screenshots of each state are written to `apps/extension/e2e/screenshots/`. It runs headless (set `HEADED=1` to see the window); set `CHROMIUM_PATH` to a Chromium or Chrome for Testing binary.
 
 ## Dictionary data
 
-The dictionary is built from [CC-Canto](https://cantonese.org) and its Cantonese readings for CC-CEDICT (© Pleco Inc.), and [CC-CEDICT](https://www.mdbg.net/chinese/dictionary?page=cc-cedict) (© MDBG), all under [CC BY-SA](https://creativecommons.org/licenses/by-sa/3.0/). Example sentences are Cantonese sentences from [Tatoeba](https://tatoeba.org) with their English translations, under [CC BY 2.0 FR](https://creativecommons.org/licenses/by/2.0/fr/); about 6,000 sentences covering 5,000 words. Their Jyutping is built word by word from the dictionary, so a character with several readings can occasionally get the wrong one. Words with no bundled example get an "Ask the tutor for examples" button when a model is set up. `pnpm --filter extension dict` rebuilds both.
+The dictionary is built from [CC-Canto](https://cantonese.org) and its Cantonese readings for CC-CEDICT (© Pleco Inc.), and [CC-CEDICT](https://www.mdbg.net/chinese/dictionary?page=cc-cedict) (© MDBG), all under [CC BY-SA](https://creativecommons.org/licenses/by-sa/3.0/). Example sentences are Cantonese sentences from [Tatoeba](https://tatoeba.org) with their English translations, under [CC BY 2.0 FR](https://creativecommons.org/licenses/by/2.0/fr/); about 6,000 sentences covering 5,000 words. Their Jyutping is built word by word from the dictionary, so a character with several readings can occasionally get the wrong one. `pnpm --filter extension dict` rebuilds both.

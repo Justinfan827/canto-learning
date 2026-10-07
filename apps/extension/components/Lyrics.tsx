@@ -8,7 +8,6 @@ export interface LyricLine {
   startMs: number
   endMs: number
   words: LineWord[]
-  english: string | null
 }
 
 /** Where the current line sits, as a share of the panel's height. */
@@ -25,7 +24,6 @@ export function Lyrics(props: {
   lines: LyricLine[]
   current: number
   showJyutping: boolean
-  showEnglish: boolean
   onSeek: (line: LyricLine) => void
   head?: ReactNode
   tail?: ReactNode
@@ -72,7 +70,6 @@ export function Lyrics(props: {
           line={l}
           state={l.idx === current ? "now" : current >= 0 && l.idx < current ? "past" : "next"}
           showJyutping={props.showJyutping}
-          english={l.idx === current && props.showEnglish ? l.english : null}
           onSeek={props.onSeek}
         />
       ))}
@@ -86,7 +83,6 @@ const Line = memo(function Line(props: {
   line: LyricLine
   state: "past" | "now" | "next"
   showJyutping: boolean
-  english: string | null
   onSeek: (line: LyricLine) => void
 }) {
   const { line, state } = props
@@ -100,7 +96,6 @@ const Line = memo(function Line(props: {
           </span>
         ))}
       </span>
-      {props.english && <span className="en">{props.english}</span>}
     </div>
   )
 })

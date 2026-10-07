@@ -18,13 +18,6 @@ const PATHS = {
       <circle cx="19" cy="12" r="1.8" />
     </g>
   ),
-  mic: (
-    <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <rect x="9" y="3" width="6" height="11" rx="3" />
-      <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" />
-    </g>
-  ),
-  send: <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 19V5M5.5 11.5L12 5l6.5 6.5" />,
   sound: (
     <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
@@ -43,20 +36,11 @@ const PATHS = {
       <path d="M18 4.5V9h-4.5M6 19.5V15h4.5" />
     </g>
   ),
-  spark: (
-    <path fill="currentColor" d="M12 2.5l1.9 6.1 6.1 1.9-6.1 1.9L12 18.5l-1.9-6.1L4 10.5l6.1-1.9zM18.5 15l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z" />
-  ),
   play: <path fill="currentColor" d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" />,
   pause: (
     <g fill="currentColor">
       <rect x="6" y="5" width="4" height="14" rx="1" />
       <rect x="14" y="5" width="4" height="14" rx="1" />
-    </g>
-  ),
-  lock: (
-    <g fill="none" stroke="currentColor" strokeWidth="2">
-      <rect x="5" y="10.5" width="14" height="10" rx="2" />
-      <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
     </g>
   ),
   people: (

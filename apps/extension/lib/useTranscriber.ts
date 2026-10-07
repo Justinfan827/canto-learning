@@ -111,7 +111,7 @@ export function useTranscriber(
         flush()
         setStatus({ kind: "done", engine: engine.label })
         // SenseVoice writes what was said; Whisper writes it as standard Chinese. Run Whisper
-        // afterwards, quietly, so the 書面語 view works without a tutor model.
+        // afterwards, quietly, so the 書面語 view works.
         const writer = SPOKEN_ENGINES.includes(engine.id) ? engines.find((e) => WRITTEN_ENGINES.includes(e.id) && !e.unavailable) : null
         if (writer) {
           const out: CaptionLine[] = []

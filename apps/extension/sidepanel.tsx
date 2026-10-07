@@ -1,29 +1,29 @@
-import { alignByTime, examplesFor, lineAt, lookup, pickTrack, regroup, senses, trackLabel, transcriptCoverage, type Examples, type LineWord, type Sense, type TaughtWord, type Dict } from "@pna/shared"
+import { alignByTime, examplesFor, lineAt, lookup, pickTrack, regroup, senses, trackLabel, transcriptCoverage, type Examples, type LineWord, type Sense, type Dict } from "@pna/shared"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { DisplayMenu, Header, type Pill, type SourceOption } from "~components/Header"
 import { Lyrics, type LyricLine } from "~components/Lyrics"
-import { Dock, MomentCard, Thread, WordSheet } from "~components/Moment"
+import { Dock, MomentCard, WordSheet } from "~components/Moment"
 import { formatTime } from "~components/Ruby"
 import { SavedList } from "~components/SavedList"
 import { Squads } from "~components/Squads"
-import { loadDict, loadExamples } from "~lib/dict"
+import { loadExamples } from "~lib/dict"
 import "~lib/fonts"
 import { store } from "~lib/data"
-import { aiKey, loadSettings, saveSettings, type Settings } from "~lib/settings"
-import { listen, speak, speechSupported } from "~lib/speech"
-import { aiFor, createTutor } from "~lib/tutor"
+import { loadSettings, saveSettings, type Settings } from "~lib/settings"
+import { speak } from "~lib/speech"
 import { useDict } from "~lib/useDict"
 import { useGroupings } from "~lib/useGroupings"
 import { usePlayer, type PlayerState } from "~lib/usePlayer"
 import { useSaved, type SavedWord } from "~lib/useSaved"
+import { useSaveWord } from "~lib/useSaveWord"
 import { pickEngine, type Engine } from "~lib/transcriber"
 import { useTranscriber, type TranscriberStatus } from "~lib/useTranscriber"
-import { useTutor } from "~lib/useTutor"
+import { createWords } from "~lib/words"
 
 import "./style.css"
 
-const LISTEN_SILENCE_MS = 8000
+const wordLog = createWords(store)
 const openSetup = (hash = "") => chrome.tabs.create({ url: chrome.runtime.getURL("tabs/setup.html") + hash })
 
 function SidePanel() {
@@ -34,16 +34,9 @@ function SidePanel() {
     chrome.storage.onChanged.addListener(onChange)
     return () => chrome.storage.onChanged.removeListener(onChange)
   }, [])
-  // Rebuild the tutor only when the model changes, not on every display tweak.
-  const modelKey = settings ? aiKey(settings) : null
-  const tutor = useMemo(
-    () => (settings ? createTutor(store, aiFor(settings), loadDict) : null),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [modelKey]
-  )
 
   const { state, seek, play, pause, setLocalCaptions, useTrack } = usePlayer()
-  const t = useTutor(tutor, state)
+  const t = useSaveWord(wordLog, state)
   const { dict, split } = useDict()
   const groupings = useGroupings()
   const saved = useSaved(store)
@@ -56,41 +49,32 @@ function SidePanel() {
   const [selWord, setSelWord] = useState<number | null>(null)
   const [loopIdx, setLoopIdx] = useState<number | null>(null)
   const loopRef = useRef<number | null>(null)
-  const [input, setInput] = useState("")
-  const [listening, setListening] = useState(false)
-  const [micError, setMicError] = useState<string | null>(null)
-  const stopListening = useRef<(() => void) | null>(null)
 
   const [examples, setExamples] = useState<Examples | null>(null)
   useEffect(() => {
     if ((selWord !== null || savedSel) && !examples) loadExamples().then(setExamples, (e) => console.warn(e))
   }, [selWord, savedSel, examples])
-  const hasAi = !!tutor?.hasAi
   // Written Chinese for each line from a second local transcript, when there is one.
   const written = useMemo(() => (tr.written ? alignByTime(state.lines, tr.written) : null), [state.lines, tr.written])
-  const canFormal = hasAi || !!written
+  const canFormal = !!written
   const register = canFormal ? (settings?.register ?? "colloquial") : "colloquial"
   const current = lineAt(state.lines, state.timeMs)
 
   // Each line in the chosen register, split into dictionary words. Stable between time updates.
-  const lines = useMemo<(LyricLine & { inferred: boolean; text: string; regrouped: boolean })[]>(
+  const lines = useMemo<(LyricLine & { text: string; regrouped: boolean })[]>(
     () =>
       state.lines.map((l) => {
-        const c = t.converted[l.idx]
-        const conv = c && c.text === l.text ? c : undefined
-        const text = (register === "formal" ? conv?.textFormal || written?.get(l.idx) : conv?.textColloquial) || l.text
+        const text = (register === "formal" && written?.get(l.idx)) || l.text
         return {
           idx: l.idx,
           startMs: l.startMs,
           endMs: l.endMs,
           text,
           words: groupings.map[text] && dict ? groupings.map[text].map((w) => lookup(w, dict)) : split(text),
-          regrouped: !!groupings.map[text],
-          english: conv?.textEnglish ?? null,
-          inferred: register === "colloquial" && !!conv?.colloquialInferred && text !== l.text
+          regrouped: !!groupings.map[text]
         }
       }),
-    [state.lines, t.converted, register, split, groupings.map, dict, written]
+    [state.lines, register, split, groupings.map, dict, written]
   )
 
   const pausedView = state.paused || loopIdx != null
@@ -102,41 +86,6 @@ function SidePanel() {
     setLoopIdx(idx)
   }
 
-  const ask = useCallback(
-    (q: string) => {
-      const question = q.trim()
-      if (!question) return
-      stopListening.current?.()
-      setInput("")
-      t.ask(question, focus ?? current, (answer) => {
-        if (settings?.speakAnswers) speak(answer.replace(/[*`#]/g, ""), { lang: "en-US" })
-      })
-    },
-    [t, focus, current, settings]
-  )
-
-  const startListening = useCallback(() => {
-    if (!speechSupported() || listening) return
-    setMicError(null)
-    setListening(true)
-    stopListening.current = listen({
-      lang: settings?.listenLang ?? "zh-HK",
-      silenceMs: LISTEN_SILENCE_MS,
-      onText: (text) => setInput(text),
-      onDone: (err) => {
-        setListening(false)
-        stopListening.current = null
-        if (err === "not-allowed") setMicError("Microphone blocked. Allow it in settings.")
-        else if (err && err !== "no-speech" && err !== "aborted") setMicError(`Voice input stopped: ${err}`)
-        // Send what was heard; the user can edit and resend if it was misheard.
-        setInput((text) => {
-          if (text.trim() && !err) setTimeout(() => ask(text), 0)
-          return text
-        })
-      }
-    })
-  }, [listening, settings, ask])
-
   // Pause opens the line; play closes it (unless it's looping).
   const wasPaused = useRef(state.paused)
   useEffect(() => {
@@ -145,13 +94,10 @@ function SidePanel() {
       setSelWord(null)
       if (current >= 0) {
         setFocusIdx(current)
-        if (state.captionSource !== "track") t.convertAround(current).catch(() => {})
-        if (hasAi) startListening()
       }
     } else if (!state.paused && wasPaused.current && loopRef.current == null) {
       setFocusIdx(null)
       setSelWord(null)
-      stopListening.current?.()
     }
     wasPaused.current = state.paused
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -203,13 +149,8 @@ function SidePanel() {
     await t.saveWord(w, focus)
     saved.refresh()
   }
-  const saveTaught = async (w: TaughtWord) => {
-    if (focus == null) return
-    await t.saveTaught(w, focus)
-    saved.refresh()
-  }
 
-  if (!settings || !tutor) return null
+  if (!settings) return null
   if (view === "squads")
     return (
       <div className={"panel size-" + settings.textSize}>
@@ -250,7 +191,6 @@ function SidePanel() {
             senses={sel.senses}
             examples={examples ? examplesFor(typeof dict?.[sel.word.text] === "string" ? (dict[sel.word.text] as string) : sel.word.text, examples) : null}
             onHearExample={(text) => speak(text)}
-            onAskExamples={null}
             saved
             from={savedSel.at ? { ms: savedSel.at.startMs, title: savedSel.at.videoTitle, onOpen: () => openSource(savedSel) } : null}
             onSave={() => {}}
@@ -269,8 +209,6 @@ function SidePanel() {
   const job = status.kind === "running" ? status : null
   const coverage = job ? transcriptCoverage(state.lines, { ...job, done: false }) : null
   const word = focusLine && selWord != null ? focusLine.words[selWord] : null
-  const thread = focus != null ? t.chat.filter((m) => m.lineIdx === focus) : []
-  const showEnglish = settings.showEnglish && hasAi
 
   const header = (
     <Header
@@ -289,7 +227,7 @@ function SidePanel() {
       onSaved={() => setView("saved")}
       onSquads={() => setView("squads")}
       onMore={() => openSetup()}
-      menu={<DisplayMenu s={settings} hasAi={hasAi} canFormal={canFormal} onChange={(p) => saveSettings(p)} />}
+      menu={<DisplayMenu s={settings} canFormal={canFormal} onChange={(p) => saveSettings(p)} />}
     />
   )
 
@@ -319,8 +257,6 @@ function SidePanel() {
           <MomentCard
             words={focusLine.words}
             startMs={focusLine.startMs}
-            english={showEnglish ? focusLine.english : null}
-            inferred={focusLine.inferred}
             showJyutping={settings.showJyutping}
             saved={saved.words}
             selected={selWord}
@@ -354,24 +290,18 @@ function SidePanel() {
                 play()
               }
             }}
-            onExplain={hasAi ? () => ask("Explain this line") : null}
           />
-          {thread.length ? (
-            <Thread messages={thread} saved={saved.words} onSave={saveTaught} onAsk={ask} />
-          ) : (
-            <div className="ctx after">
-              {lines.slice(focusLine.idx + 1, focusLine.idx + 3).map((l) => (
-                <CtxLine key={l.idx} line={l} onSeek={onSeek} />
-              ))}
-            </div>
-          )}
+          <div className="ctx after">
+            {lines.slice(focusLine.idx + 1, focusLine.idx + 3).map((l) => (
+              <CtxLine key={l.idx} line={l} onSeek={onSeek} />
+            ))}
+          </div>
         </div>
       ) : (
         <Lyrics
           lines={lines}
           current={current}
           showJyutping={settings.showJyutping}
-          showEnglish={showEnglish}
           onSeek={onSeek}
           head={
             job?.pass === 2 && job.fromMs > 0 ? (
@@ -395,7 +325,6 @@ function SidePanel() {
           senses={dict ? senses(word.text, dict) : []}
           examples={examples ? examplesFor(typeof dict?.[word.text] === "string" ? (dict[word.text] as string) : word.text, examples) : null}
           onHearExample={(text) => speak(text)}
-          onAskExamples={hasAi ? () => ask(`Give two short everyday example sentences that use ${word.colloquial ?? word.text}, each with Jyutping and English.`) : null}
           saved={saved.words.has(word.colloquial ?? word.text)}
           from={{ ms: focusLine.startMs }}
           onSave={() => saveWord(word)}
@@ -404,21 +333,7 @@ function SidePanel() {
         />
       )}
 
-      <Dock
-        mode={!focusLine ? "watching" : hasAi ? "ask" : "no-tutor"}
-        listening={listening}
-        canListen={speechSupported()}
-        onListen={() => (listening ? stopListening.current?.() : startListening())}
-        onAsk={ask}
-        onSetup={() => openSetup("#tutor")}
-        input={input}
-        setInput={setInput}
-        error={micError ?? t.error}
-        onClearError={() => {
-          setMicError(null)
-          t.clearError()
-        }}
-      />
+      <Dock watching={!focusLine} error={t.error} onClearError={t.clearError} />
     </div>
   )
 }

@@ -1,10 +1,7 @@
-import type { Example, LineWord, Sense, TaughtWord } from "@pna/shared"
+import type { Example, LineWord, Sense } from "@pna/shared"
 import { useEffect, useRef, useState } from "react"
 
-import type { ChatMessage } from "~lib/useTutor"
-
 import { Icon } from "./Icon"
-import { Markdown } from "./Markdown"
 import { formatTime, Ruby } from "./Ruby"
 
 const isWord = (w: LineWord) => /[\p{L}\p{N}]/u.test(w.text)
@@ -13,8 +10,6 @@ const isWord = (w: LineWord) => /[\p{L}\p{N}]/u.test(w.text)
 export function MomentCard(props: {
   words: LineWord[]
   startMs: number
-  english: string | null
-  inferred: boolean
   showJyutping: boolean
   saved: Set<string>
   selected: number | null
@@ -27,7 +22,6 @@ export function MomentCard(props: {
   onResetGrouping: () => void
   onHear: (slow: boolean) => void
   onLoop: () => void
-  onExplain: (() => void) | null
 }) {
   const { words, saved, selected } = props
   // Character offset where each word starts, for drag-to-regroup.
@@ -54,8 +48,6 @@ export function MomentCard(props: {
         <span>
           {props.looping ? "Looping" : "Paused at"} {formatTime(props.startMs)}
         </span>
-        <span className="grow" />
-        {props.inferred && <span title="The caption was written Chinese; the spoken words are a guess">Spoken form inferred</span>}
       </div>
       <div
         className="big"
@@ -123,7 +115,6 @@ export function MomentCard(props: {
       ) : (
         <div className="regroup-hint muted-hint">Drag across characters to group them differently.</div>
       )}
-      {props.english && <div className="en">{props.english}</div>}
       <div className="acts">
         <button className="act" onClick={() => props.onHear(false)}>
           <Icon name="sound" />
@@ -137,12 +128,6 @@ export function MomentCard(props: {
           <Icon name="loop" />
           {props.looping ? "Stop loop" : "Loop"}
         </button>
-        {props.onExplain && (
-          <button className="act ai" onClick={props.onExplain}>
-            <Icon name="spark" />
-            Explain
-          </button>
-        )}
       </div>
     </section>
   )
@@ -155,8 +140,6 @@ export function WordSheet(props: {
   /** Example sentences that use the word, or null while they load. */
   examples: Example[] | null
   onHearExample: (text: string) => void
-  /** Asks the tutor for examples when the bundled ones have none; null without a model. */
-  onAskExamples: (() => void) | null
   saved: boolean
   /** Where the word was heard: a timestamp, or a link back to the video when opened from Saved words. */
   from: { ms: number; title?: string; onOpen?: () => void } | null
@@ -211,7 +194,7 @@ export function WordSheet(props: {
             </span>
           </div>
         )}
-        {props.examples && (props.examples.length > 0 || props.onAskExamples) && (
+        {!!props.examples?.length && (
           <section className="examples" aria-label="Examples">
             <h3>Examples</h3>
             {props.examples.map((ex) => (
@@ -228,12 +211,6 @@ export function WordSheet(props: {
                 </div>
               </div>
             ))}
-            {!props.examples.length && props.onAskExamples && (
-              <button className="act ai" onClick={props.onAskExamples}>
-                <Icon name="spark" />
-                Ask the tutor for examples
-              </button>
-            )}
           </section>
         )}
         {props.from?.onOpen && (
@@ -258,61 +235,8 @@ function markWord(text: string, word: string) {
   return parts.flatMap((p, i) => (i ? [<b key={i}>{word}</b>, p] : [p]))
 }
 
-/** The tutor's answers for one paused line, with Save chips for the words they taught. */
-export function Thread(props: { messages: ChatMessage[]; saved: Set<string>; onSave: (w: TaughtWord) => void; onAsk: (q: string) => void }) {
-  const end = useRef<HTMLDivElement>(null)
-  const last = props.messages[props.messages.length - 1]
-  useEffect(() => end.current?.scrollIntoView({ block: "nearest" }), [props.messages.length, last?.content])
-  return (
-    <div className="answer" aria-live="polite">
-      {props.messages.map((m) =>
-        m.role === "user" ? (
-          <div key={m.id} className="q">
-            {m.content}
-          </div>
-        ) : (
-          <div key={m.id} className={"a" + (m.error ? " error" : "")}>
-            {m.content ? <Markdown text={m.content} /> : <span className="typing" aria-label="Thinking" />}
-            {!!m.taught?.length && (
-              <div className="follow">
-                {m.taught.map((w) => {
-                  const saved = props.saved.has(w.colloquial)
-                  return (
-                    <button key={"s" + w.colloquial} className={"act" + (saved ? " done" : "")} disabled={saved} onClick={() => props.onSave(w)}>
-                      <Icon name={saved ? "starFill" : "star"} />
-                      {saved ? "Saved" : "Save"} <span lang="yue-Hant">{w.colloquial}</span>
-                    </button>
-                  )
-                })}
-                {m.taught.slice(0, 1).map((w) => (
-                  <button key={"m" + w.colloquial} className="act" onClick={() => props.onAsk(`Other uses of ${w.colloquial}?`)}>
-                    Other uses of <span lang="yue-Hant">{w.colloquial}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )
-      )}
-      <div ref={end} />
-    </div>
-  )
-}
-
-/** Bottom of the panel: a pause hint while playing; the ask bar (or a note about the tutor) when paused. */
-export function Dock(props: {
-  mode: "watching" | "ask" | "no-tutor"
-  listening: boolean
-  canListen: boolean
-  onListen: () => void
-  onAsk: (q: string) => void
-  onSetup: () => void
-  input: string
-  setInput: (s: string) => void
-  error: string | null
-  onClearError: () => void
-}) {
-  const [focused, setFocused] = useState(false)
+/** Bottom of the panel: a pause hint while playing, and any error. */
+export function Dock(props: { watching: boolean; error: string | null; onClearError: () => void }) {
   return (
     <div className="dock">
       {props.error && (
@@ -320,55 +244,10 @@ export function Dock(props: {
           {props.error}
         </button>
       )}
-      {props.mode === "watching" && (
+      {props.watching && (
         <div className="hint">
-          Pause the video to ask <kbd>Space</kbd>
+          Pause the video to look up words <kbd>Space</kbd>
         </div>
-      )}
-      {props.mode === "no-tutor" && (
-        <div className="offnote">
-          <Icon name="lock" />
-          <span>
-            Tap any word for its meaning. Want explanations?{" "}
-            <button className="link" onClick={props.onSetup}>
-              Add a tutor
-            </button>
-          </span>
-        </div>
-      )}
-      {props.mode === "ask" && (
-        <form
-          className={"ask" + (focused ? " focus" : "")}
-          onSubmit={(e) => {
-            e.preventDefault()
-            props.onAsk(props.input)
-          }}
-        >
-          <input
-            value={props.input}
-            onChange={(e) => props.setInput(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            placeholder={props.listening ? "Listening…" : "Ask about this line…"}
-            aria-label="Ask about this line"
-          />
-          {props.input.trim() && !props.listening ? (
-            <button className="mic" type="submit" aria-label="Send">
-              <Icon name="send" />
-            </button>
-          ) : (
-            props.canListen && (
-              <button
-                type="button"
-                className={"mic" + (props.listening ? " live" : "")}
-                aria-label={props.listening ? "Stop listening" : "Ask by voice"}
-                onClick={props.onListen}
-              >
-                <Icon name="mic" />
-              </button>
-            )
-          )}
-        </form>
       )}
     </div>
   )
