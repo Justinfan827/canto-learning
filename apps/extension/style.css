@@ -129,9 +129,24 @@ rt { font: 400 9.5px/1 var(--f-ui); color: var(--muted); letter-spacing: 0; padd
 .skel i { display: block; height: 14px; border-radius: 4px; background: linear-gradient(90deg, var(--soft), var(--line), var(--soft)); background-size: 200% 100%; animation: shimmer 1.6s linear infinite; }
 .skel.big i { height: 18px; }
 @keyframes shimmer { to { background-position: -200% 0; } }
-.notice { margin: 4px 12px 0; padding: 10px 12px; border-radius: var(--r-m); background: var(--amber-soft); font-size: 12.5px; line-height: 1.45; display: grid; gap: 6px; flex: none; }
-.notice b { font-weight: 600; }
-.notice .link { color: var(--amber); }
+/* Before the first transcribed lines arrive. */
+.loading { flex: 1; min-height: 0; display: grid; place-items: center; padding: 0 16px 48px; }
+.loading-card { width: 100%; max-width: 320px; display: grid; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: var(--r-l); font-size: 13px; }
+.loading-h { display: flex; align-items: center; gap: 8px; }
+.loading-h b { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.loading-t { font: 12px var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.loading-card p { margin: 0; font-size: 12px; line-height: 1.45; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; color: var(--faint); }
+.steps li { display: flex; align-items: center; gap: 8px; }
+.steps li.done { color: var(--muted); }
+.steps li.now { color: var(--fg); font-weight: 500; }
+.step-mark { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid currentColor; display: grid; place-items: center; font-size: 10px; flex: none; }
+.steps li.done .step-mark { border-color: var(--jade); background: var(--jade); color: var(--on-accent); }
+.steps li.now .step-mark { border-color: var(--amber); border-top-color: transparent; animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.bar-indef { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.bar-indef i { display: block; width: 35%; height: 100%; border-radius: 2px; background: var(--amber); animation: indef 1.3s ease-in-out infinite; }
+@keyframes indef { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
 
 /* ---------- paused ---------- */
 .paused { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; padding-bottom: 8px; }

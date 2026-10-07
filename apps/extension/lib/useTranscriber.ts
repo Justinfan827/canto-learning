@@ -63,9 +63,13 @@ export function useTranscriber(
   timeRef.current = player.timeMs
   const sendRef = useRef(setLocalCaptions)
   sendRef.current = setLocalCaptions
+  /** The last run's inputs, to tell a switch of model on the same video from opening a new one. */
+  const prev = useRef({ videoId, engineSetting, preferLocal })
 
   useEffect(() => {
     setWritten(null)
+    const switched = prev.current.videoId === videoId && (prev.current.engineSetting !== engineSetting || prev.current.preferLocal !== preferLocal)
+    prev.current = { videoId, engineSetting, preferLocal }
     if (!needed || !videoId) {
       setStatus({ kind: "off" })
       return
@@ -130,13 +134,18 @@ export function useTranscriber(
         if (!ctl.signal.aborted) setStatus({ kind: "error", message: e instanceof Error ? e.message : String(e) })
       }
     }
-    timer = window.setTimeout(run, SETTLE_MS)
+    if (switched) {
+      // The user picked another source: drop the old transcript and start at once.
+      sendRef.current(videoId, [])
+      setStatus({ kind: "checking" })
+    }
+    timer = window.setTimeout(run, switched ? 0 : SETTLE_MS)
     return () => {
       ctl.abort()
       clearTimeout(timer)
       clearTimeout(flushTimer)
     }
-  }, [needed, videoId, engineSetting, attempt])
+  }, [needed, videoId, engineSetting, preferLocal, attempt])
 
   return { status, written, engines, retry: () => setAttempt((n) => n + 1) }
 }

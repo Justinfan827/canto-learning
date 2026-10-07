@@ -18,7 +18,7 @@ import { usePlayer, type PlayerState } from "~lib/usePlayer"
 import { useSaved, type SavedWord } from "~lib/useSaved"
 import { useSaveWord } from "~lib/useSaveWord"
 import { pickEngine, type Engine } from "~lib/transcriber"
-import { useTranscriber, type TranscriberStatus } from "~lib/useTranscriber"
+import { useTranscriber, type TranscribeJob, type TranscriberStatus } from "~lib/useTranscriber"
 import { createWords } from "~lib/words"
 
 import "./style.css"
@@ -239,19 +239,9 @@ function SidePanel() {
           <i style={{ width: `${(coverage?.fraction ?? 0) * 100}%` }} />
         </div>
       )}
-      {job && !settings.transcribeNoticeSeen && (
-        <div className="notice">
-          <b>No Cantonese captions on this video.</b>
-          <span>Transcribing locally with {job.engine}. Audio stays on this computer.</span>
-          <div className="row">
-            <button className="link" onClick={() => saveSettings({ transcribeNoticeSeen: true })}>
-              Got it
-            </button>
-          </div>
-        </div>
-      )}
-
-      {focusLine ? (
+      {(status.kind === "running" || status.kind === "checking") && !lines.length ? (
+        <TranscribeLoading job={job} />
+      ) : focusLine ? (
         <div className="paused">
           <div className="ctx">{lines[focusLine.idx - 1] && <CtxLine line={lines[focusLine.idx - 1]} past onSeek={onSeek} />}</div>
           <MomentCard
@@ -412,6 +402,46 @@ function TranscribingEdge({ text }: { text: string }) {
         <i style={{ width: "82%" }} />
         <i style={{ width: "64%" }} />
         <i style={{ width: "74%" }} />
+      </div>
+    </div>
+  )
+}
+
+/** The download, convert and transcribe steps the helper reports, in order. */
+const STEPS = ["Download audio", "Convert audio", "Transcribe"]
+const stepOf = (stage: string) => (stage.startsWith("Transcribing") ? 2 : stage.startsWith("Converting") ? 1 : 0)
+
+/** Shown until the first transcribed lines arrive, when a video starts or the user switches model. */
+function TranscribeLoading({ job }: { job: (TranscribeJob & { kind: "running" }) | null }) {
+  const [started] = useState(Date.now)
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [])
+  const step = job ? stepOf(job.stage) : -1
+  return (
+    <div className="loading" role="status" aria-live="polite">
+      <div className="loading-card">
+        <div className="loading-h">
+          <span className="dot work" />
+          <b>{job ? `Transcribing with ${shortName(job.engine)}` : "Starting the transcriber"}</b>
+          <span className="loading-t">{formatTime(now - started)}</span>
+        </div>
+        <ol className="steps">
+          {STEPS.map((s, i) => (
+            <li key={s} className={i < step ? "done" : i === step ? "now" : ""}>
+              <span className="step-mark" aria-hidden="true">
+                {i < step ? "✓" : ""}
+              </span>
+              {s}
+            </li>
+          ))}
+        </ol>
+        <div className="bar-indef" aria-hidden="true">
+          <i />
+        </div>
+        <p className="muted">Audio stays on this computer. Lines appear as they&apos;re ready, starting from where you are in the video.</p>
       </div>
     </div>
   )

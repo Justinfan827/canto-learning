@@ -5,8 +5,6 @@ export interface Settings {
   transcribeEngine: string
   /** Use the local engine even when YouTube has captions. Off: YouTube first, local only as a fallback. */
   preferLocal: boolean
-  /** Set once the "audio stays on this computer" notice has been dismissed. */
-  transcribeNoticeSeen: boolean
   /** Show the paused line in a small popup over YouTube's sidebar when the side panel is closed. */
   pausePopup: boolean
   // Display options, from the panel's Aa menu.
@@ -22,7 +20,6 @@ export interface Settings {
 const DEFAULTS: Settings = {
   transcribeEngine: "auto",
   preferLocal: false,
-  transcribeNoticeSeen: false,
   pausePopup: true,
   showJyutping: true,
   register: "colloquial",
