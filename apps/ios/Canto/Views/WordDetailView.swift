@@ -113,6 +113,11 @@ struct SourceCard: View {
                 .font(Typeface.hanzi(20, relativeTo: .title3))
                 .lineSpacing(4)
                 .cantonese()
+            if let jyutping = source.spokenJyutping {
+                Text(jyutping)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(Palette.muted)
+            }
             if let english = source.textEnglish {
                 Text(english)
                     .font(.subheadline)
@@ -160,7 +165,7 @@ struct ExamplesSection: View {
                 HStack(alignment: .top, spacing: 12) {
                     SpeakButton(text: example.yue, size: 34)
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(highlighted(example.yue, word.colloquial, size: 18))
+                        Text(highlighted(example.yue, example.yue.contains(word.colloquial) ? word.colloquial : word.traditional, size: 18))
                             .font(Typeface.hanzi(18, relativeTo: .body))
                             .cantonese()
                         Text(example.jyutping)

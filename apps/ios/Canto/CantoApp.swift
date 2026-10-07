@@ -25,7 +25,7 @@ struct CantoApp: App {
     }
 }
 
-enum AppTab: Hashable { case library, review, listen, squads }
+enum AppTab: Hashable { case library, review, progress, listen, squads }
 
 struct RootView: View {
     @Environment(StudyStore.self) private var store
@@ -41,6 +41,9 @@ struct RootView: View {
                 ReviewView()
             }
             .badge(store.dueCount > 0 ? store.dueCount : 0)
+            Tab("Progress", systemImage: "chart.bar", value: AppTab.progress) {
+                StudyProgressView(tab: $tab)
+            }
             Tab("Listen", systemImage: "headphones", value: AppTab.listen) {
                 ListenView()
             }
@@ -57,6 +60,7 @@ struct RootView: View {
     private static var initialTab: AppTab {
         switch UserDefaults.standard.string(forKey: "tab") {
         case "review": .review
+        case "progress": .progress
         case "listen": .listen
         case "squads": .squads
         default: .library

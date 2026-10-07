@@ -10,6 +10,7 @@ import { Squads } from "~components/Squads"
 import { loadExamples } from "~lib/dict"
 import "~lib/fonts"
 import { store } from "~lib/data"
+import { fillLineJyutping } from "~lib/data/lineJyutping"
 import { loadSettings, saveSettings, type Settings } from "~lib/settings"
 import { speak } from "~lib/speech"
 import { useDict } from "~lib/useDict"
@@ -143,6 +144,13 @@ function SidePanel() {
     },
     [seek, state.paused]
   )
+
+  // Fill in Jyutping for saved words' source lines, for the phone. Runs once the dictionary loads
+  // and after each save; only lines without it are touched.
+  const savedCount = saved.list.length
+  useEffect(() => {
+    if (dict) fillLineJyutping(store, split).catch((e) => console.warn("Line Jyutping", e))
+  }, [dict, split, savedCount])
 
   const saveWord = async (w: LineWord) => {
     if (focus == null) return

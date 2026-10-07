@@ -267,3 +267,101 @@ struct ConvexSquadsTests {
         }
     }
 }
+
+struct ProgressTests {
+    func word(_ id: Int, _ c: String, meaning: String? = nil, known: Bool = false) -> StudyWord {
+        StudyWord(id: id, colloquial: c, formal: nil, jyutping: nil, meaning: meaning, notes: nil, status: known ? "known" : "learning", timesAsked: 0, timesMissed: 0,
+                  intervalDays: 1, ease: 2.5, dueAt: 0, createdAt: 0, updatedAt: 0, sources: [])
+    }
+    func card(interval: Double, reviews: Int = 3, missed: Int = 0) -> CardState {
+        CardState(intervalDays: interval, ease: 2.5, timesMissed: missed, dueAt: 0, reviews: reviews, lastReviewedAt: 0)
+    }
+
+    @Test func stagesFollowTheInterval() {
+        #expect(Mastery.of(card(interval: 1, reviews: 0), known: false) == .new)
+        #expect(Mastery.of(card(interval: 2.5), known: false) == .learning)
+        #expect(Mastery.of(card(interval: 7), known: false) == .familiar)
+        #expect(Mastery.of(card(interval: 21), known: false) == .mastered)
+        #expect(Mastery.of(card(interval: 1, reviews: 0), known: true) == .mastered)
+    }
+
+    @Test func countsStreakRecallAndHardestWords() {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "UTC")!
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let day = 86_400_000.0
+        let words = [word(1, "迷茫"), word(2, "交友"), word(3, "幽默")]
+        let cards = [1: card(interval: 1, missed: 3), 2: card(interval: 30), 3: card(interval: 1, reviews: 0)]
+        // Answers today, yesterday and two days ago (a 3-day streak), and one 10 days ago.
+        let history = [
+            StudyReview(wordId: 1, colloquial: "迷茫", correct: false, at: now.ms),
+            StudyReview(wordId: 2, colloquial: "交友", correct: true, at: now.ms - day),
+            StudyReview(wordId: 2, colloquial: "交友", correct: true, at: now.ms - 2 * day),
+            StudyReview(wordId: 1, colloquial: "迷茫", correct: true, at: now.ms - 10 * day),
+        ]
+        let p = ProgressStats(words: words, card: { cards[$0.id]! }, history: history, now: now, calendar: cal)
+        #expect(p.count(.learning) == 1 && p.count(.mastered) == 1 && p.count(.new) == 1)
+        #expect(p.streak == 3)
+        #expect(p.reviewedToday == 1)
+        #expect(p.recall == 2.0 / 3.0) // the 10-day-old answer is outside the week
+        #expect(p.days.count == 14 && p.days.last?.missed == 1)
+        #expect(p.hardest.map(\.word.colloquial) == ["迷茫"])
+    }
+
+    @Test func streakSurvivesUntilYouReviewToday() {
+        let now = Date()
+        let yesterday = now.ms - 86_400_000
+        let p = ProgressStats(words: [], card: { _ in .seed(from: word(0, "")) }, history: [StudyReview(wordId: 1, colloquial: "x", correct: true, at: yesterday)], now: now)
+        #expect(p.streak == 1)
+        #expect(p.reviewedToday == 0)
+    }
+
+    @Test func storeKeepsEveryAnswerForProgress() {
+        let dir = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        let store = StudyStore(directory: dir)
+        store.loadSample()
+        let w = store.dueWords()[0]
+        store.record(w, correct: false)
+        store.record(w, correct: true)
+        #expect(store.history.count == 2)
+        #expect(StudyStore(directory: dir).history.count == 2)
+        #expect(store.progress().reviewedToday == 2)
+        store.resetProgress()
+        #expect(store.history.isEmpty)
+    }
+}
+
+struct WordSetTests {
+    let p = ProgressTests()
+
+    @Test func findsTopicsIdiomsAndProgressSets() {
+        let words = [
+            p.word(1, "交友", meaning: "to make friends"), p.word(2, "相遇", meaning: "to meet; to encounter"), p.word(3, "緣分", meaning: "fate or chance that brings people together"),
+            p.word(4, "血統", meaning: "blood relationship; lineage"), p.word(5, "不知所措", meaning: "not knowing what to do (idiom)"), p.word(6, "玩世不恭", meaning: "frivolous"),
+        ]
+        let cards = [1: p.card(interval: 1, missed: 2), 2: p.card(interval: 30)]
+        let sets = WordSets.build(words: words, card: { cards[$0.id] ?? .seed(from: $0) }, videos: [])
+        let byID = Dictionary(uniqueKeysWithValues: sets.map { ($0.id, $0) })
+        #expect(byID["topic-relationships"]?.words.map(\.id) == [1, 2, 3]) // not 血統's "blood relationship"
+        #expect(byID["topic-idioms"]?.words.map(\.id) == [5, 6])
+        #expect(byID["missing"]?.words.map(\.id) == [1])
+        #expect(byID["new"]?.words.count == 4)
+    }
+
+    @Test func matchesWholeWordsOrWordStarts() {
+        #expect(WordSets.matches("to make friends", "friend"))
+        #expect(!WordSets.matches("mankind", "kind"))
+        #expect(WordSets.matches("good and honest; kindhearted", "kind"))
+    }
+
+    @Test func practicesUnmasteredWordsFirst() {
+        let words = (1...6).map { p.word($0, "字\($0)") }
+        let cards = [1: p.card(interval: 30), 2: p.card(interval: 30)]
+        let order = WordSets.practiceOrder(words, card: { cards[$0.id] ?? .seed(from: $0) })
+        #expect(Set(order.suffix(2).map(\.id)) == [1, 2])
+    }
+
+    @Test func findsExamplesForSimplifiedWords() {
+        #expect(!ExampleBank.bundled.examples(for: "摇篮").isEmpty)
+    }
+}

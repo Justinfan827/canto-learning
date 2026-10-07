@@ -2,6 +2,7 @@ import "fake-indexeddb/auto"
 
 import { describe, expect, it } from "vitest"
 
+import { fillLineJyutping } from "./lineJyutping"
 import { createLocalStore, dumpLocalStore, restoreLocalStore } from "./localStore"
 
 const video = { id: "v1", title: "Vlog" }
@@ -55,7 +56,7 @@ describe("local store", () => {
     expect(snap.words).toHaveLength(1)
     expect(snap.words[0]).toMatchObject({ colloquial: "咁", jyutping: "gam3", status: "learning" })
     expect(snap.words[0].sources).toEqual([
-      { videoId: "v9", lineIdx: 1, startMs: 2000, endMs: 4000, text: "這麼古怪", textColloquial: "咁古怪", textFormal: "這麼古怪", textEnglish: "So weird", createdAt: expect.any(Number) }
+      { videoId: "v9", lineIdx: 1, startMs: 2000, endMs: 4000, text: "這麼古怪", textColloquial: "咁古怪", textFormal: "這麼古怪", textEnglish: "So weird", jyutping: null, createdAt: expect.any(Number) }
     ])
   })
 
@@ -97,5 +98,16 @@ describe("local store", () => {
     expect((await now.getVideo("v1"))?.lines).toHaveLength(2)
 
     expect(await restoreLocalStore(backup, "t-new")).toEqual({ videos: 0, lines: 0, words: 0, encounters: 0 })
+  })
+
+  it("fills in the Jyutping of saved words' source lines for the phone", async () => {
+    const s = createLocalStore("t-jyut")
+    await s.putVideo(video, lines, "manual")
+    await s.logTaughtWord(kam, { videoId: "v1", lineIdx: 1 })
+    expect((await s.exportStudy()).words[0].sources[0].jyutping).toBeNull()
+    const split = (text: string) => [...text].map((c) => ({ text: c, jyutping: c === "這" ? "ze5" : c === "麼" ? "mo1" : "", meaning: "", formal: null, colloquial: null, likelyError: null }))
+    expect(await fillLineJyutping(s, split)).toBe(1)
+    expect((await s.exportStudy()).words[0].sources[0].jyutping).toBe("ze5 mo1")
+    expect(await fillLineJyutping(s, split)).toBe(0)
   })
 })

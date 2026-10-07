@@ -49,6 +49,8 @@ nonisolated struct StudyWord: Codable, Sendable, Identifiable, Hashable {
     /// The written form, only when it differs from the spoken one.
     var formalIfDifferent: String? { formal.flatMap { $0.isEmpty || $0 == colloquial ? nil : $0 } }
     var latestSource: StudySource? { sources.first }
+    /// The word in Traditional characters, for words saved from a Simplified transcript.
+    var traditional: String { colloquial.applyingTransform(StringTransform("Hans-Hant"), reverse: false) ?? colloquial }
 }
 
 nonisolated struct StudySource: Codable, Sendable, Hashable {
@@ -60,10 +62,14 @@ nonisolated struct StudySource: Codable, Sendable, Hashable {
     var textColloquial: String?
     var textFormal: String?
     var textEnglish: String?
+    /// The caption's Jyutping, word by word from the extension's dictionary. Older snapshots don't have it.
+    var jyutping: String? = nil
     var createdAt: Double
 
     /// The spoken (口語) line when the extension has one, else the caption as captured.
     var spoken: String { textColloquial ?? text }
+    /// Jyutping for `spoken`, when it's the caption the Jyutping was made from.
+    var spokenJyutping: String? { textColloquial == nil || textColloquial == text ? jyutping.flatMap { $0.isEmpty ? nil : $0 } : nil }
 }
 
 /// A word typed in on the phone, queued for upload. Matches `StudyNewWord` in study.ts.
@@ -82,7 +88,7 @@ nonisolated struct StudyReview: Codable, Sendable, Hashable {
     var at: Double
 }
 
-extension Date {
+nonisolated extension Date {
     var ms: Double { timeIntervalSince1970 * 1000 }
     init(ms: Double) { self.init(timeIntervalSince1970: ms / 1000) }
 }

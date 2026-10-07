@@ -1,4 +1,4 @@
-import type { StudySnapshot, StudySource } from "@pna/shared/src/study"
+import { lineJyutping, type StudySnapshot, type StudySource } from "@pna/shared/src/study"
 import { v } from "convex/values"
 
 import { mutation, query } from "./_generated/server"
@@ -31,6 +31,7 @@ export const snapshot = query({
         textColloquial: line.textColloquial,
         textFormal: line.textFormal,
         textEnglish: line.textEnglish ?? null,
+        jyutping: lineJyutping(line.words),
         createdAt: e.createdAt
       })
       byWord.set(e.wordNum, list)

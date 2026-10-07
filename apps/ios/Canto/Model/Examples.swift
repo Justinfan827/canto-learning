@@ -50,6 +50,9 @@ nonisolated struct ExampleBank: Decodable, Sendable {
 
     /// Falls back to sentences that contain the word when the index doesn't list it, as the extension does.
     func examples(for word: String, max: Int = 3) -> [ExampleSentence] {
+        // The bank is in Traditional characters; a word saved in Simplified finds its sentences too.
+        let trad = word.applyingTransform(StringTransform("Hans-Hant"), reverse: false) ?? word
+        if trad != word, words[word] == nil, words[trad] != nil { return examples(for: trad, max: max) }
         var ids = words[word] ?? []
         if ids.isEmpty && word.count > 1 {
             ids = Array(sentences.indices.lazy.filter { sentences[$0].yue.contains(word) }.prefix(max))
