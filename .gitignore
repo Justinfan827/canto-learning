@@ -6,6 +6,9 @@ dist
 .dev.vars
 .env*
 !.env.example
+# Public build settings: which Convex deployment each build syncs with.
+!apps/extension/.env.dev
+!apps/extension/.env.prod
 *.log
 apps/extension/e2e/screenshots/
 *.tsbuildinfo

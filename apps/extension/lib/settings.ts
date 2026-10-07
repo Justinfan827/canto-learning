@@ -11,10 +11,6 @@ export interface Settings {
   showJyutping: boolean
   register: "colloquial" | "formal"
   textSize: TextSize
-  /** Where saved words and captions live: this browser, or a Convex deployment shared with the phone. */
-  dataBackend: "local" | "convex"
-  convexUrl: string
-  convexToken: string
 }
 
 const DEFAULTS: Settings = {
@@ -23,10 +19,7 @@ const DEFAULTS: Settings = {
   pausePopup: true,
   showJyutping: true,
   register: "colloquial",
-  textSize: "m",
-  dataBackend: "local",
-  convexUrl: "",
-  convexToken: ""
+  textSize: "m"
 }
 
 export async function loadSettings(): Promise<Settings> {

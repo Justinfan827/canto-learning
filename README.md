@@ -16,7 +16,7 @@ pnpm build:ext        # production build in apps/extension/build/chrome-mv3-prod
 In Chrome, open `chrome://extensions`, turn on Developer mode, and **Load unpacked** the build folder. The settings page opens on install; everything on it is optional:
 
 - **Captions**: whether the local transcriber helper is running, and its quality (Auto picks the best installed engine).
-- **Saved words**: keep them in this browser, or connect a Convex deployment the phone app can read.
+- **Saved words**: they stay in this browser until you sign in; signed in, they're kept in your account on the build's Convex deployment, where the phone app can read them.
 
 **Pause popup.** With the side panel closed, pausing a video shows the paused line in a small card over YouTube's sidebar (or over the player's right edge in theater mode). Tap a word for its meaning and save it, step to the previous or next line with ↑ ↓, and press Space to carry on watching. The panel icon in the card opens the full transcript. Turn it off in the Aa menu or in settings.
 
@@ -52,15 +52,17 @@ curl -LO https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sile
 | Dictionary | `packages/shared/src/dict.ts`, `apps/extension/scripts/build-dict.mjs` | Longest-match word splitting and lookups over CC-Canto + CC-CEDICT with Cantonese readings, built into `assets/dict.dat` |
 | Example sentences | `packages/shared/src/examples.ts`, `apps/extension/scripts/build-examples.mjs` | Tatoeba's Cantonese sentences with English, Jyutping filled in from the dictionary, indexed by the words they use; built into `assets/examples.dat` and `apps/ios/Canto/Resources/examples.json` |
 | Transcriber | `apps/transcriber/server.mjs`, `apps/extension/lib/useTranscriber.ts` | Local speech-to-text for videos without captions, started automatically from the playhead; lines go to the bridge as `local` captions |
-| Data layer | `apps/extension/lib/data` | The one `store` the app uses; settings pick the backend. `localStore.ts` (IndexedDB, the default) or `convexStore.ts` (Convex) |
+| Data layer | `apps/extension/lib/data` | The one `store` the app uses: Convex when signed in, this browser otherwise. `localStore.ts` (IndexedDB, the default) or `convexStore.ts` (Convex) |
 | Local database | `apps/extension/lib/data/localStore.ts` | IndexedDB: videos, caption lines, words, encounters, questions, reviews |
 | Study sync | `apps/extension/lib/data/studySync.ts`, `packages/shared/src/study.ts` | Pushes saved words with their source lines to the helper for the phone app, and adds words typed in on the phone |
 | Convex backend | `packages/backend/convex` | Schema and functions mirroring `Store`, plus the phone's `study:snapshot` and `study:addReviews` (the phone adds words with `store:addWord`) |
 | Shared | `packages/shared` | Types, caption parsing, the `Store` interface, spaced-repetition scheduling, register diff |
 
-**Backups on disk.** While the helper is running, the extension copies its whole database to `~/.cache/canto-learning/backups/` a few seconds after each change (`latest.json` plus one file per day, kept for 60 days). Chrome ties the database to the extension's ID, which changes when the folder moves; when that happens the extension starts empty and merges `latest.json` back in on its own. A backup with less than half the previous words is saved beside it as `smaller-….json` rather than replacing it. Settings > Saved words can also restore a backup file by hand; restoring only adds what's missing.
+**Backups on disk.** While the helper is running, the extension copies its whole database to `~/.cache/canto-learning/backups/` a few seconds after each change (`latest.json` plus one file per day, kept for 60 days). Chrome ties the database to the extension's ID. The ID is pinned by the `key` in the manifest, but if it ever changes the extension starts empty and merges `latest.json` back in on its own. A backup with less than half the previous words is saved beside it as `smaller-….json` rather than replacing it. Settings > Saved words can also restore a backup file by hand; restoring only adds what's missing.
 
-**Storage is local by default.** The app imports `store` from `apps/extension/lib/data` and never touches IndexedDB or Convex directly. Both backends implement the `Store` interface in `packages/shared/src/store.ts`. To share words with the phone from anywhere, connect a Convex deployment under Settings > Saved words; see [packages/backend/README.md](packages/backend/README.md).
+**Storage is local by default.** The app imports `store` from `apps/extension/lib/data` and never touches IndexedDB or Convex directly. Both backends implement the `Store` interface in `packages/shared/src/store.ts`. Signing in (Settings > Saved words) switches to Convex; see [packages/backend/README.md](packages/backend/README.md).
+
+**Builds and accounts.** Each build points at a Convex deployment through public settings in `apps/extension/.env.dev` and `.env.prod`. `pnpm dev:ext` and `pnpm build:ext:dev` (into `build/chrome-mv3-dev`) use the dev deployment and show a **Sign in as dev user** button, whose password comes from a gitignored `apps/extension/.env.dev.local` (`PLASMO_PUBLIC_DEV_LOGIN_PASSWORD=…`); `pnpm build:ext` is the release build and stays local until `.env.prod` names a production deployment. Nothing secret ships in the extension: sign-in gives each browser its own session, and the backend only returns that user's rows. `node apps/extension/e2e/auth.mjs` checks signing in on a dev build.
 
 ## Phone study app
 

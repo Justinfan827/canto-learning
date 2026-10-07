@@ -7,6 +7,7 @@ import { Dock, MomentCard, WordSheet } from "~components/Moment"
 import { formatTime } from "~components/Ruby"
 import { SavedList } from "~components/SavedList"
 import { Squads } from "~components/Squads"
+import { CONVEX_URL } from "~lib/auth"
 import { loadExamples } from "~lib/dict"
 import "~lib/fonts"
 import { store } from "~lib/data"
@@ -154,7 +155,7 @@ function SidePanel() {
   if (view === "squads")
     return (
       <div className={"panel size-" + settings.textSize}>
-        <Squads defaultUrl={process.env.PLASMO_PUBLIC_SQUADS_URL || settings.convexUrl} onBack={() => setView("video")} />
+        <Squads defaultUrl={process.env.PLASMO_PUBLIC_SQUADS_URL || CONVEX_URL} onBack={() => setView("video")} />
       </div>
     )
   if (view === "saved") {

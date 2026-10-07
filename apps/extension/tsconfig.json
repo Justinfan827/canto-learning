@@ -5,6 +5,8 @@
   "compilerOptions": {
     "paths": { "~*": ["./*"] },
     "baseUrl": ".",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "strict": true,
     "jsx": "react-jsx"
   }
