@@ -3,6 +3,7 @@ import {
   type CaptionKind,
   type CaptionLine,
   cleanNewWord,
+  lineJyutping,
   type Encounter,
   type NewWord,
   type QuestionRecord,
@@ -296,6 +297,7 @@ export function createLocalStore(name = "pause-and-ask"): Store {
           textColloquial: line.textColloquial,
           textFormal: line.textFormal,
           textEnglish: line.textEnglish ?? null,
+          jyutping: lineJyutping(line.words),
           createdAt: e.createdAt
         })
         byWord.set(e.wordId, list)

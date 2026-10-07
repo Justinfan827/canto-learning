@@ -38,7 +38,9 @@ Everything stays on your own machines. To sync from anywhere instead, pick **Con
 | `Views/LibraryView.swift` | Videos with their words, or all words with search |
 | `Views/WordDetailView.swift` | Characters, Jyutping with tone contours, meaning, written form, example sentences, source lines with "watch at" links |
 | `Model/Examples.swift` | Example sentences from `Resources/examples.json` (Tatoeba, CC BY 2.0 FR), the same file the extension builds with `pnpm --filter extension dict` |
-| `Views/FlashcardSession.swift` | Tap to flip, swipe right if you knew it and left if you're still learning; misses come back a few cards later |
+| `Views/ReviewView.swift`, `Model/WordSets.swift` | Today's review, picked by the schedule (due words, then new ones), and practice sets found in your words: by progress (keep missing, still learning, nearly there, new), by topic (matched from the English meanings, plus four-character idioms) and by video |
+| `Views/FlashcardSession.swift` | Tap to flip, swipe right if you knew it and left if you're still learning, with Quizlet-style "Still learning" and "Know" counts; misses come back a few cards later until you know them all, then a summary of first-try accuracy and the words that took a few tries |
+| `Views/ProgressView.swift`, `Model/Progress.swift` | Words by stage (new, learning, familiar at a week apart, mastered at three weeks or marked known), streak, 7-day recall, answers per day for two weeks, and the words you miss most. Every answer is kept in `history.json` |
 | `Views/ListenView.swift`, `Audio/ListenSession.swift` | Word, meaning, then the source line, read aloud with lock-screen and headphone controls |
 | `Views/ToneMarks.swift` | Draws each syllable's pitch so tones read as shapes |
 
@@ -50,4 +52,6 @@ Speech uses the phone's built-in Cantonese voice (zh-HK). If none is installed, 
 cd apps/ios && xcodebuild test -project Canto.xcodeproj -scheme Canto -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
 
-Screenshot shortcuts (launch arguments): `-tab review`, `-tab listen`, `-autostart YES` (opens the review), `-flipped YES`, `-video <id>`, `-word <id>`, `-add YES` (opens Add a word), `-serverURL <url>`, `-backend convex -convexURL <url> -convexToken <token>`.
+Saved lines show their Jyutping once the extension has split them with its dictionary (`fillLineJyutping`, run when the side panel loads the dictionary and after each save); example sentences come with Jyutping and English, and every sentence has a play button.
+
+Screenshot shortcuts (launch arguments): `-tab review`, `-tab progress`, `-tab listen`, `-autostart YES` (opens the review), `-flipped YES`, `-video <id>`, `-word <id>`, `-add YES` (opens Add a word), `-serverURL <url>`, `-backend convex -convexURL <url> -convexToken <token>`.

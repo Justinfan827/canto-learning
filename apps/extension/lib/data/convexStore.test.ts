@@ -1,15 +1,32 @@
 import "fake-indexeddb/auto"
 
-import { describe, expect, it } from "vitest"
+import { convexClient, crossDomainClient } from "@convex-dev/better-auth/client/plugins"
+import { createAuthClient } from "better-auth/client"
+import { beforeAll, describe, expect, it } from "vitest"
 
 import { copyLocalToConvex, createConvexStore } from "./convexStore"
 import { createLocalStore } from "./localStore"
 
-// Runs against a real deployment: start one with `pnpm --filter @pna/backend dev`
-// (a local backend works), set SYNC_TOKEN on it, then
-// CONVEX_TEST_URL=http://127.0.0.1:3210 CONVEX_TEST_TOKEN=<token> pnpm --filter extension test
+// Runs against a real deployment with DEV_LOGIN=1 (packages/backend/convex/auth.ts), e.g.
+// CONVEX_TEST_URL=https://<name>.convex.cloud pnpm --filter extension test
+// Each run signs up its own user, so runs don't see each other's data.
 const url = process.env.CONVEX_TEST_URL
-const token = process.env.CONVEX_TEST_TOKEN ?? ""
+const EXTENSION_ORIGIN = "chrome-extension://anhlhljekeokoaobmdgkekjmlfdmohii"
+const siteUrl = url?.replace(/\.convex\.cloud\/?$/, ".convex.site").replace(/:3210\/?$/, ":3211")
+
+/** Signs a new user up and returns a token source for them, as lib/auth.ts does in the extension. */
+async function newUser(email: string) {
+  const mem = new Map<string, string>()
+  const auth = createAuthClient({
+    baseURL: siteUrl,
+    plugins: [convexClient(), crossDomainClient({ storage: { getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, v) } })],
+    // Better Auth only answers trusted origins: the extension's pages.
+    fetchOptions: { headers: { origin: EXTENSION_ORIGIN } }
+  })
+  const r = await auth.signUp.email({ email, password: "test-password-123", name: "Test" })
+  if (r.error) throw new Error(`Sign-up failed (is DEV_LOGIN=1 set on the deployment?): ${r.error.message}`)
+  return async () => (await auth.convex.token()).data!.token
+}
 
 describe.skipIf(!url)("convex store", () => {
   // The deployment keeps data between runs, so every run uses its own ids.
@@ -18,10 +35,17 @@ describe.skipIf(!url)("convex store", () => {
     { idx: 0, startMs: 0, endMs: 2000, text: "他沒有看到" },
     { idx: 1, startMs: 2000, endMs: 4000, text: "這麼古怪" }
   ]
+  let token: () => Promise<string>
+  beforeAll(async () => {
+    token = await newUser(`test-${run}@canto-learning.local`)
+  })
   const s = () => createConvexStore({ url: url!, token })
 
-  it("rejects a wrong token", async () => {
-    await expect(createConvexStore({ url: url!, token: "wrong" }).knownWords()).rejects.toThrow(/Wrong sync token/)
+  it("refuses calls without a signed-in user, and keeps each user's words to themselves", async () => {
+    await expect(createConvexStore({ url: url!, token: async () => "" }).knownWords()).rejects.toThrow()
+    await s().addWord({ colloquial: `私${run}`, jyutping: "si1", meaning: "private" })
+    const other = createConvexStore({ url: url!, token: await newUser(`other-${run}@canto-learning.local`) })
+    expect(await other.listWords()).toEqual([])
   })
 
   it("keeps conversions unless the caption text changes", async () => {

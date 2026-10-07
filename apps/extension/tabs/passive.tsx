@@ -345,7 +345,9 @@ function PausePopup() {
 function NoLine({ status, hasLines, onOpen }: { status: TranscriberStatus; hasLines: boolean; onOpen: () => void }) {
   const text = hasLines
     ? "Nothing has been said yet at this point."
-    : status.kind === "running" || status.kind === "checking"
+    : status.kind === "no-captions"
+      ? "This video has no Cantonese or Chinese captions."
+      : status.kind === "running" || status.kind === "checking"
       ? "Transcribing this video on your computer. Lines appear here as they're ready."
       : status.kind === "missing" || status.kind === "no-engine"
         ? "This video has no Cantonese captions, and the local transcriber isn't set up."

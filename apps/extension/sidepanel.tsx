@@ -7,9 +7,12 @@ import { Dock, MomentCard, WordSheet } from "~components/Moment"
 import { formatTime } from "~components/Ruby"
 import { SavedList } from "~components/SavedList"
 import { Squads } from "~components/Squads"
+import { CONVEX_URL } from "~lib/auth"
+import { LOCAL_HELPER } from "~lib/features"
 import { loadExamples } from "~lib/dict"
 import "~lib/fonts"
 import { store } from "~lib/data"
+import { fillLineJyutping } from "~lib/data/lineJyutping"
 import { loadSettings, saveSettings, type Settings } from "~lib/settings"
 import { speak } from "~lib/speech"
 import { useDict } from "~lib/useDict"
@@ -144,6 +147,13 @@ function SidePanel() {
     [seek, state.paused]
   )
 
+  // Fill in Jyutping for saved words' source lines, for the phone. Runs once the dictionary loads
+  // and after each save; only lines without it are touched.
+  const savedCount = saved.list.length
+  useEffect(() => {
+    if (dict) fillLineJyutping(store, split).catch((e) => console.warn("Line Jyutping", e))
+  }, [dict, split, savedCount])
+
   const saveWord = async (w: LineWord) => {
     if (focus == null) return
     await t.saveWord(w, focus)
@@ -154,7 +164,7 @@ function SidePanel() {
   if (view === "squads")
     return (
       <div className={"panel size-" + settings.textSize}>
-        <Squads defaultUrl={process.env.PLASMO_PUBLIC_SQUADS_URL || settings.convexUrl} onBack={() => setView("video")} />
+        <Squads defaultUrl={process.env.PLASMO_PUBLIC_SQUADS_URL || CONVEX_URL} onBack={() => setView("video")} />
       </div>
     )
   if (view === "saved") {
@@ -342,6 +352,7 @@ const shortName = (label: string) => label.replace(/\s*\(.*\)$/, "")
 /** The pill's menu: YouTube's captions first, then each local speech model. */
 function sourceOptions(state: PlayerState, engines: Engine[] | null, s: Settings, status: TranscriberStatus): SourceOption[] {
   const track = pickTrack(state.tracks)
+  if (!LOCAL_HELPER) return [{ id: "youtube", label: trackLabel(track), note: track ? undefined : "None in Chinese on this video", active: !!track, disabled: !track }]
   const local = status.kind !== "off" || state.captionSource === "local"
   const chosen = engines ? pickEngine(engines, s.transcribeEngine) : null
   const out: SourceOption[] = [
@@ -366,6 +377,8 @@ function pillFor(state: PlayerState, status: TranscriberStatus, retry: () => voi
       return { text: `Transcribing · ${shortName(status.engine)}`, tone: "work" }
     case "done":
       return { text: `${shortName(status.engine)} · this computer`, tone: "ok" }
+    case "no-captions":
+      return { text: "No Chinese captions", tone: "warn" }
     case "missing":
       return { text: "No captions", tone: "warn", action: { label: "Set up transcriber", run: () => openSetup("#captions") } }
     case "no-engine":
@@ -435,6 +448,8 @@ function TranscribeLoading({ job }: { job: (TranscribeJob & { kind: "running" })
 function EmptyLyrics({ status, hasTrack, screen, onRetry }: { status: TranscriberStatus; hasTrack: boolean; screen: boolean; onRetry: () => void }) {
   if (screen) return <p className="lyrics-note">Reading captions from the video as they appear. Play the video to start.</p>
   switch (status.kind) {
+    case "no-captions":
+      return <p className="lyrics-note">This video has no Cantonese or Chinese captions.</p>
     case "missing":
       return (
         <div className="lyrics-note">

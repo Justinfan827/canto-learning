@@ -33,8 +33,8 @@ const SENSEVOICE_DIR = firstExisting(
 )
 const SILERO_VAD = firstExisting(path.join(CACHE, "models/silero_vad.onnx"))
 const ENGINES_DIR = path.join(path.dirname(new URL(import.meta.url).pathname), "engines")
-const SENSEVOICE_PY = path.join(ENGINES_DIR, "sensevoice.py")
-const TO_HK_PY = path.join(ENGINES_DIR, "to_hk.py")
+const SENSEVOICE = path.join(ENGINES_DIR, "sensevoice.mjs")
+const TO_HK = path.join(ENGINES_DIR, "to_hk.mjs")
 
 /** "[00:01:02.500 --> 00:01:04.000]  text" (whisper.cpp) or "[01:02.500 --> 01:04.000] text" (SenseVoice). */
 const TS_LINE = /^\[((?:\d+:)?\d+:\d+\.\d+) --> ((?:\d+:)?\d+:\d+\.\d+)\]\s*(.*)$/
@@ -58,17 +58,8 @@ const ENGINES = {
   sensevoice: {
     label: "SenseVoice Small (sherpa-onnx)",
     languages: "Cantonese, Mandarin, English, Japanese, Korean; writes spoken Cantonese (佢哋, 嘅, 唔)",
-    available: () =>
-      !which("uv")
-        ? "uv isn't installed"
-        : !SENSEVOICE_DIR || !SILERO_VAD
-          ? "model not downloaded (see apps/transcriber/README)"
-          : null,
-    run: (wav, onLine) => ({
-      cmd: which("uv"),
-      args: ["run", "-q", "--with", "sherpa-onnx", "--with", "numpy", "--with", "opencc", "python", SENSEVOICE_PY, SENSEVOICE_DIR, SILERO_VAD, wav, "yue"],
-      parse: parseTimestampLines(onLine)
-    })
+    available: () => (!SENSEVOICE_DIR || !SILERO_VAD ? "model not downloaded (see the README)" : null),
+    run: (wav, onLine) => ({ cmd: process.execPath, args: [SENSEVOICE, SENSEVOICE_DIR, SILERO_VAD, wav, "yue"], parse: parseTimestampLines(onLine) })
   },
   "whisper-cpp-turbo": {
     label: "Whisper large-v3-turbo (whisper.cpp)",
@@ -78,13 +69,11 @@ const ENGINES = {
         ? "whisper.cpp isn't installed (brew install whisper-cpp)"
         : !GGML_TURBO
           ? "ggml-large-v3-turbo.bin not found"
-          : !which("uv")
-            ? "uv isn't installed"
-            : null,
+          : null,
     // Whisper mixes Simplified and Traditional, so its output goes through OpenCC to HK Traditional.
     run: (wav, onLine) => ({
-      cmd: which("uv"),
-      args: ["run", "-q", "--with", "opencc", "python", TO_HK_PY, which("whisper-cli"), "-m", GGML_TURBO, "-l", "yue", "-f", wav, "-pp"],
+      cmd: process.execPath,
+      args: [TO_HK, which("whisper-cli"), "-m", GGML_TURBO, "-l", "yue", "-f", wav, "-pp"],
       parse: parseTimestampLines(onLine)
     })
   }

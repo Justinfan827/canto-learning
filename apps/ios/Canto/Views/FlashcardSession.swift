@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// Quizlet-style flashcards: tap to flip, swipe right if you knew it, left if
-/// you're still learning it. Missed words come back a few cards later. The
+/// you're still learning it. Missed words come back a few cards later, again and
+/// again until you know them, so the session ends with every word known. The
 /// first answer for each word sets when it's due again.
 struct FlashcardSession: View {
     let words: [StudyWord]
@@ -18,6 +19,9 @@ struct FlashcardSession: View {
     @State private var firstAnswers: [Int: Bool] = [:]
     @State private var answered = 0
     @State private var lastCorrect = true
+    /// Words you've gotten right this session, and ones you've missed and not gotten right yet.
+    @State private var known: Set<Int> = []
+    @State private var learning: Set<Int> = []
 
     private var current: StudyWord? { queue.indices.contains(position) ? queue[position] : nil }
 
@@ -25,13 +29,16 @@ struct FlashcardSession: View {
         VStack(spacing: 0) {
             topBar
             if let word = current {
+                tally
+                    .padding(.horizontal, 20)
+                    .padding(.top, 14)
                 Spacer(minLength: 12)
                 card(word)
                     .padding(.horizontal, 20)
                 Spacer(minLength: 12)
                 answerButtons
             } else {
-                SessionSummary(words: words, firstAnswers: firstAnswers) { missed in
+                SessionSummary(words: words, firstAnswers: firstAnswers, answers: answered) { missed in
                     restart(with: missed)
                 } done: {
                     dismiss()
@@ -77,6 +84,15 @@ struct FlashcardSession: View {
     }
 
     private var total: Int { queue.count }
+
+    /// Quizlet's two piles: how many you're still learning, and how many you know.
+    private var tally: some View {
+        HStack {
+            TallyChip(count: learning.count, text: "Still learning", color: Palette.amber, soft: Palette.amberSoft, systemImage: "arrow.uturn.left")
+            Spacer()
+            TallyChip(count: known.count, text: "Know", color: Palette.jade, soft: Palette.jadeSoft, systemImage: "checkmark")
+        }
+    }
 
     /// A word you said you're still learning, seen again.
     private var isRepeat: Bool { current.map { firstAnswers[$0.id] != nil } ?? false }
@@ -179,6 +195,8 @@ struct FlashcardSession: View {
         flipped = false
         offset = .zero
         answered = 0
+        known = []
+        learning = []
         if list.count != words.count || !firstAnswers.isEmpty { firstAnswers = [:] }
         autoplay()
     }
@@ -203,6 +221,14 @@ struct FlashcardSession: View {
             store.record(word, correct: correct)
         }
         answered += 1
+        withAnimation(.snappy) {
+            if correct {
+                known.insert(word.id)
+                learning.remove(word.id)
+            } else {
+                learning.insert(word.id)
+            }
+        }
         let fly = reduceMotion ? 0 : (correct ? 1 : -1) * 600.0
         withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
             offset = CGSize(width: fly, height: offset.height)
@@ -217,6 +243,29 @@ struct FlashcardSession: View {
             flipped = false
             withAnimation(.spring(response: 0.35, dampingFraction: 1)) { position += 1 }
         }
+    }
+}
+
+/// One of the two running counts above the card.
+struct TallyChip: View {
+    var count: Int
+    var text: String
+    var color: Color
+    var soft: Color
+    var systemImage: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: systemImage).font(.caption.weight(.bold))
+            Text("\(count)").font(.subheadline.weight(.semibold).monospacedDigit())
+                .contentTransition(.numericText(value: Double(count)))
+            Text(text).font(.footnote)
+        }
+        .foregroundStyle(color)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(soft, in: .capsule)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -288,6 +337,13 @@ struct FrontContent: View {
 struct BackContent: View {
     var word: StudyWord
 
+    /// The line it was saved from, or else an example sentence, to hear it in use.
+    private var sentence: (text: String, jyutping: String?, english: String?)? {
+        if let s = word.latestSource { return (s.spoken, s.spokenJyutping, s.textEnglish) }
+        if let e = ExampleBank.bundled.examples(for: word.colloquial, max: 1).first { return (e.yue, e.jyutping, e.english.isEmpty ? nil : e.english) }
+        return nil
+    }
+
     var body: some View {
         VStack(spacing: 18) {
             Spacer(minLength: 0)
@@ -303,20 +359,28 @@ struct BackContent: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Palette.ink)
             Spacer(minLength: 0)
-            if let source = word.latestSource {
-                VStack(spacing: 6) {
-                    Text(highlighted(source.spoken, word.colloquial, size: 17))
-                        .font(Typeface.hanzi(17, relativeTo: .body))
-                        .multilineTextAlignment(.center)
-                        .lineLimit(3)
-                        .cantonese()
-                    if let english = source.textEnglish {
-                        Text(english)
-                            .font(.footnote)
-                            .foregroundStyle(Palette.muted)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
+            if let line = sentence {
+                HStack(alignment: .center, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(highlighted(line.text, line.text.contains(word.colloquial) ? word.colloquial : word.traditional, size: 17))
+                            .font(Typeface.hanzi(17, relativeTo: .body))
+                            .lineLimit(3)
+                            .cantonese()
+                        if let jyutping = line.jyutping {
+                            Text(jyutping)
+                                .font(.caption.monospaced())
+                                .foregroundStyle(Palette.muted)
+                                .lineLimit(2)
+                        }
+                        if let english = line.english {
+                            Text(english)
+                                .font(.footnote)
+                                .foregroundStyle(Palette.muted)
+                                .lineLimit(2)
+                        }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    SpeakButton(text: line.text, size: 36)
                 }
                 .padding(.top, 14)
                 .frame(maxWidth: .infinity)
@@ -329,6 +393,8 @@ struct BackContent: View {
 struct SessionSummary: View {
     var words: [StudyWord]
     var firstAnswers: [Int: Bool]
+    /// Every answer this session, repeats included.
+    var answers: Int
     var again: ([StudyWord]) -> Void
     var done: () -> Void
 
@@ -340,11 +406,16 @@ struct SessionSummary: View {
                 Text(missed.isEmpty ? "You knew all \(words.count)." : "You knew \(known) of \(words.count).")
                     .font(.largeTitle.weight(.semibold))
                     .foregroundStyle(Palette.ink)
-                Text(missed.isEmpty ? "They'll come back further apart from now on." : "The ones you missed come back tomorrow.")
+                Text(missed.isEmpty ? "They'll come back further apart from now on." : "You got the rest by the end. The ones you missed come back tomorrow.")
                     .font(.body)
                     .foregroundStyle(Palette.muted)
             }
+            HStack(spacing: 12) {
+                SummaryStat(value: "\(Int((Double(known) / Double(max(words.count, 1)) * 100).rounded()))%", label: "Knew on the first try")
+                SummaryStat(value: "\(answers)", label: answers == 1 ? "Card flipped" : "Cards to get them all")
+            }
             if !missed.isEmpty {
+                Text("Took a few tries").font(.headline).foregroundStyle(Palette.ink)
                 FlowWords(words: missed)
             }
             Spacer(minLength: 0)
@@ -364,6 +435,22 @@ struct SessionSummary: View {
         .padding(.horizontal, 20)
         .padding(.top, 48)
         .padding(.bottom, 12)
+    }
+}
+
+private struct SummaryStat: View {
+    var value: String
+    var label: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value).font(.title.weight(.semibold).monospacedDigit()).foregroundStyle(Palette.ink)
+            Text(label).font(.caption).foregroundStyle(Palette.muted)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Palette.surface, in: .rect(cornerRadius: 16))
+        .accessibilityElement(children: .combine)
     }
 }
 

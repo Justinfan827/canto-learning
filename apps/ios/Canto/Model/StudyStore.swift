@@ -17,6 +17,8 @@ final class StudyStore {
     private(set) var snapshot: StudySnapshot = .empty
     private(set) var cards: [Int: CardState] = [:]
     private(set) var pending: [StudyReview] = []
+    /// Every flashcard answer on this phone, kept for the Progress tab. `pending` empties as it syncs; this doesn't.
+    private(set) var history: [StudyReview] = []
     /// Words typed in on this phone that haven't come back in a snapshot yet.
     private(set) var added: [AddedWord] = []
     private(set) var sync: SyncState = .idle
@@ -49,6 +51,7 @@ final class StudyStore {
         snapshot = load("snapshot.json") ?? .empty
         cards = load("cards.json") ?? [:]
         pending = load("pending.json") ?? []
+        history = load("history.json") ?? []
         added = load("added.json") ?? []
         lastSyncedAt = load("synced.json")
     }
@@ -101,6 +104,17 @@ final class StudyStore {
 
     var dueCount: Int { dueWords().count }
 
+    /// Practice sets found from your words: by progress, by topic and by video.
+    func wordSets() -> [WordSet] { WordSets.build(words: allWords, card: card(for:), videos: videos) }
+
+    /// A set's words in practice order: ones you don't know yet first.
+    func practiceOrder(_ words: [StudyWord]) -> [StudyWord] { WordSets.practiceOrder(words, card: card(for:)) }
+
+    /// Where your words stand and how your reviews have gone.
+    func progress(now: Date = .now) -> ProgressStats {
+        ProgressStats(words: allWords, card: card(for:), history: history, now: now)
+    }
+
     /// When the next card comes due, if nothing is due now.
     var nextDue: Date? {
         allWords.filter { !$0.isKnown && !card(for: $0).isNew }.map { card(for: $0).dueAt }.min().map { Date(ms: $0) }
@@ -110,9 +124,12 @@ final class StudyStore {
 
     func record(_ word: StudyWord, correct: Bool, now: Date = .now) {
         cards[word.id] = Scheduler.review(card(for: word), correct: correct, now: now.ms)
-        pending.append(StudyReview(wordId: word.id, colloquial: word.colloquial, correct: correct, at: now.ms))
+        let review = StudyReview(wordId: word.id, colloquial: word.colloquial, correct: correct, at: now.ms)
+        pending.append(review)
+        history.append(review)
         save(cards, "cards.json")
         save(pending, "pending.json")
+        save(history, "history.json")
     }
 
     // MARK: Adding
@@ -222,8 +239,10 @@ final class StudyStore {
     func resetProgress() {
         cards = [:]
         pending = []
+        history = []
         save(cards, "cards.json")
         save(pending, "pending.json")
+        save(history, "history.json")
     }
 
     private func describe(_ error: Error) -> String {

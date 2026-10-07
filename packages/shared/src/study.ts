@@ -51,7 +51,15 @@ export interface StudySource {
   textColloquial: string | null
   textFormal: string | null
   textEnglish: string | null
+  /** The line's Jyutping, word by word from the dictionary; missing until the extension has filled it in. */
+  jyutping?: string | null
   createdAt: number
+}
+
+/** A line's Jyutping from its dictionary words, or null when it hasn't been split yet. */
+export function lineJyutping(words: { jyutping: string }[] | null | undefined): string | null {
+  const s = (words ?? []).map((w) => w.jyutping.trim()).filter(Boolean).join(" ")
+  return s || null
 }
 
 /** A word typed in on the phone, queued for the extension when syncing through the local helper. */

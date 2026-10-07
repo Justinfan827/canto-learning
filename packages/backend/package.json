@@ -9,7 +9,9 @@
     "typecheck": "tsc --noEmit -p convex"
   },
   "dependencies": {
+    "@convex-dev/better-auth": "^0.12.5",
     "@pna/shared": "workspace:*",
+    "better-auth": "~1.6.15",
     "convex": "^1.46.0"
   },
   "devDependencies": {
