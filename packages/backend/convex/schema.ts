@@ -16,22 +16,27 @@ export const captionKind = v.union(v.literal("manual"), v.literal("auto"))
 export const register = v.union(v.literal("formal"), v.literal("colloquial"))
 export const wordStatus = v.union(v.literal("learning"), v.literal("known"))
 export const wordSource = v.union(v.literal("video"), v.literal("manual"))
+/** The signed-in user each row belongs to: their Better Auth user id (convex/auth.ts). */
+const owner = v.string()
 
 /**
  * Mirrors the extension's IndexedDB stores (apps/extension/lib/localStore.ts).
  * Words and encounters keep a numeric id (`num`) so clients see the same
- * shapes as the local store and the phone's StudySnapshot.
+ * shapes as the local store and the phone's StudySnapshot. Every row has an
+ * `owner`, and every index starts with it, so each user only sees their own.
  */
 export default defineSchema({
   videos: defineTable({
+    owner,
     videoId: v.string(),
     title: v.string(),
     channel: v.optional(v.string()),
     captionKind: v.optional(captionKind),
     createdAt: v.number()
-  }).index("by_videoId", ["videoId"]),
+  }).index("by_videoId", ["owner", "videoId"]),
 
   lines: defineTable({
+    owner,
     videoId: v.string(),
     idx: v.number(),
     startMs: v.number(),
@@ -43,9 +48,10 @@ export default defineSchema({
     colloquialInferred: v.boolean(),
     textEnglish: v.optional(nullable(v.string())),
     words: nullable(v.array(lineWord))
-  }).index("by_video_idx", ["videoId", "idx"]),
+  }).index("by_video_idx", ["owner", "videoId", "idx"]),
 
   words: defineTable({
+    owner,
     num: v.number(),
     colloquial: v.string(),
     formal: nullable(v.string()),
@@ -63,44 +69,48 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number()
   })
-    .index("by_num", ["num"])
-    .index("by_colloquial", ["colloquial"])
-    .index("by_status", ["status"]),
+    .index("by_num", ["owner", "num"])
+    .index("by_colloquial", ["owner", "colloquial"])
+    .index("by_status", ["owner", "status"]),
 
   encounters: defineTable({
+    owner,
     num: v.number(),
     wordNum: v.number(),
     videoId: v.string(),
     lineIdx: v.number(),
     kind: v.union(v.literal("asked"), v.literal("seen")),
     createdAt: v.number()
-  }).index("by_word", ["wordNum"]),
+  }).index("by_word", ["owner", "wordNum"]),
 
   questions: defineTable({
+    owner,
     videoId: v.string(),
     lineIdx: nullable(v.number()),
     atMs: v.number(),
     question: v.string(),
     answer: v.string(),
     createdAt: v.number()
-  }).index("by_createdAt", ["createdAt"]),
+  }).index("by_createdAt", ["owner", "createdAt"]),
 
   reviews: defineTable({
+    owner,
     wordNum: v.number(),
     quizType: v.string(),
     correct: v.boolean(),
     createdAt: v.number()
-  }).index("by_createdAt", ["createdAt"]),
+  }).index("by_createdAt", ["owner", "createdAt"]),
 
   /** Flashcard answers from the phone, kept for the extension to apply later (same as the helper's study-reviews.json). */
   phoneReviews: defineTable({
+    owner,
     wordId: v.number(),
     colloquial: v.string(),
     correct: v.boolean(),
     at: v.number()
-  }),
+  }).index("by_owner", ["owner"]),
 
-  counters: defineTable({ name: v.string(), value: v.number() }).index("by_name", ["name"]),
+  counters: defineTable({ owner, name: v.string(), value: v.number() }).index("by_name", ["owner", "name"]),
 
   // Squads (convex/squads.ts). Users are anonymous: a display name plus the
   // sessions of the devices signed in as them. Nothing here is sensitive.

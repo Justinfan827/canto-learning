@@ -1,12 +1,14 @@
 // Smoke test: loads the built extension in Chromium against a mock YouTube page and
 // a mock transcriber helper. Reads along, pauses, looks up and saves a word, then opens
 // a video with no captions and checks it transcribes on its own. Screenshots of each state go to e2e/screenshots/.
-// Run: pnpm build && xvfb-run -a node e2e/smoke.mjs   (set CHROMIUM_PATH if needed)
+// Run: pnpm build:dev && node e2e/smoke.mjs, or pnpm build && BUILD=prod node e2e/smoke.mjs   (set CHROMIUM_PATH if needed)
 import { chromium } from "playwright-core"
-import { execSync } from "child_process"
 import fs from "fs"
 
-const EXT = new URL("../build/chrome-mv3-prod", import.meta.url).pathname
+// BUILD=prod checks the release build, which doesn't use the local helper (lib/features.ts).
+const BUILD = process.env.BUILD ?? "dev"
+const TRANSCRIBES = BUILD === "dev"
+const EXT = new URL(`../build/chrome-mv3-${BUILD}`, import.meta.url).pathname
 const VID = "mockvid0001"
 const NOCAP = "mockvid0002"
 const SHOTS = new URL("screenshots/", import.meta.url).pathname
@@ -115,15 +117,6 @@ if (process.env.DEBUG) console.log("LOGS", logs, await yt.evaluate(() => [docume
 const opt = await yt.evaluate(() => window.__setOption)
 console.log("track enabled:", JSON.stringify(opt))
 const tabId = await sw.evaluate(async () => (await chrome.tabs.query({ url: "https://www.youtube.com/*" }))[0].id)
-// CONVEX_URL + CONVEX_TOKEN run the same flow with saved words on the local Convex deployment
-// from `pnpm --filter @pna/backend dev`. It starts by emptying that deployment.
-const convex = process.env.CONVEX_URL ? { url: process.env.CONVEX_URL, token: process.env.CONVEX_TOKEN ?? "" } : null
-if (convex) execSync("npx convex run admin:clearAll", { cwd: new URL("../../../packages/backend", import.meta.url).pathname, stdio: "ignore" })
-if (convex) await sw.evaluate((c) => chrome.storage.local.set({ dataBackend: "convex", convexUrl: c.url, convexToken: c.token }), convex)
-const convexSnapshot = async () => {
-  const r = await fetch(`${convex.url}/api/query`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path: "study:snapshot", args: { token: convex.token }, format: "json" }) })
-  return (await r.json()).value
-}
 
 const panel = await ctx.newPage()
 await panel.setViewportSize({ width: 380, height: 720 })
@@ -158,12 +151,6 @@ if ((await panel.locator(".sheet .examples").count()) && !(await panel.locator("
 await panel.screenshot({ path: SHOTS + "3-word.png" })
 await panel.click(".sheet .save")
 await panel.waitForSelector(".sheet .save.done", { timeout: 5000 })
-if (convex) {
-  const snap = await convexSnapshot()
-  const w = snap.words.find((x) => x.colloquial === "古怪")
-  console.log("convex word:", w?.colloquial, "| sources:", w?.sources.map((s) => `${s.videoId}#${s.lineIdx}`))
-  if (!w?.sources.some((s) => s.videoId === VID)) throw new Error("saved word didn't reach Convex")
-}
 await panel.keyboard.press("Escape")
 await panel.waitForSelector(".sheet", { state: "detached" })
 console.log("saved badge:", await panel.locator(".ib .n").innerText(), "| saved underline:", await panel.locator(".moment .chip-w.saved").allInnerTexts())
@@ -218,7 +205,8 @@ await panel.waitForFunction(() => document.querySelector(".moment .chip-w")?.tex
 const setup = await ctx.newPage()
 await setup.goto(`chrome-extension://${extId}/tabs/setup.html`)
 const sections = await setup.locator("section h2").allInnerTexts()
-console.log("settings sections:", sections, "| transcriber:", await setup.locator("#captions select option").first().innerText())
+console.log("settings sections:", sections, "| transcriber:", TRANSCRIBES ? await setup.locator("#captions select option").first().innerText() : "(not in this build)")
+if (!TRANSCRIBES && (await setup.locator("#captions select, #captions pre").count())) throw new Error("the release build's settings show transcriber setup")
 if (sections.some((h) => /tutor|microphone/i.test(h))) throw new Error("settings still show the tutor")
 await setup.close()
 await panel.bringToFront()
@@ -280,41 +268,56 @@ await panel.locator("body").click({ position: { x: 5, y: 700 } }).catch(() => {}
 await panel.keyboard.press("Space")
 await panel.waitForTimeout(400)
 console.log("after Space paused:", await yt.evaluate(() => document.querySelector("video").paused), "| card:", await panel.locator(".moment").count(), "| hint:", await panel.locator(".hint").innerText())
-const words = convex ? (await convexSnapshot()).words : await panel.evaluate(() => new Promise((res) => { const r = indexedDB.open("pause-and-ask"); r.onsuccess = () => { const q = r.result.transaction("words").objectStore("words").getAll(); q.onsuccess = () => res(q.result) } }))
+const words = await panel.evaluate(() => new Promise((res) => { const r = indexedDB.open("pause-and-ask"); r.onsuccess = () => { const q = r.result.transaction("words").objectStore("words").getAll(); q.onsuccess = () => res(q.result) } }))
 console.log("stored words:", JSON.stringify(words.map((w) => [w.colloquial, w.jyutping, w.timesAsked])))
 
-// A video with no Chinese captions transcribes on its own, from the playhead.
-await yt.goto(`https://www.youtube.com/watch?v=${NOCAP}`)
-await yt.evaluate(async () => { const v = document.querySelector("video"); if (v.readyState < 1) await new Promise(r => v.addEventListener("loadedmetadata", r, { once: true })); v.currentTime = 1 })
-await panel.waitForSelector(".pill >> text=Transcribing ·", { timeout: 10000 })
-await panel.waitForSelector(".loading-card")
-console.log("transcribing:", await panel.locator(".bar .pill").innerText(), "| loading:", (await panel.locator(".loading-card").innerText()).replace(/\n/g, " | "))
-await panel.screenshot({ path: SHOTS + "7-transcribing.png" })
-releaseTranscript()
-await yt.evaluate(() => document.querySelector("video").play())
-await panel.waitForSelector(".lyrics .ln[data-idx='1']", { timeout: 10000 })
-console.log("transcribed:", await panel.locator(".bar .pill").innerText(), "| lines:", await panel.locator(".lyrics .ln").count(), "| request:", JSON.stringify(transcribeCalls))
-console.log("menu on no-caption video:", (await (async () => { await panel.click(".bar .pill"); const t = await panel.locator(".src-menu").innerText(); await panel.keyboard.press("Escape"); await panel.click(".bar .pill"); return t })()).replace(/\n/g, " | "))
+if (!TRANSCRIBES) {
+  // Release build: a video with no Chinese captions just says so, and nothing calls the transcriber.
+  await yt.goto(`https://www.youtube.com/watch?v=${NOCAP}`)
+  await panel.waitForSelector(".pill >> text=No Chinese captions", { timeout: 10000 })
+  console.log("no captions:", await panel.locator(".bar .pill").innerText(), "|", await panel.locator(".lyrics-note").innerText(), "| transcribe requests:", transcribeCalls.length)
+  if (transcribeCalls.length) throw new Error("the release build called the transcriber")
+  await panel.click(".bar .pill")
+  console.log("menu:", (await panel.locator(".src-menu").innerText()).replace(/\n/g, " | "))
+  await panel.keyboard.press("Escape")
+} else {
+  // A video with no Chinese captions transcribes on its own, from the playhead.
+  await yt.goto(`https://www.youtube.com/watch?v=${NOCAP}`)
+  await yt.evaluate(async () => { const v = document.querySelector("video"); if (v.readyState < 1) await new Promise(r => v.addEventListener("loadedmetadata", r, { once: true })); v.currentTime = 1 })
+  await panel.waitForSelector(".pill >> text=Transcribing ·", { timeout: 10000 })
+  await panel.waitForSelector(".loading-card")
+  console.log("transcribing:", await panel.locator(".bar .pill").innerText(), "| loading:", (await panel.locator(".loading-card").innerText()).replace(/\n/g, " | "))
+  await panel.screenshot({ path: SHOTS + "7-transcribing.png" })
+  releaseTranscript()
+  await yt.evaluate(() => document.querySelector("video").play())
+  await panel.waitForSelector(".lyrics .ln[data-idx='1']", { timeout: 10000 })
+  console.log("transcribed:", await panel.locator(".bar .pill").innerText(), "| lines:", await panel.locator(".lyrics .ln").count(), "| request:", JSON.stringify(transcribeCalls))
+  console.log("menu on no-caption video:", (await (async () => { await panel.click(".bar .pill"); const t = await panel.locator(".src-menu").innerText(); await panel.keyboard.press("Escape"); await panel.click(".bar .pill"); return t })()).replace(/\n/g, " | "))
 
-// Back on a captioned video: YouTube is the default, and the pill's menu switches to a local model and back.
-await yt.goto(`https://www.youtube.com/watch?v=${VID}`)
-await panel.waitForSelector(".pill >> text=YouTube captions", { timeout: 10000 })
-await panel.click(".bar .pill")
-console.log("source menu:", (await panel.locator(".src-menu .srcopt").allInnerTexts()).map((t) => t.replace(/\n/g, " ")).join(" | "))
-await panel.click(".src-menu .srcopt:has-text('Whisper turbo')")
-await panel.waitForSelector(".pill >> text=Whisper turbo", { timeout: 10000 })
-console.log("after picking local:", await panel.locator(".bar .pill").innerText(), "| preferLocal:", (await panel.evaluate(() => chrome.storage.local.get("preferLocal"))).preferLocal)
-await panel.click(".bar .pill")
-await panel.click(".src-menu .srcopt:has-text('YouTube captions')")
-await panel.waitForSelector(".pill >> text=YouTube captions", { timeout: 10000 })
-await panel.waitForSelector(".lyrics .ln[data-idx='3'], .moment", { timeout: 5000 }).catch(() => {})
-console.log("back to YouTube:", await panel.locator(".bar .pill").innerText(), "| lines:", await panel.locator(".lyrics .ln").count(), "| card:", await text(".moment .big").catch(() => "-"))
-// With Convex the phone reads Convex, so nothing is pushed to the helper.
-const lastPush = convex ? await convexSnapshot() : studyPushes.at(-1)
-console.log(convex ? "convex snapshot:" : `study pushes: ${studyPushes.length} |`, "words:", lastPush?.words.map((w) => [w.colloquial, w.sources.length]), "| videos:", lastPush?.videos.map((v) => v.id))
-if (convex && studyPushes.length) throw new Error("pushed to the helper while on Convex")
-const fromVideos = lastPush?.words.filter((w) => w.source !== "manual") ?? []
-if (!fromVideos.length || !fromVideos.every((w) => w.sources.length)) throw new Error("study snapshot missing saved words or their source lines")
-if (!lastPush.words.some((w) => w.colloquial === "傾偈" && w.source === "manual" && w.jyutping)) throw new Error("study snapshot missing the word added by hand")
+  // Back on a captioned video: YouTube is the default, and the pill's menu switches to a local model and back.
+  await yt.goto(`https://www.youtube.com/watch?v=${VID}`)
+  await panel.waitForSelector(".pill >> text=YouTube captions", { timeout: 10000 })
+  await panel.click(".bar .pill")
+  console.log("source menu:", (await panel.locator(".src-menu .srcopt").allInnerTexts()).map((t) => t.replace(/\n/g, " ")).join(" | "))
+  await panel.click(".src-menu .srcopt:has-text('Whisper turbo')")
+  await panel.waitForSelector(".pill >> text=Whisper turbo", { timeout: 10000 })
+  console.log("after picking local:", await panel.locator(".bar .pill").innerText(), "| preferLocal:", (await panel.evaluate(() => chrome.storage.local.get("preferLocal"))).preferLocal)
+  await panel.click(".bar .pill")
+  await panel.click(".src-menu .srcopt:has-text('YouTube captions')")
+  await panel.waitForSelector(".pill >> text=YouTube captions", { timeout: 10000 })
+  await panel.waitForSelector(".lyrics .ln[data-idx='3'], .moment", { timeout: 5000 }).catch(() => {})
+  console.log("back to YouTube:", await panel.locator(".bar .pill").innerText(), "| lines:", await panel.locator(".lyrics .ln").count(), "| card:", await text(".moment .big").catch(() => "-"))
+}
+if (!TRANSCRIBES) {
+  // The release build doesn't use the local helper at all, so nothing goes to the phone relay.
+  console.log("study pushes:", studyPushes.length)
+  if (studyPushes.length) throw new Error("the release build pushed to the local helper")
+} else {
+  const lastPush = studyPushes.at(-1)
+  console.log(`study pushes: ${studyPushes.length} |`, "words:", lastPush?.words.map((w) => [w.colloquial, w.sources.length]), "| videos:", lastPush?.videos.map((v) => v.id))
+  const fromVideos = lastPush?.words.filter((w) => w.source !== "manual") ?? []
+  if (!fromVideos.length || !fromVideos.every((w) => w.sources.length)) throw new Error("study snapshot missing saved words or their source lines")
+  if (!lastPush.words.some((w) => w.colloquial === "傾偈" && w.source === "manual" && w.jyutping)) throw new Error("study snapshot missing the word added by hand")
+}
 console.log("errors:", logs.filter((l) => /error/i.test(l)).slice(0, 5))
 await ctx.close()

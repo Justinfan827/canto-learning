@@ -4,9 +4,9 @@ import { v } from "convex/values"
 import type { Doc, Id } from "./_generated/dataModel"
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 
-// Squads and their leaderboard. These don't take SYNC_TOKEN: friends share
-// this deployment for squads only, and the device session is what identifies
-// a user. Shapes match `SquadApi` in packages/shared/src/squads.ts.
+// Squads and their leaderboard. These don't need an account (convex/auth.ts):
+// friends share this deployment for squads only, and the device session is what
+// identifies a user. Shapes match `SquadApi` in packages/shared/src/squads.ts.
 
 const LINK_CODE_MS = 10 * 60_000
 const MAX_SQUADS = 20

@@ -3,37 +3,36 @@ import { cleanNewWord } from "@pna/shared/src/store"
 import { v } from "convex/values"
 
 import { mutation, query } from "./_generated/server"
-import { checkToken, lineAt, nextNum, toLine, toWord, videoById, wordByNum } from "./lib"
+import { lineAt, nextNum, signedIn, toLine, toWord, videoById, wordByNum, wordByText } from "./lib"
 import { captionKind, lineWord, nullable, register, wordStatus } from "./schema"
 
 // One function per method of `Store` in packages/shared/src/store.ts, with the
 // same behaviour as the IndexedDB store in apps/extension/lib/localStore.ts.
 
 const DAY = 86_400_000
-const token = v.string()
 
 const captionLine = v.object({ idx: v.number(), startMs: v.number(), endMs: v.number(), text: v.string() })
 const videoInfo = v.object({ id: v.string(), title: v.string(), channel: v.optional(v.string()), captionKind: v.optional(captionKind) })
 
 export const putVideo = mutation({
-  args: { token, video: videoInfo, lines: v.array(captionLine), captionKind },
-  handler: async (ctx, { token, video, lines, captionKind }) => {
-    checkToken(token)
-    const prev = await videoById(ctx, video.id)
-    const row = { videoId: video.id, title: video.title, channel: video.channel, captionKind }
+  args: { video: videoInfo, lines: v.array(captionLine), captionKind },
+  handler: async (ctx, { video, lines, captionKind }) => {
+    const owner = await signedIn(ctx)
+    const prev = await videoById(ctx, owner, video.id)
+    const row = { owner, videoId: video.id, title: video.title, channel: video.channel, captionKind }
     if (prev) await ctx.db.patch(prev._id, row)
     else await ctx.db.insert("videos", { ...row, createdAt: Date.now() })
 
     const needsConversion: number[] = []
     for (const l of lines) {
-      const old = await lineAt(ctx, video.id, l.idx)
+      const old = await lineAt(ctx, owner, video.id, l.idx)
       // A changed caption text drops its cached conversion and word split.
       if (old && old.text === l.text) {
         await ctx.db.patch(old._id, { startMs: l.startMs, endMs: l.endMs })
         if (!old.textColloquial) needsConversion.push(l.idx)
         continue
       }
-      const fresh = { ...l, videoId: video.id, sourceRegister: null, textFormal: null, textColloquial: null, colloquialInferred: false, words: null }
+      const fresh = { ...l, owner, videoId: video.id, sourceRegister: null, textFormal: null, textColloquial: null, colloquialInferred: false, words: null }
       if (old) await ctx.db.replace(old._id, fresh)
       else await ctx.db.insert("lines", fresh)
       needsConversion.push(l.idx)
@@ -43,14 +42,14 @@ export const putVideo = mutation({
 })
 
 export const getVideo = query({
-  args: { token, videoId: v.string() },
-  handler: async (ctx, { token, videoId }) => {
-    checkToken(token)
-    const video = await videoById(ctx, videoId)
+  args: { videoId: v.string() },
+  handler: async (ctx, { videoId }) => {
+    const owner = await signedIn(ctx)
+    const video = await videoById(ctx, owner, videoId)
     if (!video) return null
     const lines = await ctx.db
       .query("lines")
-      .withIndex("by_video_idx", (q) => q.eq("videoId", videoId))
+      .withIndex("by_video_idx", (q) => q.eq("owner", owner).eq("videoId", videoId))
       .collect()
     return {
       video: { id: video.videoId, title: video.title, channel: video.channel, captionKind: video.captionKind },
@@ -60,17 +59,16 @@ export const getVideo = query({
 })
 
 export const getLines = query({
-  args: { token, videoId: v.string(), idxs: v.array(v.number()) },
-  handler: async (ctx, { token, videoId, idxs }) => {
-    checkToken(token)
-    const rows = await Promise.all(idxs.map((i) => lineAt(ctx, videoId, i)))
+  args: { videoId: v.string(), idxs: v.array(v.number()) },
+  handler: async (ctx, { videoId, idxs }) => {
+    const owner = await signedIn(ctx)
+    const rows = await Promise.all(idxs.map((i) => lineAt(ctx, owner, videoId, i)))
     return rows.filter((r) => r !== null).map(toLine)
   }
 })
 
 export const saveConversions = mutation({
   args: {
-    token,
     videoId: v.string(),
     lines: v.array(
       v.object({
@@ -83,45 +81,41 @@ export const saveConversions = mutation({
       })
     )
   },
-  handler: async (ctx, { token, videoId, lines }) => {
-    checkToken(token)
+  handler: async (ctx, { videoId, lines }) => {
+    const owner = await signedIn(ctx)
     for (const { idx, ...l } of lines) {
-      const row = await lineAt(ctx, videoId, idx)
+      const row = await lineAt(ctx, owner, videoId, idx)
       if (row) await ctx.db.patch(row._id, l)
     }
   }
 })
 
 export const saveLineWords = mutation({
-  args: { token, videoId: v.string(), idx: v.number(), words: v.array(lineWord) },
-  handler: async (ctx, { token, videoId, idx, words }) => {
-    checkToken(token)
-    const row = await lineAt(ctx, videoId, idx)
+  args: { videoId: v.string(), idx: v.number(), words: v.array(lineWord) },
+  handler: async (ctx, { videoId, idx, words }) => {
+    const owner = await signedIn(ctx)
+    const row = await lineAt(ctx, owner, videoId, idx)
     if (row) await ctx.db.patch(row._id, { words })
   }
 })
 
 export const saveQuestion = mutation({
-  args: { token, videoId: v.string(), lineIdx: nullable(v.number()), atMs: v.number(), question: v.string(), answer: v.string() },
-  handler: async (ctx, { token, ...q }) => {
-    checkToken(token)
-    await ctx.db.insert("questions", { ...q, createdAt: Date.now() })
+  args: { videoId: v.string(), lineIdx: nullable(v.number()), atMs: v.number(), question: v.string(), answer: v.string() },
+  handler: async (ctx, q) => {
+    const owner = await signedIn(ctx)
+    await ctx.db.insert("questions", { ...q, owner, createdAt: Date.now() })
   }
 })
 
 export const logTaughtWord = mutation({
   args: {
-    token,
     word: v.object({ colloquial: v.string(), formal: nullable(v.string()), jyutping: v.string(), meaning: v.string(), notes: nullable(v.string()) }),
     at: v.object({ videoId: v.string(), lineIdx: nullable(v.number()) })
   },
-  handler: async (ctx, { token, word: w, at }) => {
-    checkToken(token)
+  handler: async (ctx, { word: w, at }) => {
+    const owner = await signedIn(ctx)
     const now = Date.now()
-    const existing = await ctx.db
-      .query("words")
-      .withIndex("by_colloquial", (q) => q.eq("colloquial", w.colloquial))
-      .unique()
+    const existing = await wordByText(ctx, owner, w.colloquial)
     let num: number
     if (existing) {
       // Asking about a word again counts as a miss.
@@ -141,8 +135,9 @@ export const logTaughtWord = mutation({
       })
       num = existing.num
     } else {
-      num = await nextNum(ctx, "words")
+      num = await nextNum(ctx, owner, "words")
       await ctx.db.insert("words", {
+        owner,
         num,
         ...w,
         status: "learning",
@@ -156,25 +151,21 @@ export const logTaughtWord = mutation({
       })
     }
     if (at.lineIdx != null)
-      await ctx.db.insert("encounters", { num: await nextNum(ctx, "encounters"), wordNum: num, videoId: at.videoId, lineIdx: at.lineIdx, kind: "asked", createdAt: now })
-    return toWord((await wordByNum(ctx, num))!)
+      await ctx.db.insert("encounters", { owner, num: await nextNum(ctx, owner, "encounters"), wordNum: num, videoId: at.videoId, lineIdx: at.lineIdx, kind: "asked", createdAt: now })
+    return toWord((await wordByNum(ctx, owner, num))!)
   }
 })
 
 export const addWord = mutation({
   args: {
-    token,
     word: v.object({ colloquial: v.string(), jyutping: nullable(v.string()), meaning: nullable(v.string()), formal: v.optional(nullable(v.string())), notes: v.optional(nullable(v.string())) })
   },
-  handler: async (ctx, { token, word: input }) => {
-    checkToken(token)
+  handler: async (ctx, { word: input }) => {
+    const owner = await signedIn(ctx)
     const w = cleanNewWord(input)
     if (!w) throw new Error("Enter the word in Cantonese")
     const now = Date.now()
-    const existing = await ctx.db
-      .query("words")
-      .withIndex("by_colloquial", (q) => q.eq("colloquial", w.colloquial))
-      .unique()
+    const existing = await wordByText(ctx, owner, w.colloquial)
     if (existing) {
       // Already saved: keep its schedule, fill in what was blank.
       await ctx.db.patch(existing._id, {
@@ -186,8 +177,9 @@ export const addWord = mutation({
       })
       return { word: toWord((await ctx.db.get(existing._id))!), created: false }
     }
-    const num = await nextNum(ctx, "words")
+    const num = await nextNum(ctx, owner, "words")
     await ctx.db.insert("words", {
+      owner,
       num,
       colloquial: w.colloquial,
       formal: w.formal ?? null,
@@ -204,20 +196,23 @@ export const addWord = mutation({
       createdAt: now,
       updatedAt: now
     })
-    return { word: toWord((await wordByNum(ctx, num))!), created: true }
+    return { word: toWord((await wordByNum(ctx, owner, num))!), created: true }
   }
 })
 
 export const listWords = query({
-  args: { token, status: v.optional(wordStatus), sort: v.optional(v.union(v.literal("missed"), v.literal("due"))) },
-  handler: async (ctx, { token, status, sort }) => {
-    checkToken(token)
+  args: { status: v.optional(wordStatus), sort: v.optional(v.union(v.literal("missed"), v.literal("due"))) },
+  handler: async (ctx, { status, sort }) => {
+    const owner = await signedIn(ctx)
     const rows = status
       ? await ctx.db
           .query("words")
-          .withIndex("by_status", (q) => q.eq("status", status))
+          .withIndex("by_status", (q) => q.eq("owner", owner).eq("status", status))
           .collect()
-      : await ctx.db.query("words").collect()
+      : await ctx.db
+          .query("words")
+          .withIndex("by_num", (q) => q.eq("owner", owner))
+          .collect()
     rows.sort(
       sort === "due"
         ? (a, b) => a.dueAt - b.dueAt
@@ -228,19 +223,19 @@ export const listWords = query({
 })
 
 export const getWord = query({
-  args: { token, id: v.number() },
-  handler: async (ctx, { token, id }) => {
-    checkToken(token)
-    const row = await wordByNum(ctx, id)
+  args: { id: v.number() },
+  handler: async (ctx, { id }) => {
+    const owner = await signedIn(ctx)
+    const row = await wordByNum(ctx, owner, id)
     if (!row) return null
     const encs = await ctx.db
       .query("encounters")
-      .withIndex("by_word", (q) => q.eq("wordNum", id))
+      .withIndex("by_word", (q) => q.eq("owner", owner).eq("wordNum", id))
       .collect()
     encs.sort((a, b) => b.createdAt - a.createdAt || b.num - a.num)
     const encounters = await Promise.all(
       encs.map(async (e) => {
-        const [video, line] = await Promise.all([videoById(ctx, e.videoId), lineAt(ctx, e.videoId, e.lineIdx)])
+        const [video, line] = await Promise.all([videoById(ctx, owner, e.videoId), lineAt(ctx, owner, e.videoId, e.lineIdx)])
         return {
           id: e.num,
           videoId: e.videoId,
@@ -258,10 +253,10 @@ export const getWord = query({
 })
 
 export const setStatus = mutation({
-  args: { token, id: v.number(), status: wordStatus },
-  handler: async (ctx, { token, id, status }) => {
-    checkToken(token)
-    const row = await wordByNum(ctx, id)
+  args: { id: v.number(), status: wordStatus },
+  handler: async (ctx, { id, status }) => {
+    const owner = await signedIn(ctx)
+    const row = await wordByNum(ctx, owner, id)
     if (!row) throw new Error(`No word ${id}`)
     await ctx.db.patch(row._id, { status, updatedAt: Date.now() })
     return toWord((await ctx.db.get(row._id))!)
@@ -269,12 +264,12 @@ export const setStatus = mutation({
 })
 
 export const knownWords = query({
-  args: { token },
-  handler: async (ctx, { token }) => {
-    checkToken(token)
+  args: {},
+  handler: async (ctx) => {
+    const owner = await signedIn(ctx)
     const rows = await ctx.db
       .query("words")
-      .withIndex("by_status", (q) => q.eq("status", "known"))
+      .withIndex("by_status", (q) => q.eq("owner", owner).eq("status", "known"))
       .collect()
     return rows
       .sort((a, b) => b.updatedAt - a.updatedAt)
@@ -284,15 +279,15 @@ export const knownWords = query({
 })
 
 export const recordReview = mutation({
-  args: { token, wordId: v.number(), quizType: v.string(), correct: v.boolean() },
-  handler: async (ctx, { token, wordId, quizType, correct }) => {
-    checkToken(token)
+  args: { wordId: v.number(), quizType: v.string(), correct: v.boolean() },
+  handler: async (ctx, { wordId, quizType, correct }) => {
+    const owner = await signedIn(ctx)
     const now = Date.now()
-    const row = await wordByNum(ctx, wordId)
+    const row = await wordByNum(ctx, owner, wordId)
     if (!row) throw new Error(`No word ${wordId}`)
     const { intervalDays, ease, timesMissed, dueAt } = schedule(row, correct, now)
     await ctx.db.patch(row._id, { intervalDays, ease, timesMissed, dueAt, updatedAt: now })
-    await ctx.db.insert("reviews", { wordNum: wordId, quizType, correct, createdAt: now })
+    await ctx.db.insert("reviews", { owner, wordNum: wordId, quizType, correct, createdAt: now })
     return toWord((await ctx.db.get(row._id))!)
   }
 })

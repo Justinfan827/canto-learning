@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "node scripts/build-dict.mjs --if-missing && node scripts/build-examples.mjs --if-missing && plasmo dev",
     "build": "node scripts/build-dict.mjs --if-missing && node scripts/build-examples.mjs --if-missing && plasmo build && node scripts/wrap-main-world.mjs",
+    "build:dev": "node scripts/build-dict.mjs --if-missing && node scripts/build-examples.mjs --if-missing && plasmo build --tag=dev && node scripts/wrap-main-world.mjs build/chrome-mv3-dev",
     "package": "pnpm build && plasmo package",
     "typecheck": "tsc --noEmit",
     "test": "vitest run lib",
@@ -14,8 +15,10 @@
     "dict": "node scripts/build-dict.mjs && node scripts/build-examples.mjs"
   },
   "dependencies": {
+    "@convex-dev/better-auth": "^0.12.5",
     "@pna/backend": "workspace:^",
     "@pna/shared": "workspace:*",
+    "better-auth": "~1.6.15",
     "convex": "^1.46.0",
     "idb": "^8.0.0",
     "plasmo": "0.90.5",
@@ -32,16 +35,19 @@
     "vitest": "^2.1.0"
   },
   "manifest": {
+    "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5cyj/Q+MOkR6yOp592l4irrNoch3w0ZmwueEA1BgVYO0JFennM8UKY6cNFjCen1K80/Vn0r677iMJFn5ouilnAHNtjbLDG6KcpstVKFQtK3c9LegE7jzxN5oCaaG7tG0oNDUjUbwB2UKrPS8tbBwVPslsTEXAuxBWSjal0f0WL8DOpRxnTzYtRb1yx4gilxsgALRtm8CKU5AI5A0nRzB53QpK6mZp1N7lYe3KC+4hrxyP9lZoZAwcoAbQ7d5wyvycRF1IKC0hWdIl/2znEQ1tcXBjrH2R5oWg0NvUmmYfti0lAl6uP7PfzBR+zhiyuLDzcp6WNyThp+WpjsuyhJplwIDAQAB",
     "permissions": [
       "sidePanel",
       "storage",
-      "tabs"
+      "tabs",
+      "identity"
     ],
     "host_permissions": [
       "https://www.youtube.com/*",
       "http://localhost/*",
       "http://127.0.0.1/*",
-      "https://*.convex.cloud/*"
+      "https://*.convex.cloud/*",
+      "https://*.convex.site/*"
     ],
     "side_panel": {
       "default_path": "sidepanel.html"
