@@ -1,0 +1,142 @@
+[
+ {
+  "src": "01-launch",
+  "name": "duo-logo-wordmark",
+  "box": [
+   0.18,
+   0.27,
+   0.82,
+   0.56
+  ]
+ },
+ {
+  "src": "02-onboarding",
+  "name": "duo-mascot-wave",
+  "box": [
+   0.3,
+   0.47,
+   0.72,
+   0.72
+  ]
+ },
+ {
+  "src": "14-setup",
+  "name": "super-duo-paywall",
+  "box": [
+   0.15,
+   0.2,
+   0.88,
+   0.56
+  ]
+ },
+ {
+  "src": "16-lesson",
+  "name": "duo-pencil",
+  "box": [
+   0.35,
+   0.46,
+   0.76,
+   0.68
+  ]
+ },
+ {
+  "src": "17-lesson",
+  "name": "character-hello-card",
+  "box": [
+   0.5,
+   0.37,
+   0.97,
+   0.6
+  ]
+ },
+ {
+  "src": "20-exercise",
+  "name": "character-lily-hijab",
+  "box": [
+   0.02,
+   0.19,
+   0.32,
+   0.42
+  ]
+ },
+ {
+  "src": "28-translate-to-english",
+  "name": "character-mustache-bubble",
+  "box": [
+   0.02,
+   0.18,
+   0.8,
+   0.41
+  ]
+ },
+ {
+  "src": "29-lesson",
+  "name": "character-purple-hair",
+  "box": [
+   0.02,
+   0.18,
+   0.32,
+   0.42
+  ]
+ },
+ {
+  "src": "34-lesson-end",
+  "name": "duo-celebrate",
+  "box": [
+   0.18,
+   0.17,
+   0.78,
+   0.46
+  ]
+ },
+ {
+  "src": "36-lesson-end",
+  "name": "streak-flame",
+  "box": [
+   0.3,
+   0.33,
+   0.72,
+   0.56
+  ]
+ },
+ {
+  "src": "37-streak-home",
+  "name": "duo-streak-flame",
+  "box": [
+   0.2,
+   0.26,
+   0.84,
+   0.56
+  ]
+ },
+ {
+  "src": "38-streak-home",
+  "name": "duo-calendar",
+  "box": [
+   0.22,
+   0.24,
+   0.82,
+   0.45
+  ]
+ },
+ {
+  "src": "43-home-path",
+  "name": "home-path-nodes",
+  "box": [
+   0.05,
+   0.14,
+   0.97,
+   0.97
+  ]
+ },
+ {
+  "src": "34-lesson-end",
+  "name": "lesson-stats-tiles",
+  "box": [
+   0.05,
+   0.7,
+   0.95,
+   0.82
+  ]
+ }
+]

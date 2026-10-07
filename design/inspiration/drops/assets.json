@@ -1,0 +1,72 @@
+[
+ {
+  "src": "01-launch",
+  "name": "person-waving",
+  "box": [
+   0.22,
+   0.19,
+   0.78,
+   0.45
+  ]
+ },
+ {
+  "src": "04-setup",
+  "name": "dog-gau2-card",
+  "box": [
+   0.3,
+   0.26,
+   0.7,
+   0.5
+  ]
+ },
+ {
+  "src": "20-lesson",
+  "name": "word-card-hi",
+  "box": [
+   0.2,
+   0.12,
+   0.8,
+   0.68
+  ]
+ },
+ {
+  "src": "25-lesson",
+  "name": "bank-illustration",
+  "box": [
+   0.3,
+   0.12,
+   0.75,
+   0.34
+  ]
+ },
+ {
+  "src": "22-lesson",
+  "name": "thank-you-figure",
+  "box": [
+   0.33,
+   0.63,
+   0.68,
+   0.86
+  ]
+ },
+ {
+  "src": "26-lesson",
+  "name": "celebrate-figure",
+  "box": [
+   0.3,
+   0.27,
+   0.72,
+   0.48
+  ]
+ },
+ {
+  "src": "12-interests",
+  "name": "interest-chips",
+  "box": [
+   0.0,
+   0.24,
+   1.0,
+   0.62
+  ]
+ }
+]

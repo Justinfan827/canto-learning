@@ -1,0 +1,22 @@
+[
+ {
+  "src": "02-search-results",
+  "name": "results-list-tone-colors",
+  "box": [
+   0.0,
+   0.1,
+   1.0,
+   0.6
+  ]
+ },
+ {
+  "src": "03-entry",
+  "name": "entry-header-definition",
+  "box": [
+   0.0,
+   0.08,
+   1.0,
+   0.5
+  ]
+ }
+]
