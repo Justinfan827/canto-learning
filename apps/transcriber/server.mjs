@@ -32,9 +32,11 @@ const SENSEVOICE_DIR = firstExisting(
   path.join(CACHE, "models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17")
 )
 const SILERO_VAD = firstExisting(path.join(CACHE, "models/silero_vad.onnx"))
-const SENSEVOICE_PY = path.join(path.dirname(new URL(import.meta.url).pathname), "engines/sensevoice.py")
+const ENGINES_DIR = path.join(path.dirname(new URL(import.meta.url).pathname), "engines")
+const SENSEVOICE_PY = path.join(ENGINES_DIR, "sensevoice.py")
+const TO_HK_PY = path.join(ENGINES_DIR, "to_hk.py")
 
-/** "[00:01:02.500 --> 00:01:04.000]  text" (whisper.cpp) or "[01:02.500 --> 01:04.000] text" (openai-whisper). */
+/** "[00:01:02.500 --> 00:01:04.000]  text" (whisper.cpp) or "[01:02.500 --> 01:04.000] text" (SenseVoice). */
 const TS_LINE = /^\[((?:\d+:)?\d+:\d+\.\d+) --> ((?:\d+:)?\d+:\d+\.\d+)\]\s*(.*)$/
 const toMs = (ts) => Math.round(ts.split(":").reduce((acc, p) => acc * 60 + Number(p), 0) * 1000)
 
@@ -70,42 +72,20 @@ const ENGINES = {
   },
   "whisper-cpp-turbo": {
     label: "Whisper large-v3-turbo (whisper.cpp)",
-    languages: "Cantonese, Mandarin, English and ~100 more",
-    available: () => (!which("whisper-cli") ? "whisper.cpp isn't installed (brew install whisper-cpp)" : !GGML_TURBO ? "ggml-large-v3-turbo.bin not found" : null),
-    run: (wav, onLine) => ({ cmd: which("whisper-cli"), args: ["-m", GGML_TURBO, "-l", "yue", "-f", wav, "-pp"], parse: parseTimestampLines(onLine) })
-  },
-  "whisper-turbo": {
-    label: "Whisper turbo (openai-whisper)",
-    languages: "Cantonese, Mandarin, English and ~100 more; downloads a 1.5 GB model on first use",
-    available: () => (which("whisper") ? null : "openai-whisper isn't installed"),
-    run: (wav, onLine, dir) => ({
-      cmd: which("whisper"),
-      args: [wav, "--model", "turbo", "--language", "yue", "--output_format", "json", "--output_dir", dir, "--verbose", "True"],
+    languages: "Writes Cantonese speech as formal written Chinese (書面語), in Traditional characters",
+    available: () =>
+      !which("whisper-cli")
+        ? "whisper.cpp isn't installed (brew install whisper-cpp)"
+        : !GGML_TURBO
+          ? "ggml-large-v3-turbo.bin not found"
+          : !which("uv")
+            ? "uv isn't installed"
+            : null,
+    // Whisper mixes Simplified and Traditional, so its output goes through OpenCC to HK Traditional.
+    run: (wav, onLine) => ({
+      cmd: which("uv"),
+      args: ["run", "-q", "--with", "opencc", "python", TO_HK_PY, which("whisper-cli"), "-m", GGML_TURBO, "-l", "yue", "-f", wav, "-pp"],
       parse: parseTimestampLines(onLine)
-    })
-  },
-  "whisper-medium": {
-    label: "Whisper medium (openai-whisper)",
-    languages: "Chinese (no separate Cantonese option), English and more",
-    available: () => (which("whisper") ? null : "openai-whisper isn't installed"),
-    run: (wav, onLine, dir) => ({
-      cmd: which("whisper"),
-      args: [wav, "--model", "medium", "--language", "zh", "--output_format", "json", "--output_dir", dir, "--verbose", "True"],
-      parse: parseTimestampLines(onLine)
-    })
-  },
-  "parakeet-v3": {
-    label: "Parakeet TDT 0.6B v3 (MLX)",
-    languages: "English and 24 European languages; no Chinese",
-    available: () => (which("parakeet-mlx") ? null : "parakeet-mlx isn't installed"),
-    run: (wav, onLine, dir) => ({
-      cmd: which("parakeet-mlx"),
-      args: [wav, "--model", "mlx-community/parakeet-tdt-0.6b-v3", "--output-format", "json", "--output-dir", dir, "--output-template", "parakeet"],
-      // Parakeet writes everything at the end.
-      done: () => {
-        const json = JSON.parse(fs.readFileSync(path.join(dir, "parakeet.json"), "utf8"))
-        for (const s of json.sentences ?? []) onLine({ startMs: Math.round(s.start * 1000), endMs: Math.round(s.end * 1000), text: s.text.trim() })
-      }
     })
   }
 }
@@ -191,16 +171,14 @@ function startJob(videoId, engineId, fromMs) {
         fs.mkdirSync(passDir)
         const input = start || end != null ? await cut(wav, start, end, path.join(passDir, "part.wav")) : wav
         // Timestamps come back relative to the cut; shift them to the video's time.
-        const r = engine.run(input, (l) => onLine({ ...l, startMs: l.startMs + start, endMs: l.endMs + start }), passDir)
+        const r = engine.run(input, (l) => onLine({ ...l, startMs: l.startMs + start, endMs: l.endMs + start }))
         await exec(r.cmd, r.args, r.parse)
-        r.done?.()
       }
     } finally {
       fs.rmSync(dir, { recursive: true, force: true })
     }
-    // An empty result usually means the model can't hear this language (Parakeet on Cantonese);
-    // report it rather than caching nothing.
-    if (!job.lines.length) throw new Error(`${engine.label} heard no speech it could transcribe. It may not support this language.`)
+    // An empty result usually means there's no speech (or only music); report it rather than caching nothing.
+    if (!job.lines.length) throw new Error(`${engine.label} heard no speech it could transcribe.`)
     const sorted = job.lines.map(({ startMs, endMs, text }) => ({ startMs, endMs, text })).sort((a, b) => a.startMs - b.startMs)
     fs.writeFileSync(cached, JSON.stringify(sorted))
   })().then(
@@ -224,7 +202,11 @@ const STUDY = path.join(CACHE, "study.json")
 const REVIEWS = path.join(CACHE, "study-reviews.json")
 // Words typed in on the phone, waiting for the extension to add them.
 const NEW_WORDS = path.join(CACHE, "study-words.json")
-const MAX_BODY = 20 * 1024 * 1024
+const MAX_BODY = 50 * 1024 * 1024
+// Backups of the extension's whole database: latest.json, plus one file per day.
+const BACKUPS = path.join(CACHE, "backups")
+const LATEST = path.join(BACKUPS, "latest.json")
+const KEEP_DAILY = 60
 const readJson = (file, fallback) => {
   try {
     return JSON.parse(fs.readFileSync(file, "utf8"))
@@ -249,6 +231,33 @@ const readBody = (req) =>
     req.on("error", reject)
   })
 const json = (res, status, value) => res.writeHead(status, { "content-type": "application/json", "cache-control": "no-store" }).end(JSON.stringify(value))
+
+/** Saves a backup unless it has far fewer words than the last one, which would mean a database was lost. */
+function saveBackup(dump) {
+  fs.mkdirSync(BACKUPS, { recursive: true })
+  const stamp = new Date().toISOString()
+  const prev = readJson(LATEST, null)
+  if (prev && dump.words.length < prev.words.length / 2) {
+    writeJson(path.join(BACKUPS, `smaller-${stamp.replace(/[:.]/g, "-")}.json`), dump)
+    return { ok: false, words: dump.words.length, kept: prev.words.length }
+  }
+  writeJson(LATEST, dump)
+  // Named by local date, e.g. 2026-10-06.json.
+  writeJson(path.join(BACKUPS, `${new Date().toLocaleDateString("sv")}.json`), dump)
+  const daily = fs.readdirSync(BACKUPS).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort()
+  for (const f of daily.slice(0, -KEEP_DAILY)) fs.rmSync(path.join(BACKUPS, f))
+  return { ok: true, words: dump.words.length }
+}
+
+async function handleBackup(req, res) {
+  if (req.method === "GET") return fs.existsSync(LATEST) ? json(res, 200, readJson(LATEST, null)) : json(res, 404, { error: "no backup yet" })
+  if (req.method === "PUT") {
+    const dump = JSON.parse(await readBody(req))
+    if (!Array.isArray(dump?.words) || !Array.isArray(dump?.videos)) return json(res, 400, { error: "bad backup" })
+    return json(res, 200, saveBackup(dump))
+  }
+  return false
+}
 
 async function handleStudy(req, res, url) {
   if (url.pathname === "/study" && req.method === "GET")
@@ -306,6 +315,13 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") return res.writeHead(204).end()
 
   const url = new URL(req.url, `http://localhost:${PORT}`)
+  if (url.pathname === "/backup") {
+    try {
+      if ((await handleBackup(req, res)) !== false) return
+    } catch (e) {
+      return json(res, 400, { error: e.message })
+    }
+  }
   if (url.pathname.startsWith("/study")) {
     try {
       if ((await handleStudy(req, res, url)) !== false) return

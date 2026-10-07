@@ -25,7 +25,7 @@ export type TranscriberStatus =
 
 /** Engines that write spoken Cantonese, and the ones whose written-Chinese output pairs with them. */
 const SPOKEN_ENGINES = ["sensevoice"]
-const WRITTEN_ENGINES = ["whisper-cpp-turbo", "whisper-turbo"]
+const WRITTEN_ENGINES = ["whisper-cpp-turbo"]
 
 /** How long to wait for a caption track before deciding there is none. */
 const SETTLE_MS = 1500

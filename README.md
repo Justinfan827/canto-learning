@@ -32,10 +32,8 @@ Transcription runs in a small local helper. Start it with `pnpm transcriber` (po
 |---|---|---|
 | SenseVoice Small (sherpa-onnx) | `uv`, plus the model and VAD in `~/.cache/canto-learning/models` (see below) | Writes spoken Cantonese (佢哋, 嘅, 咗); about 60× real time on an M2 |
 | Whisper large-v3-turbo (whisper.cpp) | `brew install whisper-cpp` and `ggml-large-v3-turbo.bin` (found in OpenSuperWhisper's model folder, or set `WHISPER_CPP_MODEL`) | Fastest on Apple Silicon; Cantonese (`yue`) |
-| Whisper turbo / medium (openai-whisper) | `whisper` CLI | Turbo downloads 1.5 GB on first use; medium has no separate Cantonese option |
-| Parakeet TDT 0.6B v3 (MLX) | `parakeet-mlx` | English and European languages only, for comparison |
 
-Whisper tends to write Cantonese speech as formal written Chinese, so Auto prefers SenseVoice. To install SenseVoice's model (about 240 MB):
+SenseVoice writes spoken Cantonese (口語) and Whisper writes the same speech as formal written Chinese (書面語), so with both installed the Aa menu switches between them. Both are converted to Hong Kong Traditional characters with OpenCC. Auto prefers SenseVoice. To install SenseVoice's model (about 240 MB):
 
 ```sh
 mkdir -p ~/.cache/canto-learning/models && cd ~/.cache/canto-learning/models
@@ -59,6 +57,8 @@ curl -LO https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sile
 | Study sync | `apps/extension/lib/data/studySync.ts`, `packages/shared/src/study.ts` | Pushes saved words with their source lines to the helper for the phone app, and adds words typed in on the phone |
 | Convex backend | `packages/backend/convex` | Schema and functions mirroring `Store`, plus the phone's `study:snapshot` and `study:addReviews` (the phone adds words with `store:addWord`) |
 | Shared | `packages/shared` | Types, caption parsing, the `Store` interface, spaced-repetition scheduling, register diff |
+
+**Backups on disk.** While the helper is running, the extension copies its whole database to `~/.cache/canto-learning/backups/` a few seconds after each change (`latest.json` plus one file per day, kept for 60 days). Chrome ties the database to the extension's ID, which changes when the folder moves; when that happens the extension starts empty and merges `latest.json` back in on its own. A backup with less than half the previous words is saved beside it as `smaller-….json` rather than replacing it. Settings > Saved words can also restore a backup file by hand; restoring only adds what's missing.
 
 **Storage is local by default.** The app imports `store` from `apps/extension/lib/data` and never touches IndexedDB or Convex directly. Both backends implement the `Store` interface in `packages/shared/src/store.ts`. To share words with the phone from anywhere, connect a Convex deployment under Settings > Saved words; see [packages/backend/README.md](packages/backend/README.md).
 

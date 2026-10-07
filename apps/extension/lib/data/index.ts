@@ -3,7 +3,8 @@ import type { Store } from "@pna/shared"
 import { fillFromDict } from "../dict"
 import { loadSettings, type Settings } from "../settings"
 import { copyLocalToConvex, createConvexStore, type ConvexConfig } from "./convexStore"
-import { createLocalStore } from "./localStore"
+import { withDiskBackup } from "./diskBackup"
+import { createLocalStore, restoreLocalStore } from "./localStore"
 import { withStudySync } from "./studySync"
 
 // The extension's data layer. Everything else imports `store` from here and
@@ -11,6 +12,17 @@ import { withStudySync } from "./studySync"
 
 export type { ConvexConfig }
 export { copyLocalToConvex }
+
+/**
+ * Restores a backup file into this browser's database: either a raw dump, or a
+ * `{ data: { "pause-and-ask": dump } }` export of the extension's IndexedDB.
+ */
+export async function restoreBackup(text: string) {
+  const json = JSON.parse(text)
+  const dump = json?.data?.["pause-and-ask"] ?? json
+  if (!Array.isArray(dump?.words)) throw new Error("This file has no saved words in it.")
+  return restoreLocalStore(dump)
+}
 
 const BACKEND_KEYS = ["dataBackend", "convexUrl", "convexToken"] as const
 
@@ -21,8 +33,9 @@ export function convexConfig(s: Pick<Settings, (typeof BACKEND_KEYS)[number]>): 
 }
 
 let local: Store | null = null
-// The local helper relays local data to the phone; with Convex the phone reads Convex itself.
-const localStore = () => (local ??= withStudySync(createLocalStore(), { fill: fillFromDict }))
+// The local helper relays local data to the phone (with Convex the phone reads Convex itself)
+// and keeps a backup of the whole database on disk.
+const localStore = () => (local ??= withStudySync(withDiskBackup(createLocalStore()), { fill: fillFromDict }))
 
 async function pick(): Promise<Store> {
   const cfg = convexConfig(await loadSettings())

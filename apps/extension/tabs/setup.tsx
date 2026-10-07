@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { checkConvex, convexConfig, copyLocalToConvex } from "~lib/data"
+import { checkConvex, convexConfig, copyLocalToConvex, restoreBackup } from "~lib/data"
 import "~lib/fonts"
 import { loadSettings, saveSettings, type Settings } from "~lib/settings"
 import { hasCantoneseVoice, speak } from "~lib/speech"
@@ -65,6 +65,20 @@ function Setup() {
       setSync(`Copied ${r.words} words.${r.alreadyOnConvex ? ` ${r.alreadyOnConvex} of them were already on Convex.` : ""}`)
     } catch (e) {
       setSync(`Copy failed: ${e instanceof Error ? e.message : e}`)
+    }
+  }
+
+  const restore = async (file: File | undefined) => {
+    if (!file) return
+    try {
+      const r = await restoreBackup(await file.text())
+      setSync(
+        r.words || r.encounters
+          ? `Restored ${r.words} words and ${r.encounters} moments from ${r.videos} videos.`
+          : "Everything in that backup is already here."
+      )
+    } catch (e) {
+      setSync(`Restore failed: ${e instanceof Error ? e.message : e}`)
     }
   }
 
@@ -150,6 +164,11 @@ function Setup() {
             </button>
           </>
         )}
+        <label className="row">
+          Restore a backup into this browser{" "}
+          <input type="file" accept="application/json,.json" onChange={(e) => restore(e.target.files?.[0])} />
+        </label>
+        <p className="muted">Adds the backup&apos;s words to the ones here; nothing is replaced.</p>
         {sync && <p className="muted">{sync}</p>}
       </section>
 

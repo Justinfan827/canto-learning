@@ -327,3 +327,61 @@ export async function dumpLocalStore(name = "pause-and-ask") {
   d.close()
   return { videos, lines, words, encounters, questions, reviews }
 }
+
+export type LocalDump = Awaited<ReturnType<typeof dumpLocalStore>>
+
+/**
+ * Merges a dump of another copy of the database into this one, e.g. after the extension
+ * moved folders and Chrome gave it a new ID and an empty database. Nothing here is overwritten:
+ * a word already saved keeps its row and gains the backup's encounters, and videos already
+ * here keep their lines. Running it twice adds nothing the second time.
+ */
+export async function restoreLocalStore(dump: Partial<LocalDump>, name = "pause-and-ask") {
+  const d = await open(name)
+  const tx = d.transaction(["videos", "lines", "words", "encounters", "questions", "reviews"], "readwrite")
+  const added = { videos: 0, lines: 0, words: 0, encounters: 0 }
+
+  const newVideos = new Set<string>()
+  for (const v of dump.videos ?? []) {
+    if (await tx.objectStore("videos").get(v.id)) continue
+    await tx.objectStore("videos").put(v)
+    newVideos.add(v.id)
+    added.videos++
+  }
+  for (const l of dump.lines ?? []) {
+    if (!newVideos.has(l.videoId)) continue
+    await tx.objectStore("lines").put(l)
+    added.lines++
+  }
+
+  // Word ids are auto-numbered, so the backup's ids clash with this database's; map them.
+  const wordIds = new Map<number, number>()
+  for (const { id, ...w } of dump.words ?? []) {
+    const have = await tx.objectStore("words").index("colloquial").get(w.colloquial)
+    if (have) wordIds.set(id!, have.id!)
+    else {
+      wordIds.set(id!, await tx.objectStore("words").add(w))
+      added.words++
+    }
+  }
+
+  for (const { id: _id, ...e } of dump.encounters ?? []) {
+    const wordId = wordIds.get(e.wordId)
+    if (wordId == null) continue
+    const existing = await tx.objectStore("encounters").index("word").getAll(wordId)
+    if (existing.some((o) => o.videoId === e.videoId && o.lineIdx === e.lineIdx && o.createdAt === e.createdAt)) continue
+    await tx.objectStore("encounters").add({ ...e, wordId })
+    added.encounters++
+  }
+  // Questions were the AI tutor's log, which the extension no longer has, so they're left out.
+  const reviews = await tx.objectStore("reviews").getAll()
+  for (const { id: _id, ...r } of dump.reviews ?? []) {
+    const wordId = wordIds.get(r.wordId)
+    if (wordId == null || reviews.some((o) => o.wordId === wordId && o.createdAt === r.createdAt)) continue
+    await tx.objectStore("reviews").add({ ...r, wordId })
+  }
+
+  await tx.done
+  d.close()
+  return added
+}

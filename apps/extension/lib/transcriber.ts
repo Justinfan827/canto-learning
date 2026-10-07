@@ -11,8 +11,8 @@ export interface Engine {
   unavailable: string | null
 }
 
-/** Best first. Parakeet has no Chinese, so Auto never picks it. */
-const AUTO_ORDER = ["sensevoice", "whisper-cpp-turbo", "whisper-turbo", "whisper-medium"]
+/** Best first. */
+const AUTO_ORDER = ["sensevoice", "whisper-cpp-turbo"]
 
 export async function listEngines(): Promise<Engine[] | null> {
   try {

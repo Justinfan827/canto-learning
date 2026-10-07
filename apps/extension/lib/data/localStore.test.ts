@@ -2,7 +2,7 @@ import "fake-indexeddb/auto"
 
 import { describe, expect, it } from "vitest"
 
-import { createLocalStore } from "./localStore"
+import { createLocalStore, dumpLocalStore, restoreLocalStore } from "./localStore"
 
 const video = { id: "v1", title: "Vlog" }
 const lines = [
@@ -76,5 +76,26 @@ describe("local store", () => {
 
     const snap = await s.exportStudy()
     expect(snap.words.find((w) => w.colloquial === "傾偈")).toMatchObject({ source: "manual", sources: [] })
+  })
+
+  it("restores a backup into a database that already has words, keeping both", async () => {
+    const old = createLocalStore("t-old")
+    await old.putVideo(video, lines, "manual")
+    await old.logTaughtWord(kam, { videoId: "v1", lineIdx: 1 })
+    await old.logTaughtWord({ ...kam, colloquial: "古怪", formal: null }, { videoId: "v1", lineIdx: 1 })
+    const backup = await dumpLocalStore("t-old")
+
+    const now = createLocalStore("t-new")
+    await now.putVideo({ id: "v2", title: "Other" }, lines, "manual")
+    await now.logTaughtWord({ ...kam, colloquial: "傾偈", formal: null }, { videoId: "v2", lineIdx: 0 })
+    await now.logTaughtWord(kam, { videoId: "v2", lineIdx: 0 })
+
+    expect(await restoreLocalStore(backup, "t-new")).toEqual({ videos: 1, lines: 2, words: 1, encounters: 2 })
+    expect((await now.listWords({})).map((w) => w.colloquial).sort()).toEqual(["古怪", "咁", "傾偈"].sort())
+    const kamNow = (await now.listWords({})).find((w) => w.colloquial === "咁")!
+    expect((await now.getWord(kamNow.id))?.encounters.map((e) => e.videoId).sort()).toEqual(["v1", "v2"])
+    expect((await now.getVideo("v1"))?.lines).toHaveLength(2)
+
+    expect(await restoreLocalStore(backup, "t-new")).toEqual({ videos: 0, lines: 0, words: 0, encounters: 0 })
   })
 })

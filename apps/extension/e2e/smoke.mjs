@@ -87,9 +87,8 @@ await ctx.route("http://127.0.0.1:8787/**", async (route) => {
     return route.fulfill({ status: route.request().method() === "OPTIONS" ? 204 : 200, contentType: "application/json", headers: cors, body: JSON.stringify({ words: [] }) })
   if (url.pathname === "/engines")
     return route.fulfill({ contentType: "application/json", headers: cors, body: JSON.stringify({ engines: [
-      { id: "whisper-cpp-turbo", label: "Whisper large-v3-turbo (whisper.cpp)", languages: "", unavailable: "not installed" },
-      { id: "whisper-turbo", label: "Whisper turbo", languages: "", unavailable: null },
-      { id: "parakeet-v3", label: "Parakeet", languages: "", unavailable: null }] }) })
+      { id: "sensevoice", label: "SenseVoice Small (sherpa-onnx)", languages: "", unavailable: "model not downloaded" },
+      { id: "whisper-cpp-turbo", label: "Whisper turbo", languages: "", unavailable: null }] }) })
   transcribeCalls.push(Object.fromEntries(url.searchParams))
   await transcriptHeld
   const ev = [
