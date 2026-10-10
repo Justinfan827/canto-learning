@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# Prepares an Amp orb for this repo. Runs on fresh orbs and again on stale snapshots,
+# so every step must be idempotent and cheap when already done.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+step() { echo "==> $*"; SECONDS=0; }
+done_step() { echo "    (${SECONDS}s)"; }
+
+step "pnpm via corepack (packageManager: $(node -p 'require("./package.json").packageManager'))"
+corepack enable >/dev/null 2>&1 || sudo corepack enable
+COREPACK_ENABLE_DOWNLOAD_PROMPT=0 pnpm --version
+done_step
+
+step "pnpm install"
+export CI=true COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+if ! pnpm install --frozen-lockfile >/dev/null 2>&1; then
+  # pnpm-lock.yaml is in pnpm 8's format (lockfileVersion 6.0), which the pinned pnpm 10
+  # can't read. Resolve fresh, then put the committed lockfile back so the tree stays clean.
+  # Drop this fallback once a pnpm 10 lockfile is committed.
+  echo "    frozen install failed; installing without the lockfile"
+  pnpm install --no-frozen-lockfile
+  git checkout -- pnpm-lock.yaml
+fi
+done_step
+
+step "dictionary and example sentence data (skipped when already built)"
+node apps/extension/scripts/build-dict.mjs --if-missing
+node apps/extension/scripts/build-examples.mjs --if-missing
+# The examples build also rewrites the committed iOS copy from the latest Tatoeba export; keep the committed one.
+git checkout -- apps/ios/Canto/Resources/examples.json
+done_step
+
+step "yt-dlp for the local transcriber"
+if ! command -v yt-dlp >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/yt-dlp" ]; then
+  uv tool install --quiet yt-dlp
+fi
+done_step
+
+step "CHROMIUM_PATH for the e2e scripts"
+marker="# canto-learning: Chromium for e2e tests"
+if ! grep -Fqx "$marker" "$HOME/.bash_profile" 2>/dev/null; then
+  cat >> "$HOME/.bash_profile" <<'PROFILE'
+
+# canto-learning: Chromium for e2e tests
+if [ -z "${CHROMIUM_PATH:-}" ]; then
+  for c in "$HOME"/.agent-browser/browsers/chrome-*/chrome; do
+    [ -x "$c" ] && export CHROMIUM_PATH="$c"
+  done
+fi
+PROFILE
+fi
+done_step
+
+step "orb notes for agents"
+mkdir -p "$HOME/.config/amp"
+notes="$HOME/.config/amp/AGENTS.md"
+if ! grep -Fq "canto-learning orb notes" "$notes" 2>/dev/null; then
+  cat >> "$notes" <<'NOTES'
+
+## canto-learning orb notes
+- Dependencies and the dictionary data (apps/extension/assets/*.dat) are installed by .agents/setup.
+- CHROMIUM_PATH points at the orb's Chrome for Testing, so e2e scripts run headless:
+  `pnpm build:ext:dev && pnpm --filter extension smoke`.
+- The transcriber (`pnpm transcriber`, port 8787) has yt-dlp and ffmpeg, but no SenseVoice model;
+  download it per README if transcription is needed.
+- Convex sign-in tests need a deployment and secrets that are not configured in the orb.
+NOTES
+fi
+done_step
