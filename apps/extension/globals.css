@@ -17,8 +17,20 @@
 @source "./tabs";
 @source "./sidepanel.tsx";
 
-/* Follow the system setting, like the rest of the extension. */
-@custom-variant dark (@media (prefers-color-scheme: dark));
+/*
+ * Dark mode follows the system setting, except on pages that pin a theme with data-theme on
+ * <html>: the pause popup follows YouTube's own theme (tabs/passive.tsx).
+ */
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+  &:where([data-theme="dark"] *) {
+    @slot;
+  }
+}
 
 /* The one part of preflight shadcn components need: borders only where a border class asks for one. */
 @layer base {
@@ -73,7 +85,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --background: #1a1512;
     --foreground: #f6efe8;
     --card: #231d19;
@@ -115,6 +127,49 @@
     --border-pressed: #2a231f;
   }
 }
+
+:root[data-theme="dark"] {
+  --background: #1a1512;
+  --foreground: #f6efe8;
+  --card: #231d19;
+  --card-foreground: #f6efe8;
+  --popover: #231d19;
+  --popover-foreground: #f6efe8;
+  --primary: #ff5a4e;
+  --primary-foreground: #1a1512;
+  --secondary: #231d19;
+  --secondary-foreground: #45a9ec;
+  --muted: #231d19;
+  --muted-foreground: #a0958d;
+  --accent: #2e2621;
+  --accent-foreground: #f6efe8;
+  --destructive: #ff7a85;
+  --border: #3a322c;
+  --input: #3a322c;
+  --ring: #45a9ec;
+
+  --primary-pressed: #c2322a;
+  --primary-soft: #3a1c18;
+  --brand-jade: #34c08e;
+  --brand-jade-pressed: #1f8a63;
+  --brand-jade-soft: #15302a;
+  --gold: #ffc53d;
+  --gold-pressed: #c48a00;
+  --gold-soft: #33280f;
+  --gold-ink: #ffd27a;
+  --harbour: #45a9ec;
+  --harbour-pressed: #2b7fb8;
+  --harbour-ink: #6cbcf2;
+  --harbour-soft: #15283a;
+  --neon: #ff6aa8;
+  --neon-ink: #ff8dbd;
+  --neon-soft: #3a1828;
+  --body: #dcd2c9;
+  --brand-faint: #5e544e;
+  --surface: #1a1512;
+  --border-pressed: #2a231f;
+}
+
 
 @theme inline {
   --color-background: var(--background);
