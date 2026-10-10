@@ -1,0 +1,224 @@
+/*
+ * The extension's stylesheet: Tailwind and the shadcn theme, built from DESIGN.md at the repo root.
+ * `pnpm css` compiles it to tailwind.css (gitignored), which every page imports instead of style.css.
+ * Plasmo's bundler can't run Tailwind v4 itself, so the build and dev scripts run the Tailwind CLI first.
+ *
+ * Layers, lowest to highest: Tailwind's theme, a minimal reset, the hand-written style.css
+ * (legacy), then Tailwind utilities. Screens not yet on shadcn keep style.css exactly; shadcn
+ * components win where they use utility classes. Tailwind's full preflight is left out on
+ * purpose, since it would restyle the legacy screens.
+ */
+@layer theme, base, legacy, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@import "./style.css" layer(legacy);
+
+@source "./components";
+@source "./tabs";
+@source "./sidepanel.tsx";
+
+/* Follow the system setting, like the rest of the extension. */
+@custom-variant dark (@media (prefers-color-scheme: dark));
+
+/* The one part of preflight shadcn components need: borders only where a border class asks for one. */
+@layer base {
+  [class*="border"] {
+    border: 0 solid;
+  }
+}
+
+:root {
+  /* shadcn roles (DESIGN.md › Colors) */
+  --background: #ffffff;
+  --foreground: #2a211c;
+  --card: #ffffff;
+  --card-foreground: #2a211c;
+  --popover: #ffffff;
+  --popover-foreground: #2a211c;
+  --primary: #de3127;
+  --primary-foreground: #ffffff;
+  --secondary: #ffffff;
+  --secondary-foreground: #1878bc;
+  --muted: #fbf6ef;
+  --muted-foreground: #7a6f68;
+  --accent: #fbf6ef;
+  --accent-foreground: #2a211c;
+  --destructive: #a3172e;
+  --border: #ede4da;
+  --input: #ede4da;
+  --ring: #1d8fd8;
+
+  /* Brand tokens without a shadcn slot */
+  --primary-pressed: #b02219;
+  --primary-soft: #ffe4df;
+  --brand-jade: #14a374;
+  --brand-jade-pressed: #0b7a5c;
+  --brand-jade-soft: #ddf5ea;
+  --gold: #ffb81c;
+  --gold-pressed: #d99100;
+  --gold-soft: #fff1cc;
+  --gold-ink: #8a5a00;
+  --harbour: #1d8fd8;
+  --harbour-pressed: #1570ab;
+  --harbour-ink: #1878bc;
+  --harbour-soft: #ddf0fc;
+  --neon: #f0478f;
+  --neon-ink: #c2185b;
+  --neon-soft: #ffe0ee;
+  --milk-tea: #c08a55;
+  --body: #4a403a;
+  --brand-faint: #c2b8b0;
+  --surface: #fbf6ef;
+  --border-pressed: #ddd2c6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1a1512;
+    --foreground: #f6efe8;
+    --card: #231d19;
+    --card-foreground: #f6efe8;
+    --popover: #231d19;
+    --popover-foreground: #f6efe8;
+    --primary: #ff5a4e;
+    --primary-foreground: #1a1512;
+    --secondary: #231d19;
+    --secondary-foreground: #45a9ec;
+    --muted: #231d19;
+    --muted-foreground: #a0958d;
+    --accent: #2e2621;
+    --accent-foreground: #f6efe8;
+    --destructive: #ff7a85;
+    --border: #3a322c;
+    --input: #3a322c;
+    --ring: #45a9ec;
+
+    --primary-pressed: #c2322a;
+    --primary-soft: #3a1c18;
+    --brand-jade: #34c08e;
+    --brand-jade-pressed: #1f8a63;
+    --brand-jade-soft: #15302a;
+    --gold: #ffc53d;
+    --gold-pressed: #c48a00;
+    --gold-soft: #33280f;
+    --gold-ink: #ffd27a;
+    --harbour: #45a9ec;
+    --harbour-pressed: #2b7fb8;
+    --harbour-ink: #6cbcf2;
+    --harbour-soft: #15283a;
+    --neon: #ff6aa8;
+    --neon-ink: #ff8dbd;
+    --neon-soft: #3a1828;
+    --body: #dcd2c9;
+    --brand-faint: #5e544e;
+    --surface: #1a1512;
+    --border-pressed: #2a231f;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-primary-pressed: var(--primary-pressed);
+  --color-primary-soft: var(--primary-soft);
+  --color-jade: var(--brand-jade);
+  --color-jade-pressed: var(--brand-jade-pressed);
+  --color-jade-soft: var(--brand-jade-soft);
+  --color-gold: var(--gold);
+  --color-gold-pressed: var(--gold-pressed);
+  --color-gold-soft: var(--gold-soft);
+  --color-gold-ink: var(--gold-ink);
+  --color-harbour: var(--harbour);
+  --color-harbour-pressed: var(--harbour-pressed);
+  --color-harbour-ink: var(--harbour-ink);
+  --color-harbour-soft: var(--harbour-soft);
+  --color-neon: var(--neon);
+  --color-neon-ink: var(--neon-ink);
+  --color-neon-soft: var(--neon-soft);
+  --color-milk-tea: var(--milk-tea);
+  --color-body: var(--body);
+  --color-faint: var(--brand-faint);
+  --color-surface: var(--surface);
+  --color-border-pressed: var(--border-pressed);
+
+  /* DESIGN.md › Typography: Nunito for UI, Noto Sans HK for Chinese. */
+  --font-sans: "Nunito Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-heading: var(--font-sans);
+  --font-zh: "Noto Sans HK", "PingFang HK", "Microsoft JhengHei", sans-serif;
+
+  /* DESIGN.md › Shapes, pinned to the classes base-nova components use. */
+  --radius-sm: 8px; /* small accents */
+  --radius-md: 10px; /* menu items */
+  --radius-lg: 16px; /* buttons, inputs, menus */
+  --radius-xl: 16px; /* cards */
+  --radius-2xl: 20px; /* sheets, large containers */
+  --radius-3xl: 20px;
+  --radius-4xl: 9999px; /* badges, progress */
+}
+
+/* DESIGN.md › Elevation: only floating layers get a soft shadow; pressable things use lips. */
+@theme {
+  --shadow-xs: 0 0 #0000;
+  --shadow-md: 0 2px 4px rgb(42 33 28 / 0.06), 0 14px 32px -12px rgb(42 33 28 / 0.22);
+  --shadow-lg: 0 2px 4px rgb(42 33 28 / 0.06), 0 14px 32px -12px rgb(42 33 28 / 0.22);
+}
+
+/* DESIGN.md › Typography tokens as type-* utilities. */
+@utility type-display {
+  font-family: var(--font-sans);
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -0.012em;
+}
+@utility type-title {
+  font-family: var(--font-sans);
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+@utility type-body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+@utility type-body-sm {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+@utility type-button {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.057em;
+  text-transform: uppercase;
+}
+@utility type-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}

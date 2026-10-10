@@ -26,7 +26,7 @@ import { pickEngine, type Engine } from "~lib/transcriber"
 import { useTranscriber, type TranscribeJob, type TranscriberStatus } from "~lib/useTranscriber"
 import { createWords } from "~lib/words"
 
-import "./style.css"
+import "./tailwind.css"
 
 const wordLog = createWords(store)
 const openSetup = (hash = "") => chrome.tabs.create({ url: chrome.runtime.getURL("tabs/setup.html") + hash })

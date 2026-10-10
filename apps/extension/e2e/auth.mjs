@@ -27,7 +27,7 @@ try {
   await page.setViewportSize({ width: 380, height: 720 })
   await page.goto(`chrome-extension://${extId}/sidepanel.html`)
   await page.waitForSelector(".welcome")
-  console.log("welcome:", (await page.locator(".welcome-actions").innerText()).replace(/\n+/g, " | "))
+  console.log("welcome:", (await page.locator(".welcome button").allInnerTexts()).join(" | "))
   if (!(await page.locator(".welcome .dev-login").count())) throw new Error("no dev sign-in: build with PLASMO_PUBLIC_DEV_LOGIN_PASSWORD set")
 
   await page.click(".welcome .dev-login")

@@ -6,7 +6,7 @@ import { hasCantoneseVoice, speak } from "~lib/speech"
 import { LOCAL_HELPER } from "~lib/features"
 import { listEngines, pickEngine, type Engine } from "~lib/transcriber"
 
-import "../style.css"
+import "../tailwind.css"
 
 /**
  * Settings, from the panel's ⋯ menu. Everything is optional: captions and the dictionary
@@ -48,7 +48,7 @@ function Setup() {
 
   return (
     <main className="setup">
-      <h1>Pause &amp; Ask settings</h1>
+      <h1>CantoBro settings</h1>
       <p>Captions, the dictionary and saved words work with nothing set up here.</p>
 
       <section id="popup">
@@ -90,7 +90,7 @@ function Setup() {
             <p className="warn">The transcriber helper isn&apos;t running.</p>
             <p>Install the tools once (macOS):</p>
             <pre>brew install whisper-cpp yt-dlp ffmpeg</pre>
-            <p>Then start the helper from the Pause &amp; Ask folder and leave it running:</p>
+            <p>Then start the helper from the project folder and leave it running:</p>
             <pre>pnpm transcriber</pre>
             <button className="link" onClick={checkHelper}>
               Check again

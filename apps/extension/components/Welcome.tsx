@@ -1,5 +1,7 @@
 import { useState } from "react"
 
+import { Button } from "~components/ui/button"
+
 import { DEV_LOGIN, continueAsGuest, signInAsDev, signInWithGoogle } from "~lib/auth"
 import { copyLocalToConvex } from "~lib/data"
 
@@ -34,38 +36,43 @@ export function Welcome(props: { onBusy: (busy: boolean) => void }) {
 
   if (copyFailed)
     return (
-      <div className="welcome">
-        <p className="welcome-status">{status}</p>
-        <button className="primary" onClick={() => setBoth(false)}>
-          Continue
-        </button>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-surface p-8 text-center font-sans">
+        <p className="type-body-sm text-muted-foreground">{status}</p>
+        <Button onClick={() => setBoth(false)}>Continue</Button>
       </div>
     )
 
   return (
-    <div className="welcome">
-      <div className="welcome-mark" aria-hidden>
-        停
+    <div className="welcome flex min-h-screen flex-col items-center justify-center gap-3 bg-surface px-7 py-10 text-center font-sans text-body">
+      <div
+        aria-hidden
+        lang="yue"
+        className="mb-2 grid size-16 place-items-center rounded-2xl bg-primary font-zh text-[34px] font-bold text-primary-foreground shadow-[0_5px_0_var(--primary-pressed)]">
+        粵
       </div>
-      <h1>Pause &amp; Ask</h1>
-      <p className="muted">Pause a Cantonese video, tap a word, and keep the ones you want to learn.</p>
-      <div className="welcome-actions">
-        <button className="primary" disabled={busy} onClick={() => signIn(signInWithGoogle)}>
+      <h1 className="type-display text-foreground">CantoBro</h1>
+      <p className="type-body max-w-[280px] text-muted-foreground">Pause a Cantonese video, tap a word, and keep the ones you want to learn.</p>
+      <div className="mt-4 mb-2 flex w-full max-w-[280px] flex-col gap-3">
+        <Button disabled={busy} onClick={() => signIn(signInWithGoogle)}>
           Continue with Google
-        </button>
+        </Button>
         {DEV_LOGIN && (
-          <button className="secondary dev-login" disabled={busy} onClick={() => signIn(signInAsDev)}>
+          <Button variant="outline" className="dev-login" disabled={busy} onClick={() => signIn(signInAsDev)}>
             Sign in as dev user
-          </button>
+          </Button>
         )}
-        <button className="link guest" disabled={busy} onClick={continueAsGuest}>
+        <Button variant="ghost" className="guest" disabled={busy} onClick={continueAsGuest}>
           Continue as guest
-        </button>
+        </Button>
       </div>
-      <p className="muted small">
+      <p className="type-body-sm max-w-[280px] text-muted-foreground">
         Signed in, your saved words sync to the Canto app on your phone. As a guest they stay in this browser; sign in later to bring them along.
       </p>
-      {status && <p className="welcome-status">{status}</p>}
+      {status && (
+        <p role="status" className="type-body-sm text-muted-foreground">
+          {status}
+        </p>
+      )}
     </div>
   )
 }

@@ -17,3 +17,4 @@ apps/extension/assets/examples.dat
 apps/extension/.cache
 apps/extension/e2e/*.png
 .amp/portals/*
+apps/extension/tailwind.css

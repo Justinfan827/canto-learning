@@ -1,6 +1,6 @@
 ---
 name: e2e-real-chrome
-description: End-to-end test the Pause & Ask extension in the user's real, running Chrome with the dev-browser CLI. Rebuild, reload the extension and the YouTube tab, then drive play, pause, transcription, word lookups and saving on a real Cantonese video while the user watches. Use after any change to the extension or transcriber, or when the user asks to "test it in my browser". A separate Chrome for Testing window (e2e/demo.mjs) is the fallback.
+description: End-to-end test the CantoBro extension in the user's real, running Chrome with the dev-browser CLI. Rebuild, reload the extension and the YouTube tab, then drive play, pause, transcription, word lookups and saving on a real Cantonese video while the user watches. Use after any change to the extension or transcriber, or when the user asks to "test it in my browser". A separate Chrome for Testing window (e2e/demo.mjs) is the fallback.
 ---
 
 # End-to-end testing in the user's real Chrome

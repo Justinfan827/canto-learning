@@ -1,3 +1,6 @@
+// Nunito for UI text (DESIGN.md), bundled with the extension so it works offline.
+import "@fontsource-variable/nunito"
+
 // Noto Sans HK for Chinese, from Google Fonts (served in small unicode-range slices).
 // System fonts (PingFang HK, Microsoft JhengHei) take over when offline.
 const href = "https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;700&display=swap"

@@ -1,4 +1,4 @@
-// Local transcription helper for Pause & Ask. When a video has no captions, the side panel
+// Local transcription helper for CantoBro. When a video has no captions, the side panel
 // asks this server to download the audio (yt-dlp) and transcribe it with a local speech
 // model, streaming lines back as NDJSON. Run: node apps/transcriber/server.mjs
 import { spawn, spawnSync } from "child_process"
@@ -355,6 +355,6 @@ const server = http.createServer(async (req, res) => {
 })
 
 server.listen(PORT, HOST, () => {
-  console.log(`Pause & Ask transcriber on http://${HOST}:${PORT}`)
+  console.log(`CantoBro transcriber on http://${HOST}:${PORT}`)
   for (const [id, e] of Object.entries(ENGINES)) console.log(`  ${id.padEnd(18)} ${e.available() ?? "ready"}`)
 })

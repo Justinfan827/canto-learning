@@ -1,4 +1,4 @@
-# Pause & Ask
+# CantoBro
 
 A Chrome extension that turns Cantonese YouTube videos into lessons. While the video plays, the side panel shows the captions like lyrics, with Jyutping over the current line. Pause, tap any word for its meaning and example sentences from a bundled offline dictionary, and save the words you don't know with the moment they came from. Everything runs offline, with no API key.
 
@@ -60,6 +60,8 @@ curl -LO https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sile
 | Shared | `packages/shared` | Types, caption parsing, the `Store` interface, spaced-repetition scheduling, register diff |
 
 **Backups on disk.** While the helper is running, the extension copies its whole database to `~/.cache/canto-learning/backups/` a few seconds after each change (`latest.json` plus one file per day, kept for 60 days). Chrome ties the database to the extension's ID. The ID is pinned by the `key` in the manifest, but if it ever changes the extension starts empty and merges `latest.json` back in on its own. A backup with less than half the previous words is saved beside it as `smaller-….json` rather than replacing it.
+
+**Design.** [DESIGN.md](DESIGN.md) is the design system (Google's DESIGN.md format; lint it with `npx @google/design.md lint DESIGN.md`): Duolingo's chunky, playful feel in Hong Kong colours. The extension builds it with Tailwind v4 and [shadcn/ui](https://ui.shadcn.com) (Base UI, `apps/extension/components.json`, components in `components/ui`). Tokens live in `apps/extension/globals.css`, which the build and dev scripts compile to `tailwind.css` with the Tailwind CLI (`pnpm --filter extension css`), because Plasmo's bundler can't run Tailwind v4. Screens not yet moved to shadcn keep their hand-written `style.css`, loaded in a cascade layer below Tailwind's utilities. The shadcn agent skill is in `.agents/skills/shadcn`.
 
 **Storage is local by default.** The app imports `store` from `apps/extension/lib/data` and never touches IndexedDB or Convex directly. Both backends implement the `Store` interface in `packages/shared/src/store.ts`. Signing in (the panel's welcome screen or **⋯** menu) switches to Convex; see [packages/backend/README.md](packages/backend/README.md).
 

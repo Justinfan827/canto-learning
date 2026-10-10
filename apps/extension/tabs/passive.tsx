@@ -23,7 +23,7 @@ import { useSaveWord } from "~lib/useSaveWord"
 import { useTranscriber, type TranscriberStatus } from "~lib/useTranscriber"
 import { createWords } from "~lib/words"
 
-import "../style.css"
+import "../tailwind.css"
 
 const wordLog = createWords(store)
 const PANEL_CHECK_MS = 2000

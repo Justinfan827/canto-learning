@@ -1,36 +1,44 @@
 {
   "name": "extension",
-  "displayName": "Pause & Ask",
+  "displayName": "CantoBro",
   "version": "0.1.0",
   "description": "Pause a Cantonese YouTube video and look up what was just said.",
   "private": true,
   "scripts": {
-    "dev": "node scripts/build-dict.mjs --if-missing && node scripts/build-examples.mjs --if-missing && plasmo dev",
-    "build": "node scripts/build-dict.mjs --if-missing && node scripts/build-examples.mjs --if-missing && plasmo build && node scripts/wrap-main-world.mjs",
-    "build:dev": "node scripts/build-dict.mjs --if-missing && node scripts/build-examples.mjs --if-missing && plasmo build --tag=dev && node scripts/wrap-main-world.mjs build/chrome-mv3-dev",
+    "dev": "node scripts/build-dict.mjs --if-missing && node scripts/build-examples.mjs --if-missing && pnpm css && (pnpm css --watch=always & plasmo dev)",
+    "build": "node scripts/build-dict.mjs --if-missing && node scripts/build-examples.mjs --if-missing && pnpm css && plasmo build && node scripts/wrap-main-world.mjs",
+    "build:dev": "node scripts/build-dict.mjs --if-missing && node scripts/build-examples.mjs --if-missing && pnpm css && plasmo build --tag=dev && node scripts/wrap-main-world.mjs build/chrome-mv3-dev",
     "package": "pnpm build && plasmo package",
+    "css": "tailwindcss -i globals.css -o tailwind.css",
     "typecheck": "tsc --noEmit",
     "test": "vitest run lib",
     "smoke": "node e2e/smoke.mjs",
     "dict": "node scripts/build-dict.mjs && node scripts/build-examples.mjs"
   },
   "dependencies": {
+    "@base-ui/react": "^1.9.0",
     "@convex-dev/better-auth": "^0.12.5",
+    "@fontsource-variable/nunito": "^5.3.0",
     "@pna/backend": "workspace:^",
     "@pna/shared": "workspace:*",
     "better-auth": "~1.6.15",
+    "class-variance-authority": "^0.7.1",
+    "cn": "^0.4.0",
     "convex": "^1.46.0",
     "idb": "^8.0.0",
+    "lucide-react": "^1.55.0",
     "plasmo": "0.90.5",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
     "@types/chrome": "0.0.287",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
     "fake-indexeddb": "^6.0.0",
     "playwright-core": "1.56.1",
+    "tailwindcss": "^4.3.3",
     "typescript": "5.6.3",
     "vitest": "^2.1.0"
   },
@@ -53,7 +61,7 @@
       "default_path": "sidepanel.html"
     },
     "action": {
-      "default_title": "Open Pause & Ask"
+      "default_title": "Open CantoBro"
     },
     "web_accessible_resources": [
       {

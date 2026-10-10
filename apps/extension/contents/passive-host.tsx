@@ -181,7 +181,7 @@ function PassiveHost() {
       ref={frame}
       // The frame loads with the page and stays, so it can transcribe while the video plays.
       src={src}
-      title="Pause & Ask"
+      title="CantoBro"
       className={"pna-pop " + (on ? "shown" : "hidden")}
       style={style}
     />
