@@ -1,9 +1,15 @@
 import { lookup, type Dict, type NewWord, type Word } from "@pna/shared"
-import { useEffect, useRef, useState } from "react"
+import { cn } from "cn"
+import { CircleCheck, Info, X } from "lucide-react"
+import { useEffect, useId, useRef, useState } from "react"
 
-import { Icon } from "./Icon"
+import { Button } from "~components/ui/button"
+import { Field, FieldGroup, FieldLabel } from "~components/ui/field"
+import { Input } from "~components/ui/input"
 
 const HAN = /\p{Script=Han}/u
+
+const label = "type-eyebrow text-xs font-extrabold text-muted-foreground"
 
 /**
  * A quick form for saving a word you met outside a video. Only the Cantonese is
@@ -22,7 +28,7 @@ export function AddWord(props: {
   const edited = useRef({ jyutping: false, meaning: false })
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState<{ kind: "ok" | "warn"; text: string } | null>(null)
-  const first = useRef<HTMLInputElement>(null)
+  const id = useId()
 
   const word = colloquial.trim()
   useEffect(() => {
@@ -45,7 +51,7 @@ export function AddWord(props: {
       setJyutping("")
       setMeaning("")
       edited.current = { jyutping: false, meaning: false }
-      first.current?.focus()
+      document.getElementById(id + "-yue")?.focus()
     } catch (err) {
       setNote({ kind: "warn", text: err instanceof Error ? err.message : String(err) })
     } finally {
@@ -54,58 +60,89 @@ export function AddWord(props: {
   }
 
   return (
-    <form className="add" onSubmit={submit} aria-label="Add a word">
-      <div className="add-head">
-        <b>Add a word</b>
-        <button type="button" className="ib" aria-label="Close" title="Close" onClick={props.onClose}>
-          <Icon name="close" />
-        </button>
+    <form
+      className="add mx-4 mb-4 flex flex-col gap-3.5 rounded-xl border-2 border-b-4 border-border bg-card p-4 font-sans text-body"
+      onSubmit={submit}
+      aria-label="Add a word">
+      <div className="add-head -mt-1 -mr-2 flex items-center justify-between gap-2">
+        <b className="type-title text-foreground">Add a word</b>
+        <Button type="button" variant="ghost" size="icon" className="text-muted-foreground" aria-label="Close" title="Close" onClick={props.onClose}>
+          <X className="size-5" strokeWidth={2.5} />
+        </Button>
       </div>
-      <label>
-        Cantonese
-        <input
-          ref={first}
-          autoFocus
-          lang="yue-Hant"
-          className="hz"
-          value={colloquial}
-          placeholder="傾偈"
-          onChange={(e) => {
-            setColloquial(e.target.value)
-            setNote(null)
-          }}
-        />
-      </label>
-      {word && props.saved.has(word) && <p className="add-note warn">Already saved. Adding it again fills in anything missing.</p>}
-      <div className="add-row">
-        <label>
-          Jyutping
-          <input
-            value={jyutping}
-            placeholder="optional"
+      <FieldGroup className="gap-3">
+        <Field className="gap-1.5">
+          <FieldLabel htmlFor={id + "-yue"} className={label}>
+            Cantonese
+          </FieldLabel>
+          <Input
+            id={id + "-yue"}
+            autoFocus
+            lang="yue-Hant"
+            className="hz h-12 font-zh text-[22px] font-bold md:text-[22px]"
+            value={colloquial}
+            placeholder="傾偈"
             onChange={(e) => {
-              edited.current.jyutping = true
-              setJyutping(e.target.value)
+              setColloquial(e.target.value)
+              setNote(null)
             }}
           />
-        </label>
-        <label>
-          Meaning
-          <input
-            value={meaning}
-            placeholder="optional"
-            onChange={(e) => {
-              edited.current.meaning = true
-              setMeaning(e.target.value)
-            }}
-          />
-        </label>
-      </div>
-      <div className="add-foot">
-        {note ? <span className={"add-note " + note.kind}>{note.text}</span> : <span className="add-note muted">{props.dict ? "Filled from the dictionary when it knows the word." : ""}</span>}
-        <button className="primary" type="submit" disabled={!word || busy}>
+        </Field>
+        {word && props.saved.has(word) && (
+          <p className="add-note warn m-0 flex items-start gap-2 rounded-md bg-gold-soft px-3 py-2 type-body-sm text-gold-ink">
+            <Info className="mt-px size-4 shrink-0" strokeWidth={2.5} />
+            Already saved. Adding it again fills in anything missing.
+          </p>
+        )}
+        <div className="add-row grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
+          <Field className="gap-1.5">
+            <FieldLabel htmlFor={id + "-jp"} className={label}>
+              Jyutping
+            </FieldLabel>
+            <Input
+              id={id + "-jp"}
+              className="font-bold text-harbour-ink"
+              value={jyutping}
+              placeholder="optional"
+              onChange={(e) => {
+                edited.current.jyutping = true
+                setJyutping(e.target.value)
+              }}
+            />
+          </Field>
+          <Field className="gap-1.5">
+            <FieldLabel htmlFor={id + "-en"} className={label}>
+              Meaning
+            </FieldLabel>
+            <Input
+              id={id + "-en"}
+              value={meaning}
+              placeholder="optional"
+              onChange={(e) => {
+                edited.current.meaning = true
+                setMeaning(e.target.value)
+              }}
+            />
+          </Field>
+        </div>
+      </FieldGroup>
+      <div className="add-foot flex items-center justify-between gap-3">
+        {note ? (
+          <span
+            className={cn(
+              "add-note flex min-w-0 items-center gap-1.5 type-body-sm font-extrabold",
+              note.kind,
+              note.kind === "ok" ? "text-jade-pressed dark:text-jade" : "text-gold-ink"
+            )}>
+            {note.kind === "ok" ? <CircleCheck className="size-4 shrink-0" strokeWidth={2.5} /> : <Info className="size-4 shrink-0" strokeWidth={2.5} />}
+            {note.text}
+          </span>
+        ) : (
+          <span className="add-note muted min-w-0 type-body-sm text-muted-foreground">{props.dict ? "Filled from the dictionary when it knows the word." : ""}</span>
+        )}
+        <Button className="primary shrink-0 px-6" type="submit" disabled={!word || busy}>
           Save
-        </button>
+        </Button>
       </div>
     </form>
   )
