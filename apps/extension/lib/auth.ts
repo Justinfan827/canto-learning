@@ -11,6 +11,7 @@ export const CONVEX_URL = process.env.PLASMO_PUBLIC_CONVEX_URL || ""
 const CONVEX_SITE_URL = process.env.PLASMO_PUBLIC_CONVEX_SITE_URL || ""
 /** Dev builds sign in as a fixed dev user, with no Google window. */
 export const DEV_LOGIN = !!process.env.PLASMO_PUBLIC_DEV_LOGIN_PASSWORD
+const DEV_LOGIN_EMAIL = process.env.PLASMO_PUBLIC_DEV_LOGIN_EMAIL || "dev@canto-learning.local"
 
 export interface Account {
   email: string
@@ -49,7 +50,7 @@ export async function signInWithGoogle() {
 /** Dev builds only: signs in as the dev user, creating it the first time. Needs DEV_LOGIN=1 on the deployment. */
 export async function signInAsDev() {
   const a = auth()
-  const dev = { email: "dev@canto-learning.local", password: process.env.PLASMO_PUBLIC_DEV_LOGIN_PASSWORD!, name: "Dev" }
+  const dev = { email: DEV_LOGIN_EMAIL, password: process.env.PLASMO_PUBLIC_DEV_LOGIN_PASSWORD!, name: "Dev" }
   const signedIn = await a.signIn.email({ email: dev.email, password: dev.password })
   if (signedIn.error) fail("Couldn't sign in as the dev user", (await a.signUp.email(dev)).error)
   await refreshAccount()

@@ -55,8 +55,9 @@ done_step
 step "orb notes for agents"
 mkdir -p "$HOME/.config/amp"
 notes="$HOME/.config/amp/AGENTS.md"
-if ! grep -Fq "canto-learning orb notes" "$notes" 2>/dev/null; then
-  cat >> "$notes" <<'NOTES'
+# Rewrite our section (always the file's last) so edits to these notes reach existing snapshots.
+sed -i '/^## canto-learning orb notes$/,$d' "$notes" 2>/dev/null || true
+cat >> "$notes" <<'NOTES'
 
 ## canto-learning orb notes
 - Dependencies and the dictionary data (apps/extension/assets/*.dat) are installed by .agents/setup.
@@ -64,7 +65,9 @@ if ! grep -Fq "canto-learning orb notes" "$notes" 2>/dev/null; then
   `pnpm build:ext:dev && pnpm --filter extension smoke`.
 - The transcriber (`pnpm transcriber`, port 8787) has yt-dlp and ffmpeg, but no SenseVoice model;
   download it per README if transcription is needed.
-- Convex sign-in tests need a deployment and secrets that are not configured in the orb.
+- Signed-in testing: dev builds' "Sign in as dev user" button signs in to the dev Convex deployment as
+  the test user in PLASMO_PUBLIC_DEV_LOGIN_EMAIL / PLASMO_PUBLIC_DEV_LOGIN_PASSWORD (Amp project env vars).
+  Check it with `pnpm build:ext:dev && node apps/extension/e2e/auth.mjs`. Google sign-in can't be automated.
+- CONVEX_DEPLOY_KEY (project secret) is the dev deployment's key, for `npx convex` in packages/backend.
 NOTES
-fi
 done_step
