@@ -4,12 +4,14 @@
  * when it shows and tells the host. Being an extension page, it shares the side panel's
  * dictionary, saved words and local database.
  */
+import { cn } from "cn"
 import { examplesFor, lineAt, lookup, regroup, senses, type Examples, type LineWord } from "@pna/shared"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { Icon } from "~components/Icon"
 import { MomentCard, WordSheet } from "~components/Moment"
 import { formatTime } from "~components/Ruby"
+import { Button } from "~components/ui/button"
 import { store } from "~lib/data"
 import { loadExamples } from "~lib/dict"
 import "~lib/fonts"
@@ -32,9 +34,49 @@ const WHEEL_STEP = 60
 const WHEEL_RESET_MS = 250
 const SEEK_SETTLE_MS = 300
 
-document.documentElement.dataset.theme = new URLSearchParams(location.search).get("theme") ?? ""
+const ytTheme = new URLSearchParams(location.search).get("theme") ?? ""
+document.documentElement.dataset.theme = ytTheme
+followYouTubeTheme(ytTheme)
+
+/**
+ * YouTube's own theme wins over the system one, but the design tokens (globals.css) follow the
+ * system, and an iframe can't be told otherwise. So copy the light or dark token block onto
+ * :root[data-theme], which outranks both.
+ */
+function followYouTubeTheme(theme: string) {
+  if (theme !== "light" && theme !== "dark") return
+  const blocks: string[] = []
+  const take = (rules: CSSRuleList, inDark: boolean) => {
+    for (const r of Array.from(rules)) {
+      if (r instanceof CSSMediaRule) take(r.cssRules, inDark || r.conditionText.includes("prefers-color-scheme: dark"))
+      else if (r instanceof CSSStyleRule && r.selectorText === ":root" && r.style.getPropertyValue("--primary") && inDark === (theme === "dark"))
+        blocks.push(r.style.cssText)
+    }
+  }
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      take(sheet.cssRules, false)
+    } catch {
+      // A sheet from another origin (fonts); it has no tokens.
+    }
+  }
+  const style = document.createElement("style")
+  style.textContent = `:root[data-theme="${theme}"] { ${blocks.join(" ")} color-scheme: ${theme}; }`
+  document.head.append(style)
+}
 
 type Mode = "none" | "card"
+
+/**
+ * The line card and word sheet are built for the side panel; in this small frame the card drops
+ * its header and buttons (the bar below has them) and the sheet sits in place under the line
+ * instead of sliding up over it.
+ */
+const HOSTED = cn(
+  "[&_.moment]:m-0 [&_.moment_.acts]:hidden [&_.moment_.top]:hidden [&_.regroup-hint.muted-hint]:hidden",
+  "[&_.scrim]:hidden [&_.sheet_.grab]:hidden",
+  "[&_.sheet]:static [&_.sheet]:max-h-none [&_.sheet]:translate-y-0 [&_.sheet]:animate-none [&_.sheet]:overflow-visible [&_.sheet]:rounded-none [&_.sheet]:border-0 [&_.sheet]:bg-transparent [&_.sheet]:px-2 [&_.sheet]:pt-2 [&_.sheet]:pb-1 [&_.sheet]:shadow-none"
+)
 
 /** Tells the host what to show and how big it is. */
 function report(mode: Mode, width: number, height: number) {
@@ -228,7 +270,11 @@ function PausePopup() {
   const looping = !!line && loopIdx === line.idx
 
   return (
-    <div ref={box} className={"pp card size-" + settings.textSize} style={host.cardWidth ? { width: host.cardWidth } : undefined} onWheel={onWheel}>
+    <div
+      ref={box}
+      className={cn("pp card size-" + settings.textSize, "grid gap-1 bg-background p-2 pb-0 font-sans text-body", HOSTED)}
+      style={host.cardWidth ? { width: host.cardWidth } : undefined}
+      onWheel={onWheel}>
       {line ? (
         <MomentCard
           words={words}
@@ -260,7 +306,7 @@ function PausePopup() {
         <NoLine status={tr.status} hasLines={state.lines.length > 0} onOpen={openPanel} />
       )}
 
-      <div className="pp-more">
+      <div className="pp-more grid gap-1">
         {word && (
           <WordSheet
             word={word}
@@ -277,17 +323,16 @@ function PausePopup() {
             onClose={() => setSelWord(null)}
           />
         )}
-        <div className="pp-bar">
+        <div className="pp-bar -mx-2 flex items-center gap-0.5 border-t-2 border-border px-2 py-1.5">
           {line && (
             <>
-              <button className="ib small" aria-label="Hear it" title="Hear it" onClick={() => speak(line.text)}>
+              <BarButton aria-label="Hear it" title="Hear it" onClick={() => speak(line.text)}>
                 <Icon name="sound" />
-              </button>
-              <button className="ib small" aria-label="Hear it slower" title="Hear it slower" onClick={() => speak(line.text, { slow: true })}>
+              </BarButton>
+              <BarButton aria-label="Hear it slower" title="Hear it slower" onClick={() => speak(line.text, { slow: true })}>
                 <Icon name="slow" />
-              </button>
-              <button
-                className={"ib small" + (looping ? " on" : "")}
+              </BarButton>
+              <BarButton
                 aria-label={looping ? "Stop looping" : "Loop this line"}
                 aria-pressed={looping}
                 title={looping ? "Stop looping" : "Loop this line"}
@@ -303,42 +348,60 @@ function PausePopup() {
                 }}
               >
                 <Icon name="loop" />
-              </button>
+              </BarButton>
             </>
           )}
-          <span className="pp-time">
+          <span
+            className={cn(
+              "pp-time ml-1 rounded-full px-2 py-1 type-body-sm font-bold text-muted-foreground tabular-nums",
+              looping && "bg-jade-soft text-jade-pressed dark:text-jade"
+            )}>
             {looping
               ? "Looping " + formatTime(line!.startMs)
               : focusIdx != null && focusIdx !== current
                 ? formatTime(line?.startMs ?? 0)
                 : formatTime(pausedAt)}
           </span>
-          <span className="grow" />
+          <span className="flex-1" />
           {line && (
             <>
-              <button className="ib small" aria-label="Previous line" title="Previous line (scroll up or ↑)" disabled={!prev} onClick={() => goTo(focus! - 1)}>
+              <BarButton aria-label="Previous line" title="Previous line (scroll up or ↑)" disabled={!prev} onClick={() => goTo(focus! - 1)}>
                 <Icon name="up" />
-              </button>
-              <button
-                className="ib small"
+              </BarButton>
+              <BarButton
                 aria-label="Next line"
                 title="Next line (scroll down or ↓)"
                 disabled={focus! + 1 >= state.lines.length}
                 onClick={() => goTo(focus! + 1)}
               >
                 <Icon name="down" />
-              </button>
+              </BarButton>
             </>
           )}
-          <button className="ib small" aria-label="Open transcript" title="Open the full transcript" onClick={openPanel}>
+          <BarButton aria-label="Open transcript" title="Open the full transcript" onClick={openPanel}>
             <Icon name="panel" />
-          </button>
-          <button className="ib small" aria-label="Close" title="Close (Esc)" onClick={() => setDismissed(true)}>
+          </BarButton>
+          <BarButton aria-label="Close" title="Close (Esc)" onClick={() => setDismissed(true)}>
             <Icon name="close" />
-          </button>
+          </BarButton>
         </div>
       </div>
     </div>
+  )
+}
+
+/** A small icon button in the popup's bottom bar. Pressed (looping) shows in jade. */
+function BarButton({ className, ...props }: React.ComponentProps<typeof Button>) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      className={cn(
+        "text-muted-foreground hover:bg-surface hover:text-foreground aria-pressed:bg-jade-soft aria-pressed:text-jade-pressed disabled:opacity-35 dark:aria-pressed:text-jade [&_svg]:size-4",
+        className
+      )}
+      {...props}
+    />
   )
 }
 
@@ -355,12 +418,12 @@ function NoLine({ status, hasLines, onOpen }: { status: TranscriberStatus; hasLi
           ? status.message
           : "Looking for captions…"
   return (
-    <div className="pp-empty">
-      <p>{text}</p>
+    <div className="pp-empty grid justify-items-start gap-2 px-2 pt-2 pb-2.5">
+      <p className="m-0 type-body text-body">{text}</p>
       {!hasLines && (status.kind === "missing" || status.kind === "no-engine" || status.kind === "error") && (
-        <button className="link" onClick={onOpen}>
+        <Button variant="outline" size="sm" onClick={onOpen}>
           Open the side panel
-        </button>
+        </Button>
       )}
     </div>
   )
