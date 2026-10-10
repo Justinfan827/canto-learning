@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 
+import type { Account } from "~lib/auth"
 import type { Settings } from "~lib/settings"
 
 import { Icon } from "./Icon"
@@ -32,21 +33,29 @@ export function Header(props: {
   onSaved: () => void
   onSquads: () => void
   onMenu: (open: boolean) => void
-  onMore: () => void
+  /** Who's signed in: null for a guest, undefined when this build has no accounts. */
+  account?: Account | null
+  onSignIn: () => void
+  onSignOut: () => void
+  onSettings: () => void
   menu: ReactNode
 }) {
   const { pill } = props
   const menuRef = useRef<HTMLDivElement>(null)
   const srcRef = useRef<HTMLDivElement>(null)
   const [srcOpen, setSrcOpen] = useState(false)
+  const moreRef = useRef<HTMLDivElement>(null)
+  const [moreOpen, setMoreOpen] = useState(false)
   useEffect(() => {
-    if (!srcOpen) return
+    if (!srcOpen && !moreOpen) return
     const close = (e: PointerEvent) => {
       if (!srcRef.current?.contains(e.target as Node)) setSrcOpen(false)
+      if (!moreRef.current?.contains(e.target as Node)) setMoreOpen(false)
     }
     document.addEventListener("pointerdown", close)
     return () => document.removeEventListener("pointerdown", close)
-  }, [srcOpen])
+  }, [srcOpen, moreOpen])
+  const pick = (run: () => void) => () => (setMoreOpen(false), run())
   useEffect(() => {
     if (!props.menuOpen) return
     const close = (e: PointerEvent) => {
@@ -125,9 +134,32 @@ export function Header(props: {
         </button>
         {props.menuOpen && props.menu}
       </div>
-      <button className="ib" aria-label="Settings" title="Settings" onClick={props.onMore}>
-        <Icon name="more" />
-      </button>
+      <div className="menu-anchor" ref={moreRef}>
+        <button className={"ib" + (moreOpen ? " on" : "")} aria-label="More" aria-haspopup="menu" aria-expanded={moreOpen} title="Account and settings" onClick={() => setMoreOpen(!moreOpen)}>
+          <Icon name="more" />
+        </button>
+        {moreOpen && (
+          <div className="pop more-menu" role="menu">
+            {props.account !== undefined && (
+              <>
+                <div className="menu-h account-line">{props.account ? `Signed in as ${props.account.email}` : "Guest: saved words stay in this browser"}</div>
+                {props.account ? (
+                  <button role="menuitem" className="mi" onClick={pick(props.onSignOut)}>
+                    Sign out
+                  </button>
+                ) : (
+                  <button role="menuitem" className="mi" onClick={pick(props.onSignIn)}>
+                    Sign in
+                  </button>
+                )}
+              </>
+            )}
+            <button role="menuitem" className="mi" onClick={pick(props.onSettings)}>
+              Settings
+            </button>
+          </div>
+        )}
+      </div>
     </header>
   )
 }

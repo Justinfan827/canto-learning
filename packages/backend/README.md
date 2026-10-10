@@ -26,7 +26,7 @@ Point the extension's builds at the deployment in `apps/extension/.env.dev` (or 
 ## Notes
 
 - Words and encounters keep numeric ids per user (`num`, from the `counters` table) so both clients see the same shapes as the local store.
-- "Copy this browser's words to your account" in the extension's settings moves what you saved before signing in; words keep their ids where they can, so phone progress lines up, and running it twice is safe.
+- Signing in moves what you saved as a guest into the account (`copyLocalToConvex`, run by the panel's welcome screen); words keep their ids where they can, so phone progress lines up, and running it twice is safe.
 - `admin:clearAll` is internal (CLI or dashboard only) and empties every app table, for every user.
 - Integration tests for the adapter, against a deployment with `DEV_LOGIN=1` (each run signs up its own user): `CONVEX_TEST_URL=https://<deployment>.convex.cloud pnpm --filter extension test`.
 - The phone app still signs in with the old shared token and needs the same sign-in before it can sync with Convex again; until then it syncs through the local helper.

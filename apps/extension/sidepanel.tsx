@@ -7,11 +7,13 @@ import { Dock, MomentCard, WordSheet } from "~components/Moment"
 import { formatTime } from "~components/Ruby"
 import { SavedList } from "~components/SavedList"
 import { Squads } from "~components/Squads"
-import { CONVEX_URL } from "~lib/auth"
+import { Welcome } from "~components/Welcome"
+import { CONVEX_URL, leaveGuest, signOut, type Account } from "~lib/auth"
 import { LOCAL_HELPER } from "~lib/features"
 import { loadExamples } from "~lib/dict"
 import "~lib/fonts"
 import { store } from "~lib/data"
+import { useAccount } from "~lib/useAccount"
 import { fillLineJyutping } from "~lib/data/lineJyutping"
 import { loadSettings, saveSettings, type Settings } from "~lib/settings"
 import { speak } from "~lib/speech"
@@ -45,6 +47,8 @@ function SidePanel() {
   const saved = useSaved(store)
   const tr = useTranscriber(state, settings?.transcribeEngine ?? "auto", !!settings?.preferLocal, setLocalCaptions)
 
+  const acct = useAccount()
+  const [signingIn, setSigningIn] = useState(false)
   const [view, setView] = useState<"video" | "saved" | "squads">("video")
   const [savedSel, setSavedSel] = useState<SavedWord | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -160,7 +164,13 @@ function SidePanel() {
     saved.refresh()
   }
 
-  if (!settings) return null
+  if (!settings || !acct) return null
+  if (acct.choosing || signingIn)
+    return (
+      <div className={"panel size-" + settings.textSize}>
+        <Welcome onBusy={setSigningIn} />
+      </div>
+    )
   if (view === "squads")
     return (
       <div className={"panel size-" + settings.textSize}>
@@ -212,8 +222,8 @@ function SidePanel() {
     )
   }
   const openSaved = () => setView("saved")
-  if (!state.tabId) return <Empty text="Open a YouTube video in this window to start." onSaved={openSaved} />
-  if (!state.video) return <Empty text="Waiting for the video… if this doesn't change, reload the YouTube tab." onSaved={openSaved} />
+  if (!state.tabId) return <Empty text="Open a YouTube video in this window to start." onSaved={openSaved} account={acct.account} />
+  if (!state.video) return <Empty text="Waiting for the video… if this doesn't change, reload the YouTube tab." onSaved={openSaved} account={acct.account} />
 
   const status = tr.status
   const job = status.kind === "running" ? status : null
@@ -236,7 +246,10 @@ function SidePanel() {
       onMenu={setMenuOpen}
       onSaved={() => setView("saved")}
       onSquads={() => setView("squads")}
-      onMore={() => openSetup()}
+      account={CONVEX_URL ? acct.account : undefined}
+      onSignIn={() => leaveGuest()}
+      onSignOut={() => signOut()}
+      onSettings={() => openSetup()}
       menu={<DisplayMenu s={settings} canFormal={canFormal} onChange={(p) => saveSettings(p)} />}
     />
   )
@@ -489,7 +502,7 @@ function EmptyLyrics({ status, hasTrack, screen, onRetry }: { status: Transcribe
   )
 }
 
-function Empty({ text, onSaved }: { text: string; onSaved: () => void }) {
+function Empty({ text, onSaved, account }: { text: string; onSaved: () => void; account: Account | null }) {
   return (
     <div className="empty">
       <div>
@@ -498,6 +511,14 @@ function Empty({ text, onSaved }: { text: string; onSaved: () => void }) {
           Saved words
         </button>
       </div>
+      {CONVEX_URL && (
+        <p className="empty-account">
+          {account ? `Signed in as ${account.email}` : "Guest"} ·{" "}
+          <button className="link" onClick={() => (account ? signOut() : leaveGuest())}>
+            {account ? "Sign out" : "Sign in"}
+          </button>
+        </p>
+      )}
     </div>
   )
 }

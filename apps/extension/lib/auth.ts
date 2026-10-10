@@ -56,10 +56,20 @@ export async function signInAsDev() {
   await refreshAccount()
 }
 
+/** Saved words stay in this browser, with no account. Signing in later copies them over. */
+export const continueAsGuest = () => chrome.storage.local.set({ guest: true })
+
+/** Back to the welcome screen, to sign in. This browser's words stay and are copied over on sign-in. */
+export const leaveGuest = () => chrome.storage.local.set({ guest: false })
+
+/** Whether someone chose to use the extension without an account. */
+export const isGuest = async () => !!(await chrome.storage.local.get("guest")).guest
+
+/** Signs out, back to the welcome screen. */
 export async function signOut() {
   await client?.signOut()
   token = null
-  await setAccount(null)
+  await chrome.storage.local.set({ account: null, guest: false })
 }
 
 /** Re-reads the session, e.g. after signing in, and records who's signed in. */

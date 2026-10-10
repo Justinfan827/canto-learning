@@ -56,6 +56,8 @@ const tabId = await sw.evaluate(async () => (await chrome.tabs.query({ url: "htt
 const panel = await ctx.newPage()
 await panel.setViewportSize({ width: 380, height: 720 })
 await panel.goto(`chrome-extension://${extId}/sidepanel.html?tab=${tabId}`)
+// A fresh profile opens on the welcome screen (builds with a Convex deployment): continue as a guest.
+if (await panel.waitForSelector(".welcome, .panel header, .empty", { timeout: 10000 }).then((el) => el.evaluate((e) => e.classList.contains("welcome")))) await panel.click(".welcome .guest")
 await panel.waitForSelector(".moment", { timeout: 10000 })
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const vid = (fn, arg) => yt.evaluate(fn, arg)

@@ -5,7 +5,7 @@ import { fillFromDict } from "../dict"
 import { LOCAL_HELPER } from "../features"
 import { copyLocalToConvex as copyTo, createConvexStore, type ConvexConfig } from "./convexStore"
 import { withDiskBackup } from "./diskBackup"
-import { createLocalStore, restoreLocalStore } from "./localStore"
+import { createLocalStore } from "./localStore"
 import { withStudySync } from "./studySync"
 
 // The extension's data layer. Everything else imports `store` from here and
@@ -22,17 +22,6 @@ export function copyLocalToConvex(onProgress?: (done: number, total: number) => 
   const cfg = convexConfig()
   if (!cfg) throw new Error("This build doesn't sync")
   return copyTo(cfg, onProgress)
-}
-
-/**
- * Restores a backup file into this browser's database: either a raw dump, or a
- * `{ data: { "pause-and-ask": dump } }` export of the extension's IndexedDB.
- */
-export async function restoreBackup(text: string) {
-  const json = JSON.parse(text)
-  const dump = json?.data?.["pause-and-ask"] ?? json
-  if (!Array.isArray(dump?.words)) throw new Error("This file has no saved words in it.")
-  return restoreLocalStore(dump)
 }
 
 const BACKEND_KEYS = ["account"] as const

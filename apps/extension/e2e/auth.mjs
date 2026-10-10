@@ -1,6 +1,9 @@
-// Signing in on a dev build, against the dev Convex deployment in .env.dev: the settings page's
-// "Sign in as dev user" button, a signed-in call to Convex (copying this browser's words), and
-// signing out. Run: pnpm build:dev && node e2e/auth.mjs   (set CHROMIUM_PATH; HEADED=1 to watch)
+// Signing in on a dev build, against the dev Convex deployment in .env.dev: the panel's welcome
+// screen and its "Sign in as dev user" button (which also moves this browser's words to the
+// account, a signed-in call), staying signed in after a reload, signing out back to the welcome
+// screen, and continuing as a guest.
+// Run: pnpm build:dev && node e2e/auth.mjs   (needs PLASMO_PUBLIC_DEV_LOGIN_PASSWORD at build time;
+// set CHROMIUM_PATH; HEADED=1 to watch)
 import { chromium } from "playwright-core"
 import fs from "fs"
 
@@ -18,28 +21,31 @@ try {
   const extId = new URL(sw.url()).host
   console.log("extension id:", extId, extId === ID ? "(pinned)" : "(NOT the pinned id)")
   if (extId !== ID) throw new Error("the manifest key didn't pin the extension id")
+  if (ctx.pages().some((p) => p.url().includes("setup.html"))) throw new Error("installing opened the settings page")
 
   const page = await ctx.newPage()
-  await page.goto(`chrome-extension://${extId}/tabs/setup.html#sync`)
-  await page.waitForSelector("#sync button")
-  console.log("signed out:", (await page.locator("#sync").innerText()).replace(/\n+/g, " | "))
-  await page.click("#sync .dev-login")
-  await page.waitForSelector("#sync .ok", { timeout: 20000 })
-  console.log("signed in:", await page.locator("#sync .ok").innerText())
+  await page.setViewportSize({ width: 380, height: 720 })
+  await page.goto(`chrome-extension://${extId}/sidepanel.html`)
+  await page.waitForSelector(".welcome")
+  console.log("welcome:", (await page.locator(".welcome-actions").innerText()).replace(/\n+/g, " | "))
+  if (!(await page.locator(".welcome .dev-login").count())) throw new Error("no dev sign-in: build with PLASMO_PUBLIC_DEV_LOGIN_PASSWORD set")
 
-  // A call that needs the session: copy this (empty) browser's words to the account.
-  await page.click("#sync >> text=Copy this browser's words")
-  await page.waitForSelector("#sync >> text=/Copied \\d+ words/", { timeout: 20000 })
-  console.log("signed-in call:", await page.locator("#sync >> text=/Copied/").innerText())
+  await page.click(".welcome .dev-login")
+  await page.waitForSelector(".empty-account", { timeout: 30000 })
+  console.log("signed in:", await page.locator(".empty-account").innerText())
 
   // The session survives a reload: it lives in the extension's localStorage.
   await page.reload()
-  await page.waitForSelector("#sync .ok", { timeout: 10000 })
-  console.log("after reload:", await page.locator("#sync .ok").innerText())
+  await page.waitForSelector(".empty-account", { timeout: 10000 })
+  console.log("after reload:", await page.locator(".empty-account").innerText())
 
-  await page.click("#sync >> text=Sign out")
-  await page.waitForSelector("#sync >> text=Sign in with Google")
-  console.log("signed out again:", (await page.locator("#sync").innerText()).replace(/\n+/g, " | "))
+  await page.click(".empty-account >> text=Sign out")
+  await page.waitForSelector(".welcome")
+  console.log("signed out: back on the welcome screen")
+
+  await page.click(".welcome .guest")
+  await page.waitForSelector(".empty-account")
+  console.log("guest:", await page.locator(".empty-account").innerText())
   console.log("errors: []")
 } finally {
   await ctx.close()
