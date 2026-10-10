@@ -18,9 +18,14 @@ export const config: PlasmoCSConfig = {
 
 export const getStyle: PlasmoGetStyle = () => {
   const style = document.createElement("style")
+  // DESIGN.md: a floating layer, so 16px corners, a 2px warm border (drawn as a ring, so the
+  // frame's size stays exactly what the popup asked for) and one soft shadow. YouTube's own theme
+  // picks the light or dark colours; color-scheme carries it into the popup.
   style.textContent = `
-    .pna-pop { position: fixed; z-index: 2100; border: 0; border-radius: 14px; background: transparent; color-scheme: normal;
-      box-shadow: 0 1px 2px rgba(0,0,0,.14), 0 10px 28px -10px rgba(0,0,0,.4); }
+    .pna-pop { position: fixed; z-index: 2100; border: 0; border-radius: 16px; background: transparent; color-scheme: light;
+      box-shadow: 0 0 0 2px #ede4da, 0 2px 4px rgba(42,33,28,.08), 0 16px 36px -12px rgba(42,33,28,.34); }
+    .pna-pop.dark { color-scheme: dark;
+      box-shadow: 0 0 0 2px #3a322c, 0 2px 4px rgba(0,0,0,.3), 0 16px 36px -12px rgba(0,0,0,.7); }
     .pna-pop.shown { animation: pna-in .14s ease-out; }
     @keyframes pna-in { from { opacity: 0; } }
     @media (prefers-reduced-motion: reduce) { .pna-pop.shown { animation: none; } }
@@ -182,7 +187,7 @@ function PassiveHost() {
       // The frame loads with the page and stays, so it can transcribe while the video plays.
       src={src}
       title="CantoBro"
-      className={"pna-pop " + (on ? "shown" : "hidden")}
+      className={"pna-pop " + theme() + " " + (on ? "shown" : "hidden")}
       style={style}
     />
   )
