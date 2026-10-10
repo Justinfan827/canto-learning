@@ -1,0 +1,103 @@
+{
+  "app": "HelloChinese",
+  "url": "https://www.hellochinese.cc/",
+  "tagline": "No. 1 Chinese Learning App",
+  "colors": [
+    {
+      "name": "Hello green",
+      "hex": "#00CA72",
+      "role": "Wordmark, accent words, quote marks",
+      "source": "computed text"
+    },
+    {
+      "name": "Mint teal",
+      "hex": "#00DEA9",
+      "role": "Footer gradient, paint-splash",
+      "source": "sampled"
+    },
+    {
+      "name": "Site green",
+      "hex": "#00C898",
+      "role": "Brand green in CSS",
+      "source": "research note (site CSS)"
+    },
+    {
+      "name": "Hero violet",
+      "hex": "#937AFF",
+      "role": "Hero gradient field",
+      "source": "sampled"
+    },
+    {
+      "name": "Coral",
+      "hex": "#FF6574",
+      "role": "Speech-recognition card / blob",
+      "source": "computed bg"
+    },
+    {
+      "name": "Butter",
+      "hex": "#FFF9E5",
+      "role": "Game card wash",
+      "source": "computed bg"
+    },
+    {
+      "name": "Lilac wash",
+      "hex": "#F3F2FF",
+      "role": "All-in-one card wash",
+      "source": "computed bg"
+    },
+    {
+      "name": "Sky wash",
+      "hex": "#E3F9FF",
+      "role": "Video card wash",
+      "source": "computed bg"
+    },
+    {
+      "name": "Mint wash",
+      "hex": "#DFFFF3",
+      "role": "SRS card wash",
+      "source": "computed bg"
+    },
+    {
+      "name": "Ink",
+      "hex": "#222222",
+      "role": "Headings",
+      "source": "computed text"
+    },
+    {
+      "name": "Body grey",
+      "hex": "#444444",
+      "role": "Body",
+      "source": "computed text"
+    }
+  ],
+  "type": {
+    "display": {
+      "family": "Poppins",
+      "weights": "700/900",
+      "notes": "\"No. 1\" at 128px/900; section heads ~24px/700"
+    },
+    "body": {
+      "family": "Poppins",
+      "weights": "400"
+    },
+    "cjk": {
+      "family": "system (PingFang / Noto-like)",
+      "notes": "pinyin above hanzi in word cards"
+    }
+  },
+  "button": {
+    "label": "(store badges only)",
+    "bg": "#000000",
+    "fg": "#FFFFFF",
+    "radius": "~8px",
+    "shadow": "none",
+    "border": "none",
+    "weight": "—",
+    "size": "—",
+    "case": "—",
+    "letterSpacing": "—",
+    "height": "~40px"
+  },
+  "captured": "2026-10-10",
+  "viewport": "1440x900 @2x (Chromium)"
+}

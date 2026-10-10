@@ -1,0 +1,97 @@
+{
+  "app": "Speak",
+  "url": "https://www.speak.com/",
+  "tagline": "Good things happen when we Speak",
+  "colors": [
+    {
+      "name": "Electric blue",
+      "hex": "#1C49FF",
+      "role": "Logo mark, every CTA, full-bleed bands, footer",
+      "source": "css --slate-blue"
+    },
+    {
+      "name": "Band blue",
+      "hex": "#3748F7",
+      "role": "Hero band behind \"Start speaking them\"",
+      "source": "computed bg"
+    },
+    {
+      "name": "Navy",
+      "hex": "#12205A",
+      "role": "Headlines and body text",
+      "source": "css --dark-blue"
+    },
+    {
+      "name": "Hover blue",
+      "hex": "#6A88FF",
+      "role": "Hover / secondary emphasis",
+      "source": "css --hover"
+    },
+    {
+      "name": "Muted ink",
+      "hex": "#8990AD",
+      "role": "Secondary text, faded words in two-tone headlines",
+      "source": "computed text"
+    },
+    {
+      "name": "Canvas grey",
+      "hex": "#F5F5F5",
+      "role": "Card section backgrounds",
+      "source": "computed bg"
+    },
+    {
+      "name": "Card grey",
+      "hex": "#F8F8F8",
+      "role": "Feature cards",
+      "source": "computed bg"
+    },
+    {
+      "name": "Mint",
+      "hex": "#29C195",
+      "role": "Highlighted phrase, \"Perfect line\" feedback",
+      "source": "css --medium-aquamarine"
+    },
+    {
+      "name": "Tomato",
+      "hex": "#FF4242",
+      "role": "Error / correction",
+      "source": "css --tomato"
+    },
+    {
+      "name": "Gold",
+      "hex": "#F9CB78",
+      "role": "Stars / reward",
+      "source": "css --glod"
+    }
+  ],
+  "type": {
+    "display": {
+      "family": "Axiforma",
+      "weights": "500/600",
+      "notes": "h1 56px/600, -2.24px (-0.04em) tracking, sentence case; two-tone headlines (navy + grey)"
+    },
+    "body": {
+      "family": "Axiforma",
+      "weights": "400"
+    },
+    "cjk": {
+      "family": "Pretendard",
+      "notes": "Korean / Japanese pages"
+    }
+  },
+  "button": {
+    "label": "Start Speaking for free",
+    "bg": "#1C49FF",
+    "fg": "#FFFFFF",
+    "radius": "128px (pill)",
+    "shadow": "none",
+    "border": "none",
+    "weight": "600",
+    "size": "16px",
+    "case": "title case",
+    "letterSpacing": "-0.36px",
+    "height": "62px"
+  },
+  "captured": "2026-10-10",
+  "viewport": "1440x900 @2x (Chromium)"
+}

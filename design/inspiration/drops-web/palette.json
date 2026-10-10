@@ -1,0 +1,108 @@
+{
+  "app": "Drops",
+  "url": "https://languagedrops.com/",
+  "tagline": "Language learning made easy",
+  "colors": [
+    {
+      "name": "Purple 350 (page field)",
+      "hex": "#712BB5",
+      "role": "Main page background, hero band",
+      "source": "css --purple-350"
+    },
+    {
+      "name": "Deep purple",
+      "hex": "#261453",
+      "role": "Nav bar, dark sections, button text on lime",
+      "source": "css --deep-purple-100"
+    },
+    {
+      "name": "Night purple",
+      "hex": "#29093D",
+      "role": "Footer / darkest band, primary button label",
+      "source": "css --purple-100-101"
+    },
+    {
+      "name": "Blue 500",
+      "hex": "#217AD1",
+      "role": "Alternate section band (games, confidence)",
+      "source": "css --blue-500"
+    },
+    {
+      "name": "Lilac",
+      "hex": "#DFA5F7",
+      "role": "Single-colour word pictograms on purple (OG image, app)",
+      "source": "css --lilac"
+    },
+    {
+      "name": "Lime",
+      "hex": "#DBE65B",
+      "role": "Headlines, outline buttons, logo on purple",
+      "source": "css --lime"
+    },
+    {
+      "name": "Lime CTA",
+      "hex": "#DAEB3F",
+      "role": "Filled primary CTA (GET STARTED)",
+      "source": "computed button bg"
+    },
+    {
+      "name": "Premium yellow",
+      "hex": "#FFFF00",
+      "role": "PREMIUM pill in nav",
+      "source": "computed button bg"
+    },
+    {
+      "name": "Turquoise",
+      "hex": "#0AB1B4",
+      "role": "Mode colour (matching game), phone screen",
+      "source": "css --turquoise-500"
+    },
+    {
+      "name": "Banana",
+      "hex": "#F7CC51",
+      "role": "Golden drop / premium accent",
+      "source": "css --banana"
+    },
+    {
+      "name": "Lavender wash",
+      "hex": "#F5F0FF",
+      "role": "Testimonial card background",
+      "source": "computed bg"
+    }
+  ],
+  "type": {
+    "display": {
+      "family": "TT Norms Pro",
+      "weights": "700/800",
+      "notes": "geometric sans; h1 38px/800, +0.5px tracking, sentence case"
+    },
+    "body": {
+      "family": "TT Norms Pro",
+      "weights": "400",
+      "notes": "18px/30px on purple, white"
+    },
+    "history": "2017 Behance identity used Montserrat + Mouse Memoirs (learning screens)"
+  },
+  "button": {
+    "label": "GET STARTED",
+    "bg": "#DAEB3F",
+    "fg": "#29093D",
+    "radius": "100px (full pill)",
+    "shadow": "none",
+    "border": "none",
+    "weight": "700",
+    "size": "20px",
+    "case": "uppercase in copy (not text-transform)",
+    "letterSpacing": "normal",
+    "height": "66px"
+  },
+  "secondary_button": {
+    "label": "Get Started",
+    "bg": "transparent",
+    "fg": "#DBE65B",
+    "border": "2px solid #DBE65B",
+    "radius": "50px"
+  },
+  "captured": "2026-10-10",
+  "viewport": "1440x900 @2x (Chromium)"
+}

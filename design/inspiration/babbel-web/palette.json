@@ -1,0 +1,94 @@
+{
+  "app": "Babbel",
+  "url": "https://www.babbel.com/",
+  "tagline": "Which language do you want to learn?",
+  "colors": [
+    {
+      "name": "Babbel orange",
+      "hex": "#FE4D01",
+      "role": "Logo, Sign up, banner strip, closing CTA band, italic accent word",
+      "source": "computed; logo"
+    },
+    {
+      "name": "Warm cream",
+      "hex": "#F6F4EF",
+      "role": "Page canvas",
+      "source": "computed bg"
+    },
+    {
+      "name": "Ink",
+      "hex": "#151515",
+      "role": "Text, secondary pill buttons",
+      "source": "computed text / button"
+    },
+    {
+      "name": "Warm grey",
+      "hex": "#46443F",
+      "role": "Secondary text",
+      "source": "computed text"
+    },
+    {
+      "name": "Butter yellow",
+      "hex": "#FFD966",
+      "role": "Method + reviews bands, lesson cards",
+      "source": "computed bg"
+    },
+    {
+      "name": "Lesson green",
+      "hex": "#3E522D",
+      "role": "Flashcards tile, lesson card (sampled)",
+      "source": "sampled from photo-skill-tiles"
+    },
+    {
+      "name": "Salmon",
+      "hex": "#FE9567",
+      "role": "Writing tile (sampled)",
+      "source": "sampled from photo-skill-tiles"
+    },
+    {
+      "name": "Skill purple",
+      "hex": "#671EB0",
+      "role": "Speaking tile (sampled)",
+      "source": "sampled from photo-skill-tiles"
+    },
+    {
+      "name": "White",
+      "hex": "#FFFFFF",
+      "role": "Cards, FAQ rows",
+      "source": "computed bg"
+    }
+  ],
+  "type": {
+    "display": {
+      "family": "Feature Text (LC)",
+      "weights": "400",
+      "notes": "high-contrast serif, regular weight, 40px; one word in orange italic (\"language\", \"beyond\")"
+    },
+    "body": {
+      "family": "Graphik Babbel (LCG)",
+      "weights": "400/500",
+      "notes": "custom Graphik cut for UI"
+    }
+  },
+  "button": {
+    "label": "Start learning",
+    "bg": "#151515",
+    "fg": "#FFFFFF",
+    "radius": "4000px (pill)",
+    "shadow": "none",
+    "border": "1px solid #151515",
+    "weight": "400",
+    "size": "16px",
+    "case": "sentence",
+    "letterSpacing": "normal",
+    "height": "44px"
+  },
+  "secondary_button": {
+    "label": "Sign up",
+    "bg": "#FE4D01",
+    "fg": "#FFFFFF",
+    "radius": "pill"
+  },
+  "captured": "2026-10-10",
+  "viewport": "1440x900 @2x (Chromium)"
+}
