@@ -1,4 +1,5 @@
 import type { LineWord } from "@pna/shared"
+import { cn } from "cn"
 import { memo, useEffect, useLayoutEffect, useRef, type ReactNode } from "react"
 
 import { Ruby } from "./Ruby"
@@ -104,13 +105,15 @@ export function Lyrics(props: {
   }, [])
 
   return (
-    <div className="lyrics" ref={box}>
-      <div className="lyrics-pad" />
+    <div
+      className="lyrics flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-[18px] [scrollbar-width:none] [mask-image:linear-gradient(transparent,#000_12%,#000_84%,transparent)] [&::-webkit-scrollbar]:hidden"
+      ref={box}>
+      <div className="lyrics-pad h-[34vh] flex-none" />
       {props.head}
       {lines.length === 0 && props.empty}
       {lines.map((l) =>
         l.idx === focus && props.card ? (
-          <div key={l.idx} className="ln-card" data-idx={l.idx}>
+          <div key={l.idx} className="ln-card -mx-3.5 flex-none" data-idx={l.idx}>
             {props.card}
           </div>
         ) : (
@@ -124,7 +127,7 @@ export function Lyrics(props: {
         )
       )}
       {props.tail}
-      <div className="lyrics-pad" />
+      <div className="lyrics-pad h-[34vh] flex-none" />
     </div>
   )
 }
@@ -137,10 +140,23 @@ const Line = memo(function Line(props: {
 }) {
   const { line, state } = props
   return (
-    <div className={"ln " + state} data-idx={line.idx} role="button" tabIndex={-1} onClick={() => props.onSeek(line)}>
+    <div
+      className={cn(
+        "ln relative cursor-pointer font-zh text-(length:--ln) leading-[1.3] font-medium transition-colors duration-200 hover:text-foreground",
+        "[&_rt]:pb-0.5 [&_rt]:font-sans [&_rt]:text-[11px] [&_rt]:leading-none [&_rt]:font-bold [&_rt]:tracking-normal [&_rt]:text-muted-foreground",
+        state,
+        state === "past" && "text-faint",
+        state === "next" && "text-muted-foreground",
+        // The current line: ink, bold, with the one red marker the transcript allows.
+        state === "now" && "text-(length:--now) font-bold text-foreground before:absolute before:inset-y-1 before:-left-3 before:w-1 before:rounded-full before:bg-primary"
+      )}
+      data-idx={line.idx}
+      role="button"
+      tabIndex={-1}
+      onClick={() => props.onSeek(line)}>
       <span className="ln-text" lang="yue-Hant">
         {line.words.map((w, i) => (
-          <span key={i} className="w">
+          <span key={i} className="w mr-[0.18em]">
             {/* Only the current line gets Jyutping; the others stay plain so they're easy to scan. */}
             <Ruby text={w.text} jyutping={w.jyutping} show={props.showJyutping && state === "now"} />
           </span>

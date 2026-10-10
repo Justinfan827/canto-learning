@@ -1,12 +1,17 @@
 import { alignByTime, examplesFor, lineAt, lookup, pickTrack, regroup, senses, trackLabel, transcriptCoverage, type Examples, type LineWord, type Sense, type Dict } from "@pna/shared"
+import { cn } from "cn"
+import { Check, CircleAlert, Star, TvMinimalPlay } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-import { DisplayMenu, Header, type Pill, type SourceOption } from "~components/Header"
+import { DisplayMenu, Header, StatusDot, type Pill, type SourceOption } from "~components/Header"
 import { Lyrics, type LyricLine } from "~components/Lyrics"
 import { Dock, MomentCard, WordSheet } from "~components/Moment"
 import { formatTime } from "~components/Ruby"
 import { SavedList } from "~components/SavedList"
 import { Squads } from "~components/Squads"
+import { Button } from "~components/ui/button"
+import { Progress } from "~components/ui/progress"
+import { Skeleton } from "~components/ui/skeleton"
 import { Welcome } from "~components/Welcome"
 import { CONVEX_URL, leaveGuest, signOut, type Account } from "~lib/auth"
 import { LOCAL_HELPER } from "~lib/features"
@@ -167,13 +172,13 @@ function SidePanel() {
   if (!settings || !acct) return null
   if (acct.choosing || signingIn)
     return (
-      <div className={"panel size-" + settings.textSize}>
+      <div className={panelClass(settings.textSize)}>
         <Welcome onBusy={setSigningIn} />
       </div>
     )
   if (view === "squads")
     return (
-      <div className={"panel size-" + settings.textSize}>
+      <div className={panelClass(settings.textSize)}>
         <Squads defaultUrl={process.env.PLASMO_PUBLIC_SQUADS_URL || CONVEX_URL} onBack={() => setView("video")} />
       </div>
     )
@@ -188,7 +193,7 @@ function SidePanel() {
     }
     const sel = savedSel ? savedDetail(savedSel, dict) : null
     return (
-      <div className={"panel size-" + settings.textSize}>
+      <div className={panelClass(settings.textSize)}>
         <SavedList
           list={saved.list}
           videoId={state.video?.id ?? null}
@@ -255,13 +260,9 @@ function SidePanel() {
   )
 
   return (
-    <div className={"panel size-" + settings.textSize}>
+    <div className={panelClass(settings.textSize)}>
       {header}
-      {job && (
-        <div className="progress" role="progressbar" aria-label="Transcription progress" aria-valuenow={Math.round((coverage?.fraction ?? 0) * 100)}>
-          <i style={{ width: `${(coverage?.fraction ?? 0) * 100}%` }} />
-        </div>
-      )}
+      {job && <Progress value={Math.round((coverage?.fraction ?? 0) * 100)} aria-label="Transcription progress" className="mx-4 mb-1 flex-none [&_[data-slot=progress-track]]:h-2.5" />}
       {(status.kind === "running" || status.kind === "checking") && !lines.length ? (
         <TranscribeLoading job={job} />
       ) : (
@@ -402,17 +403,37 @@ function pillFor(state: PlayerState, status: TranscriberStatus, retry: () => voi
   return { text: pickTrack(state.tracks) ? "Loading captions…" : "Finding captions…", tone: "idle" }
 }
 
+/** The panel's frame: rice-paper page, Nunito, and the caption sizes the Aa menu picks. */
+function panelClass(size: Settings["textSize"]) {
+  return cn(
+    "panel relative flex h-screen flex-col overflow-hidden bg-surface font-sans text-body",
+    "size-" + size,
+    size === "s" && "[--card-size:18px] [--ln:15px] [--now:19px]",
+    size === "m" && "[--card-size:21px] [--ln:17px] [--now:23px]",
+    size === "l" && "[--card-size:25px] [--ln:20px] [--now:28px]"
+  )
+}
+
+/** Placeholder lines while captions or the next stretch of transcript load. */
+function SkeletonLines({ widths, className }: { widths: string[]; className?: string }) {
+  return (
+    <>
+      {widths.map((w) => (
+        <Skeleton key={w} className={cn("h-3.5 rounded-full bg-border", className)} style={{ width: w }} />
+      ))}
+    </>
+  )
+}
+
 function TranscribingEdge({ text }: { text: string }) {
   return (
-    <div className="edge-wrap" aria-live="polite">
-      <div className="edge">
-        <span className="dot work" />
-        {text}
+    <div className="grid gap-3" aria-live="polite">
+      <div className="flex w-fit max-w-full items-center gap-2 rounded-md bg-gold-soft px-2.5 py-1.5 type-body-sm font-bold text-gold-ink">
+        <StatusDot tone="work" />
+        <span className="truncate">{text}</span>
       </div>
-      <div className="skel" aria-hidden="true">
-        <i style={{ width: "82%" }} />
-        <i style={{ width: "64%" }} />
-        <i style={{ width: "74%" }} />
+      <div className="grid gap-3 pt-0.5" aria-hidden="true">
+        <SkeletonLines widths={["82%", "64%", "74%"]} />
       </div>
     </div>
   )
@@ -432,89 +453,104 @@ function TranscribeLoading({ job }: { job: (TranscribeJob & { kind: "running" })
   }, [])
   const step = job ? stepOf(job.stage) : -1
   return (
-    <div className="loading" role="status" aria-live="polite">
-      <div className="loading-card">
-        <div className="loading-h">
-          <span className="dot work" />
-          <b>{job ? `Transcribing with ${shortName(job.engine)}` : "Starting the transcriber"}</b>
-          <span className="loading-t">{formatTime(now - started)}</span>
+    <div className="grid min-h-0 flex-1 place-items-center px-4 pb-12" role="status" aria-live="polite">
+      <div className="loading-card grid w-full max-w-[320px] gap-4 rounded-xl border-2 border-b-4 border-border bg-card p-4 text-card-foreground">
+        <div className="flex items-center gap-2">
+          <StatusDot tone="work" className="size-2.5" />
+          <b className="min-w-0 flex-1 truncate type-body font-extrabold text-foreground">
+            {job ? `Transcribing with ${shortName(job.engine)}` : "Starting the transcriber"}
+          </b>
+          <span className="rounded-full bg-gold-soft px-2 py-0.5 type-body-sm font-extrabold text-gold-ink tabular-nums">{formatTime(now - started)}</span>
         </div>
-        <ol className="steps">
+        <ol className="m-0 grid list-none gap-2.5 p-0">
           {STEPS.map((s, i) => (
-            <li key={s} className={i < step ? "done" : i === step ? "now" : ""}>
-              <span className="step-mark" aria-hidden="true">
-                {i < step ? "✓" : ""}
+            <li
+              key={s}
+              className={cn(
+                "flex items-center gap-2.5 type-body",
+                i < step ? "text-muted-foreground" : i === step ? "font-extrabold text-foreground" : "text-faint"
+              )}>
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "grid size-[22px] flex-none place-items-center rounded-full border-[2.5px] border-current",
+                  i < step && "border-jade bg-jade text-white dark:text-background",
+                  i === step && "animate-spin border-gold border-t-transparent"
+                )}>
+                {i < step && <Check className="size-3.5" strokeWidth={3.5} />}
               </span>
               {s}
             </li>
           ))}
         </ol>
-        <div className="bar-indef" aria-hidden="true">
-          <i />
+        {/* Which step it's on, as a gold bar; the steps above carry the meaning. */}
+        <div className="h-3 overflow-hidden rounded-full bg-border" aria-hidden="true">
+          <div className="h-full animate-pulse rounded-full bg-gold transition-[width] duration-500" style={{ width: `${((step + 1) / (STEPS.length + 1)) * 100}%` }} />
         </div>
-        <p className="muted">Audio stays on this computer. Lines appear as they&apos;re ready, starting from where you are in the video.</p>
+        <p className="m-0 type-body-sm text-muted-foreground">Audio stays on this computer. Lines appear as they&apos;re ready, starting from where you are in the video.</p>
       </div>
     </div>
   )
 }
 
 function EmptyLyrics({ status, hasTrack, screen, onRetry }: { status: TranscriberStatus; hasTrack: boolean; screen: boolean; onRetry: () => void }) {
-  if (screen) return <p className="lyrics-note">Reading captions from the video as they appear. Play the video to start.</p>
+  const note = "lyrics-note grid justify-items-start gap-3 type-body text-muted-foreground"
+  if (screen) return <p className={cn(note, "m-0")}>Reading captions from the video as they appear. Play the video to start.</p>
   switch (status.kind) {
     case "no-captions":
-      return <p className="lyrics-note">This video has no Cantonese or Chinese captions.</p>
+      return <p className={cn(note, "m-0")}>This video has no Cantonese or Chinese captions.</p>
     case "missing":
       return (
-        <div className="lyrics-note">
-          <p>This video has no Cantonese captions. The transcriber helper can write them on this computer.</p>
-          <button className="primary" onClick={() => openSetup("#captions")}>
-            Set up transcriber
-          </button>
+        <div className={note}>
+          <p className="m-0">This video has no Cantonese captions. The transcriber helper can write them on this computer.</p>
+          <Button onClick={() => openSetup("#captions")}>Set up transcriber</Button>
         </div>
       )
     case "no-engine":
       return (
-        <div className="lyrics-note">
-          <p>The transcriber is running but has no speech model for Cantonese.</p>
-          <button className="primary" onClick={() => openSetup("#captions")}>
-            See how to install one
-          </button>
+        <div className={note}>
+          <p className="m-0">The transcriber is running but has no speech model for Cantonese.</p>
+          <Button onClick={() => openSetup("#captions")}>See how to install one</Button>
         </div>
       )
     case "error":
       return (
-        <div className="lyrics-note">
-          <p className="warn">{status.message}</p>
-          <button className="primary" onClick={onRetry}>
-            Try again
-          </button>
+        <div className={note}>
+          <p className="m-0 flex w-full items-start gap-2 rounded-md bg-primary-soft px-3 py-2.5 type-body-sm font-bold text-destructive">
+            <CircleAlert className="mt-px size-4 flex-none" strokeWidth={2.5} aria-hidden="true" />
+            {status.message}
+          </p>
+          <Button onClick={onRetry}>Try again</Button>
         </div>
       )
     case "running":
       return null // the edge shows progress
   }
   return (
-    <div className="skel big" aria-label={hasTrack ? "Loading captions" : "Finding captions"}>
-      <i style={{ width: "70%" }} />
-      <i style={{ width: "86%" }} />
-      <i style={{ width: "58%" }} />
+    <div className="grid gap-3.5" aria-label={hasTrack ? "Loading captions" : "Finding captions"}>
+      <SkeletonLines widths={["70%", "86%", "58%"]} className="h-[18px]" />
     </div>
   )
 }
 
 function Empty({ text, onSaved, account }: { text: string; onSaved: () => void; account: Account | null }) {
   return (
-    <div className="empty">
-      <div>
-        <p>{text}</p>
-        <button className="link" onClick={onSaved}>
+    <div className="empty relative flex h-screen flex-col items-center justify-center bg-surface px-7 pt-8 pb-20 text-center font-sans text-body">
+      <div className="flex w-full max-w-[300px] flex-col items-center gap-4">
+        <div aria-hidden className="mb-1 grid size-16 place-items-center rounded-xl bg-harbour-soft text-harbour">
+          <TvMinimalPlay className="size-8" strokeWidth={2.25} />
+        </div>
+        <p className="m-0 type-title text-balance text-foreground">{text}</p>
+        <Button variant="outline" className="mt-2 w-full" onClick={onSaved}>
+          <Star strokeWidth={2.75} data-icon="inline-start" />
           Saved words
-        </button>
+        </Button>
       </div>
       {CONVEX_URL && (
-        <p className="empty-account">
-          {account ? `Signed in as ${account.email}` : "Guest"} ·{" "}
-          <button className="link" onClick={() => (account ? signOut() : leaveGuest())}>
+        <p className="empty-account absolute inset-x-0 bottom-5 m-0 flex flex-wrap items-center justify-center gap-x-1.5 px-6 type-body-sm text-muted-foreground">
+          <span className="truncate">{account ? `Signed in as ${account.email}` : "Guest"}</span>
+          <span aria-hidden>·</span>
+          <button className="font-extrabold text-harbour-ink hover:underline" onClick={() => (account ? signOut() : leaveGuest())}>
             {account ? "Sign out" : "Sign in"}
           </button>
         </p>
