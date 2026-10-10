@@ -43,6 +43,7 @@
     color-scheme: dark;
   }
 }
+
 .size-s { --now: 19px; --ln: 15px; --card-size: 18px; }
 .size-l { --now: 28px; --ln: 20px; --card-size: 25px; }
 
@@ -71,7 +72,6 @@ kbd { font: 500 10.5px/1 var(--f-mono); border: 1px solid var(--line); border-bo
 .bar { flex: none; display: flex; align-items: center; gap: 4px; padding: 8px 10px 8px 12px; }
 .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); padding: 3px 9px 3px 7px; border-radius: 999px; background: var(--soft); white-space: nowrap; max-width: 100%; overflow: hidden; }
 .pill .pill-text { overflow: hidden; text-overflow: ellipsis; }
-.pill .pill-action { color: var(--amber); font-weight: 600; }
 button.pill:hover { color: var(--fg); }
 .pill .i { width: 12px; height: 12px; }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--jade); flex: none; }
@@ -85,7 +85,6 @@ button.pill:hover { color: var(--fg); }
 .ib.small { width: 26px; height: 26px; }
 .ib.small .i { width: 15px; height: 15px; }
 .ib .n { position: absolute; top: 1px; right: -1px; font: 600 9px/1 var(--f-ui); background: var(--jade); color: var(--on-accent); border-radius: 6px; padding: 2px 3px; }
-.menu-anchor { position: relative; }
 .progress { height: 2px; background: var(--line); flex: none; }
 .progress i { display: block; height: 100%; background: var(--amber); transition: width 0.4s; }
 
@@ -96,16 +95,6 @@ button.pill:hover { color: var(--fg); }
 .pop .row.off > div:first-child { color: var(--text-muted); }
 .pop small { display: block; color: var(--text-muted); font-size: 11.5px; line-height: 1.3; }
 .pop small.needs { color: var(--amber); }
-.tog { width: 30px; height: 18px; border-radius: 10px; background: var(--line); position: relative; flex: none; transition: background 0.15s; }
-.tog::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); transition: left 0.15s; }
-.tog.on { background: var(--jade); }
-.tog.on::after { left: 14px; }
-.tog:disabled { opacity: 0.5; }
-.seg { display: flex; background: var(--soft); border-radius: 8px; padding: 2px; flex: none; }
-.seg button { padding: 3px 8px; border-radius: var(--r-s); font-size: 13px; line-height: 1.3; color: var(--text-muted); min-width: 26px; }
-.seg.zh button { font-family: var(--f-zh); }
-.seg button.on { background: var(--bg); color: var(--fg); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); }
-.seg button:disabled { opacity: 0.6; }
 
 /* ---------- watching: lyrics ---------- */
 .lyrics { flex: 1; min-height: 0; overflow-y: auto; padding: 0 18px; display: flex; flex-direction: column; gap: 14px; scrollbar-width: none;
@@ -122,31 +111,16 @@ rt { font: 400 9.5px/1 var(--f-ui); color: var(--text-muted); letter-spacing: 0;
 .ln.now rt { font-size: 10px; }
 .lyrics-note { color: var(--text-muted); display: grid; gap: 10px; justify-items: start; font-size: 13.5px; }
 .lyrics-note p { margin: 0; }
-
-.edge-wrap { display: grid; gap: 10px; }
 .edge { font-size: 12px; color: var(--amber); display: flex; align-items: center; gap: 6px; }
-.skel { display: grid; gap: 10px; padding-top: 2px; }
-.skel i { display: block; height: 14px; border-radius: 4px; background: linear-gradient(90deg, var(--soft), var(--line), var(--soft)); background-size: 200% 100%; animation: shimmer 1.6s linear infinite; }
-.skel.big i { height: 18px; }
-@keyframes shimmer { to { background-position: -200% 0; } }
 /* Before the first transcribed lines arrive. */
 .loading { flex: 1; min-height: 0; display: grid; place-items: center; padding: 0 16px 48px; }
 .loading-card { width: 100%; max-width: 320px; display: grid; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: var(--r-l); font-size: 13px; }
-.loading-h { display: flex; align-items: center; gap: 8px; }
-.loading-h b { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.loading-t { font: 12px var(--f-mono); color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .loading-card p { margin: 0; font-size: 12px; line-height: 1.45; }
 .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; color: var(--faint); }
 .steps li { display: flex; align-items: center; gap: 8px; }
 .steps li.done { color: var(--text-muted); }
 .steps li.now { color: var(--fg); font-weight: 500; }
-.step-mark { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid currentColor; display: grid; place-items: center; font-size: 10px; flex: none; }
-.steps li.done .step-mark { border-color: var(--jade); background: var(--jade); color: var(--on-accent); }
-.steps li.now .step-mark { border-color: var(--amber); border-top-color: transparent; animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.bar-indef { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
-.bar-indef i { display: block; width: 35%; height: 100%; border-radius: 2px; background: var(--amber); animation: indef 1.3s ease-in-out infinite; }
-@keyframes indef { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
 
 /* ---------- paused ---------- */
 /* The paused line opens in place in the transcript; its text lines up with the other lines'. */
@@ -211,15 +185,11 @@ rt { font: 400 9.5px/1 var(--f-ui); color: var(--text-muted); letter-spacing: 0;
 .inline-error { font-size: 12.5px; color: var(--red); text-align: left; padding: 6px 10px; background: var(--soft); border-radius: var(--r-m); }
 
 /* ---------- saved words ---------- */
-.lh { display: flex; align-items: baseline; justify-content: space-between; padding: 6px 16px 10px; }
-.lh h1 { margin: 0; font-size: 17px; }
-.lh span { font-size: 12px; color: var(--text-muted); }
 .tabs { display: flex; gap: 4px; padding: 0 12px 8px; }
 .tabs button { font-size: 12.5px; padding: 4px 10px; border-radius: 999px; color: var(--text-muted); }
 .tabs button.on { background: var(--fg); color: var(--bg); }
 .list { flex: 1; overflow-y: auto; padding: 0 12px; margin: 0; list-style: none; }
 .list-empty { padding: 16px 4px; font-size: 13px; }
-.row-w { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px; border-top: 1px solid var(--line); }
 .item { width: 100%; text-align: left; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 12px; padding: 10px 4px; align-items: center; border-radius: 0; }
 .item:hover:not(:disabled) { background: var(--soft); }
 .item .hz { font: 500 20px/1.1 var(--f-zh); grid-row: span 2; min-width: 52px; }
@@ -310,16 +280,11 @@ html:has(.pp), html:has(.pp) body { height: auto; min-height: 0; background: tra
 .pp-empty p { margin: 0; }
 
 /* caption source menu, from the pill */
-.menu-anchor.left { min-width: 0; }
 .pop.src-menu { left: 0; right: auto; top: 30px; width: 270px; gap: 2px; }
-.menu-h { font-size: 11px; color: var(--text-muted); padding: 4px 8px 2px; text-transform: uppercase; letter-spacing: 0.04em; }
 .srcopt { display: flex; align-items: flex-start; gap: 6px; text-align: left; padding: 7px 8px; border-radius: 8px; color: var(--fg); font: 13px/1.35 var(--f-ui); }
 .srcopt:hover:not(:disabled) { background: var(--soft); }
 .srcopt:disabled { color: var(--faint); }
 .srcopt.on { color: var(--jade); }
-.src-check { width: 14px; flex: none; }
-.src-text small { display: block; color: var(--text-muted); font-size: 11.5px; line-height: 1.3; }
-.srcopt.act-row { color: var(--amber); border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; margin-top: 2px; }
 
 /* ---------- add a word ---------- */
 .add { margin: 0 12px 10px; padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: var(--r-l); display: grid; gap: 8px; }

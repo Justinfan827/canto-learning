@@ -34,36 +34,8 @@ const WHEEL_STEP = 60
 const WHEEL_RESET_MS = 250
 const SEEK_SETTLE_MS = 300
 
-const ytTheme = new URLSearchParams(location.search).get("theme") ?? ""
-document.documentElement.dataset.theme = ytTheme
-followYouTubeTheme(ytTheme)
-
-/**
- * YouTube's own theme wins over the system one, but the design tokens (globals.css) follow the
- * system, and an iframe can't be told otherwise. So copy the light or dark token block onto
- * :root[data-theme], which outranks both.
- */
-function followYouTubeTheme(theme: string) {
-  if (theme !== "light" && theme !== "dark") return
-  const blocks: string[] = []
-  const take = (rules: CSSRuleList, inDark: boolean) => {
-    for (const r of Array.from(rules)) {
-      if (r instanceof CSSMediaRule) take(r.cssRules, inDark || r.conditionText.includes("prefers-color-scheme: dark"))
-      else if (r instanceof CSSStyleRule && r.selectorText === ":root" && r.style.getPropertyValue("--primary") && inDark === (theme === "dark"))
-        blocks.push(r.style.cssText)
-    }
-  }
-  for (const sheet of Array.from(document.styleSheets)) {
-    try {
-      take(sheet.cssRules, false)
-    } catch {
-      // A sheet from another origin (fonts); it has no tokens.
-    }
-  }
-  const style = document.createElement("style")
-  style.textContent = `:root[data-theme="${theme}"] { ${blocks.join(" ")} color-scheme: ${theme}; }`
-  document.head.append(style)
-}
+// Follow YouTube's theme, not the system one: globals.css and style.css both honour data-theme.
+document.documentElement.dataset.theme = new URLSearchParams(location.search).get("theme") ?? ""
 
 type Mode = "none" | "card"
 
