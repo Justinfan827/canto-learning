@@ -161,6 +161,8 @@ await panel.screenshot({ path: SHOTS + "2-paused.png" })
 // Drag across the line's words to regroup them into one, then undo.
 {
   const chips = panel.locator(".moment .chip-w")
+  // Let the card settle after the word sheet closes, or the drag starts on a moving target.
+  await panel.waitForTimeout(400)
   const split = await chips.count()
   const first = await chips.first().boundingBox()
   const last = await chips.last().boundingBox()
