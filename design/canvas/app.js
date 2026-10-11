@@ -90,7 +90,14 @@ function brandBoard(brand) {
   const colors = web?.palette?.length ? web.palette : app?.palette || [];
   const accent = spec.button?.bg || colors[0]?.hex || "#999";
 
+  const designSrc = brand.sources.find((s) => s.design);
   const notes = h("div", { class: "b-col" },
+    designSrc && h("div", {}, h("h2", { class: "sec" }, "DESIGN.md"),
+      h("div", { class: "design-links" },
+        h("a", { href: `/inspiration/${designSrc.folder}/DESIGN.md`, target: "_blank" }, "Open DESIGN.md"),
+        h("code", {}, `pnpm design:reskin ${brand.key}`)),
+      h("details", { class: "tokens" }, h("summary", {}, "Tokens (YAML)"), h("pre", {}, designSrc.design.match(/^---\n([\s\S]*?)\n---/)?.[1] || "")),
+      md(designSrc.design.replace(/^---\n[\s\S]*?\n---\n/, "").replace(/^# .*\n/, ""), designSrc.folder)),
     h("div", {}, h("h2", { class: "sec" }, "Analysis"),
       brand.sources.filter((s) => s.readme).map((s) => h("div", { style: { marginBottom: "40px" } },
         h("span", { class: "src-tag", style: { background: s.source === "web" ? accent : "#333" } }, s.source === "web" ? "Web" : "iPhone app"),
@@ -100,6 +107,7 @@ function brandBoard(brand) {
         md(brand.notes.join("\n\n"), app?.folder || web?.folder))));
 
   const identity = h("div", { class: "b-col" });
+  if (designSrc) identity.append(h("div", {}, h("h2", { class: "sec" }, "Canto in this skin (live from DESIGN.md)"), skinPreview(brand.key)));
   if (colors.length) identity.append(h("div", {}, h("h2", { class: "sec" }, `Colour · ${colors.length}`), palette(colors)));
   if (spec.type) identity.append(h("div", {}, h("h2", { class: "sec" }, "Type"), typeSpecs(spec.type)));
   if (spec.button) identity.append(h("div", {}, h("h2", { class: "sec" }, "Buttons (rendered from captured CSS)"),
@@ -122,6 +130,7 @@ function brandBoard(brand) {
       h("header", { class: "b-head" },
         h("div", {}, h("h1", { style: { color: accent } }, brand.name), spec.tagline && h("div", { class: "b-tag" }, `“${spec.tagline}”`)),
         h("div", { class: "b-meta" },
+          brand.kit && h("a", { class: "kit", href: brand.kit, download: "" }, "↓ Download brand kit (.zip)"),
           spec.url && h("a", { href: spec.url, target: "_blank", style: { color: "#888" } }, spec.url.replace(/^https?:\/\//, "")),
           h("div", {}, brand.sources.map((s) => h("span", { class: "chip" }, s.folder))),
           spec.captured && h("div", {}, `captured ${spec.captured}`))),
@@ -138,6 +147,30 @@ function overviewBoard(overview) {
         h("div", { class: "b-tag" }, "How language-learning apps look today, and where Canto fits"))),
       h("div", { class: "overview-cols" }, overview.map((o) => h("div", {}, h("h2", { class: "sec" }, o.name), md(o.md, ""))))),
   };
+}
+
+// A small mock of Canto's side panel, styled only through Canto's CSS variables.
+function skinPreview(key) {
+  const ruby = (zh, jp) => h("ruby", {}, zh, h("rt", {}, jp));
+  const panel = (mode) => h("div", { class: `skin skin-${mode}` },
+    h("div", { class: "s-bar" }, h("span", { class: "s-pill" }, h("i", { class: "s-dot" }), "YouTube · 粵語"), h("span", { class: "s-mode" }, mode)),
+    h("div", { class: "s-line s-past", lang: "yue" }, ruby("今日", "gam1 jat6"), ruby("好", "hou2"), ruby("熱", "jit6")),
+    h("div", { class: "s-line s-now", lang: "yue" },
+      ruby("我哋", "ngo5 dei6"), h("span", { class: "s-sel" }, ruby("飲", "jam2")), ruby("杯", "bui1"),
+      h("span", { class: "s-saved" }, ruby("凍檸茶", "dung3 ning4 caa4")), ruby("啦", "laa1")),
+    h("div", { class: "s-card" },
+      h("div", { class: "s-word", lang: "yue" }, "飲 ", h("small", {}, "jam2 · to drink")),
+      h("div", { class: "s-actions" }, h("button", { class: "s-primary" }, "Save word"), h("button", { class: "s-act" }, "Replay"), h("span", { class: "s-warn" }, "● saved"))),
+    h("div", { class: "s-tabs" }, h("span", { class: "s-on" }, "Transcript"), h("span", {}, "Saved"), h("span", {}, "History")),
+    h("div", { class: "s-err" }, "Couldn't reach the transcriber"));
+  const wrap = h("div", { class: "skin-pair" }, panel("light"), panel("dark"));
+  fetch(`/api/skin/${key}`).then((r) => r.json()).then((vars) => {
+    if (!vars) return wrap.remove();
+    const [l, d] = wrap.children;
+    for (const [k, v] of Object.entries(vars.light)) { l.style.setProperty(k, v); if (!/^--(f-|r-)/.test(k)) continue; d.style.setProperty(k, v); }
+    for (const [k, v] of Object.entries(vars.dark)) d.style.setProperty(k, v);
+  });
+  return wrap;
 }
 
 // ---------- canvas ----------

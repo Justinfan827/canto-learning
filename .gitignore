@@ -17,3 +17,6 @@ apps/extension/assets/examples.dat
 apps/extension/.cache
 apps/extension/e2e/*.png
 .amp/portals/*
+
+# Brand kits (pnpm design:kits)
+design/exports/
