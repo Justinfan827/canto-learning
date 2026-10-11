@@ -8,6 +8,7 @@
     "build:ext:dev": "pnpm --filter extension build:dev",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "transcriber": "node apps/transcriber/server.mjs"
+    "transcriber": "node apps/transcriber/server.mjs",
+    "design:canvas": "node design/canvas/server.mjs"
   }
 }

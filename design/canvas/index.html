@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Brand canvas · language apps</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <aside id="sidebar">
+    <div class="logo">Brand canvas</div>
+    <div class="hint">Language-learning apps, captured Oct 2026</div>
+    <nav id="nav"></nav>
+    <div class="keys">
+      <div><kbd>←</kbd><kbd>→</kbd> previous / next board</div>
+      <div><kbd>F</kbd> fit board · <kbd>A</kbd> fit all</div>
+      <div><kbd>⌘/Ctrl</kbd> + scroll, or pinch: zoom</div>
+      <div>Scroll or drag: pan</div>
+      <div>Click an image to inspect it</div>
+    </div>
+  </aside>
+  <main id="viewport">
+    <div id="world"></div>
+    <div id="hud"><button id="zoom-out">−</button><span id="zoom">100%</span><button id="zoom-in">+</button><button id="fit">Fit</button></div>
+  </main>
+  <aside id="inspector" hidden>
+    <div class="ins-head">
+      <div><div id="ins-name"></div><div id="ins-meta"></div></div>
+      <button id="ins-close" title="Close (Esc)">✕</button>
+    </div>
+    <div class="ins-stage"><canvas id="ins-canvas"></canvas></div>
+    <div class="ins-pick"><span id="ins-swatch"></span><span id="ins-hex">Click the image to pick a colour</span></div>
+    <div class="ins-actions"><button id="ins-prev">← Prev</button><a id="ins-open" target="_blank">Open original</a><button id="ins-next">Next →</button></div>
+  </aside>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

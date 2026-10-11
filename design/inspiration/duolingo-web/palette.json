@@ -1,0 +1,363 @@
+{
+  "app": "Duolingo",
+  "url": "https://www.duolingo.com/",
+  "tagline": "The most fun way to learn languages, chess, and more!",
+  "colors": [
+    {
+      "name": "owl",
+      "hex": "#58CC02",
+      "role": "Brand green; every primary action, logo",
+      "source": "css --color-owl"
+    },
+    {
+      "name": "tree-frog",
+      "hex": "#58A700",
+      "role": "Primary button lip (box-shadow 0 4px 0)",
+      "source": "css --color-tree-frog"
+    },
+    {
+      "name": "macaw",
+      "hex": "#1CB0F6",
+      "role": "Secondary actions, links, info",
+      "source": "css --color-macaw"
+    },
+    {
+      "name": "cardinal",
+      "hex": "#FF4B4B",
+      "role": "Wrong answers, hearts",
+      "source": "css --color-cardinal"
+    },
+    {
+      "name": "bee",
+      "hex": "#FFC800",
+      "role": "XP, rewards",
+      "source": "css --color-bee"
+    },
+    {
+      "name": "fox",
+      "hex": "#FF9600",
+      "role": "Streak flame",
+      "source": "css --color-fox"
+    },
+    {
+      "name": "eel",
+      "hex": "#4B4B4B",
+      "role": "Body/heading text",
+      "source": "css --color-eel"
+    },
+    {
+      "name": "swan",
+      "hex": "#E5E5E5",
+      "role": "Borders, secondary button border",
+      "source": "css --color-swan"
+    },
+    {
+      "name": "polar",
+      "hex": "#F7F7F7",
+      "role": "Light surfaces",
+      "source": "css --color-polar"
+    },
+    {
+      "name": "snow",
+      "hex": "#FFFFFF",
+      "role": "Background",
+      "source": "css --color-snow"
+    },
+    {
+      "name": "beetle",
+      "hex": "#CE82FF",
+      "role": "Super/Max gradient",
+      "source": "css --color-beetle"
+    },
+    {
+      "name": "nebula",
+      "hex": "#3F22EC",
+      "role": "Super/Max gradient",
+      "source": "css --color-nebula"
+    },
+    {
+      "name": "eclipse",
+      "hex": "#000437",
+      "role": "Super world background",
+      "source": "css --color-eclipse"
+    },
+    {
+      "name": "wolf",
+      "hex": "#777777",
+      "role": "Secondary text",
+      "source": "css --color-wolf"
+    },
+    {
+      "name": "hare",
+      "hex": "#AFAFAF",
+      "role": "Disabled, captions",
+      "source": "css --color-hare"
+    },
+    {
+      "name": "aqua",
+      "hex": "#38EEFF",
+      "role": "",
+      "source": "css --color-aqua"
+    },
+    {
+      "name": "banana",
+      "hex": "#FFB020",
+      "role": "",
+      "source": "css --color-banana"
+    },
+    {
+      "name": "betta",
+      "hex": "#9069CD",
+      "role": "",
+      "source": "css --color-betta"
+    },
+    {
+      "name": "black-text",
+      "hex": "#3C3C3C",
+      "role": "",
+      "source": "css --color-black-text"
+    },
+    {
+      "name": "blue-jay",
+      "hex": "#84D8FF",
+      "role": "",
+      "source": "css --color-blue-jay"
+    },
+    {
+      "name": "blue-space",
+      "hex": "#0B3E71",
+      "role": "",
+      "source": "css --color-blue-space"
+    },
+    {
+      "name": "camel",
+      "hex": "#E7A601",
+      "role": "",
+      "source": "css --color-camel"
+    },
+    {
+      "name": "cloud",
+      "hex": "#CFCFCF",
+      "role": "",
+      "source": "css --color-cloud"
+    },
+    {
+      "name": "cloud-light",
+      "hex": "#DDDDDD",
+      "role": "",
+      "source": "css --color-cloud-light"
+    },
+    {
+      "name": "cloud-lightest",
+      "hex": "#F0F0F0",
+      "role": "",
+      "source": "css --color-cloud-lightest"
+    },
+    {
+      "name": "cosmos",
+      "hex": "#3C4DFF",
+      "role": "",
+      "source": "css --color-cosmos"
+    },
+    {
+      "name": "cotinga",
+      "hex": "#793AE3",
+      "role": "",
+      "source": "css --color-cotinga"
+    },
+    {
+      "name": "course-complete-cta",
+      "hex": "#78DBE0",
+      "role": "",
+      "source": "css --color-course-complete-cta"
+    },
+    {
+      "name": "course-complete-cta-border",
+      "hex": "#5EC9CC",
+      "role": "",
+      "source": "css --color-course-complete-cta-border"
+    },
+    {
+      "name": "cowbird",
+      "hex": "#AE6802",
+      "role": "",
+      "source": "css --color-cowbird"
+    },
+    {
+      "name": "deep-martin",
+      "hex": "#100F3E",
+      "role": "",
+      "source": "css --color-deep-martin"
+    },
+    {
+      "name": "diamond",
+      "hex": "#38D0D0",
+      "role": "",
+      "source": "css --color-diamond"
+    },
+    {
+      "name": "diamond-tournament-reaction",
+      "hex": "#76A3E7",
+      "role": "",
+      "source": "css --color-diamond-tournament-reaction"
+    },
+    {
+      "name": "duck",
+      "hex": "#FBE56D",
+      "role": "",
+      "source": "css --color-duck"
+    },
+    {
+      "name": "fire-ant",
+      "hex": "#EA2B2B",
+      "role": "",
+      "source": "css --color-fire-ant"
+    },
+    {
+      "name": "gamma",
+      "hex": "#26F663",
+      "role": "",
+      "source": "css --color-gamma"
+    },
+    {
+      "name": "gold-shine",
+      "hex": "#FFE700",
+      "role": "",
+      "source": "css --color-gold-shine"
+    },
+    {
+      "name": "gray-text",
+      "hex": "#999999",
+      "role": "",
+      "source": "css --color-gray-text"
+    },
+    {
+      "name": "humpback",
+      "hex": "#2B70C9",
+      "role": "",
+      "source": "css --color-humpback"
+    },
+    {
+      "name": "iguana",
+      "hex": "#DDF4FF",
+      "role": "",
+      "source": "css --color-iguana"
+    },
+    {
+      "name": "kiwi",
+      "hex": "#7AC70C",
+      "role": "",
+      "source": "css --color-kiwi"
+    },
+    {
+      "name": "kiwi-dark",
+      "hex": "#5D9709",
+      "role": "",
+      "source": "css --color-kiwi-dark"
+    },
+    {
+      "name": "kiwi-light",
+      "hex": "#8EE000",
+      "role": "",
+      "source": "css --color-kiwi-light"
+    },
+    {
+      "name": "manta-ray",
+      "hex": "#042C60",
+      "role": "",
+      "source": "css --color-manta-ray"
+    },
+    {
+      "name": "max-button-dark-purple",
+      "hex": "#3A1B7B",
+      "role": "",
+      "source": "css --color-max-button-dark-purple"
+    },
+    {
+      "name": "max-button-purple",
+      "hex": "#6121C2",
+      "role": "",
+      "source": "css --color-max-button-purple"
+    },
+    {
+      "name": "narwhal",
+      "hex": "#1453A3",
+      "role": "",
+      "source": "css --color-narwhal"
+    },
+    {
+      "name": "ocean",
+      "hex": "#007C8F",
+      "role": "",
+      "source": "css --color-ocean"
+    },
+    {
+      "name": "peacock",
+      "hex": "#00CD9C",
+      "role": "",
+      "source": "css --color-peacock"
+    },
+    {
+      "name": "quasar",
+      "hex": "#FC55FF",
+      "role": "",
+      "source": "css --color-quasar"
+    },
+    {
+      "name": "sabrewing",
+      "hex": "#A570FF",
+      "role": "",
+      "source": "css --color-sabrewing"
+    },
+    {
+      "name": "starlight",
+      "hex": "#268AFF",
+      "role": "",
+      "source": "css --color-starlight"
+    },
+    {
+      "name": "whale",
+      "hex": "#1899D6",
+      "role": "",
+      "source": "css --color-whale"
+    }
+  ],
+  "type": {
+    "display": {
+      "family": "Feather Bold",
+      "weights": "700",
+      "notes": "section headlines, 48-64px, written lowercase"
+    },
+    "body": {
+      "family": "duolingo-sans (DIN Next Rounded lineage)",
+      "weights": "400/700",
+      "notes": "UI, body, 32px hero line; PingFang SC fallback for Chinese"
+    }
+  },
+  "button": {
+    "label": "GET STARTED",
+    "bg": "#58CC02",
+    "fg": "#FFFFFF",
+    "radius": "12px",
+    "shadow": "0 4px 0 #58A700",
+    "border": "none",
+    "weight": "700",
+    "size": "15px",
+    "case": "uppercase",
+    "letterSpacing": "0.8px",
+    "height": "50px"
+  },
+  "secondary_button": {
+    "label": "I ALREADY HAVE AN ACCOUNT",
+    "bg": "#FFFFFF",
+    "fg": "#1CB0F6",
+    "radius": "12px",
+    "shadow": "0 2px 0 #E5E5E5",
+    "border": "2px solid #E5E5E5",
+    "weight": "700",
+    "case": "uppercase",
+    "letterSpacing": "0.8px"
+  },
+  "captured": "2026-10-10",
+  "viewport": "1440x900 @2x (Chromium)"
+}
