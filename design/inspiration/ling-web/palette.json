@@ -1,0 +1,94 @@
+{
+  "app": "Ling",
+  "url": "https://ling-app.com/",
+  "tagline": "The easy path to hard languages",
+  "colors": [
+    {
+      "name": "Brand orange",
+      "hex": "#FF9900",
+      "role": "Primary CTA, logo cap brim, chat bubbles",
+      "source": "css --wp--preset--color--orange; brand guide"
+    },
+    {
+      "name": "Butter yellow",
+      "hex": "#FFEDBD",
+      "role": "Hero field",
+      "source": "computed bg"
+    },
+    {
+      "name": "Sun yellow",
+      "hex": "#FFD970",
+      "role": "Cloud borders, highlights",
+      "source": "computed bg"
+    },
+    {
+      "name": "Bluish cyan",
+      "hex": "#009DFF",
+      "role": "\"See Ling in Action\" band, Gaia the globe",
+      "source": "computed bg; brand guide"
+    },
+    {
+      "name": "Sky wash",
+      "hex": "#EAF3FC",
+      "role": "Footer / world-map band",
+      "source": "computed bg"
+    },
+    {
+      "name": "Heading slate",
+      "hex": "#3D505C",
+      "role": "Headings",
+      "source": "computed h1 colour"
+    },
+    {
+      "name": "Body slate",
+      "hex": "#5C788A",
+      "role": "Body copy",
+      "source": "computed text"
+    },
+    {
+      "name": "Green",
+      "hex": "#26D968",
+      "role": "Ticks, illustration hills",
+      "source": "brand guide"
+    },
+    {
+      "name": "Purple",
+      "hex": "#913BDD",
+      "role": "Illustration accent",
+      "source": "brand guide"
+    },
+    {
+      "name": "Red",
+      "hex": "#ED5C3B",
+      "role": "Flags, emphasis",
+      "source": "css --wp--preset--color--red"
+    }
+  ],
+  "type": {
+    "display": {
+      "family": "Poppins",
+      "weights": "700",
+      "notes": "h1 48px/700, normal tracking, sentence case"
+    },
+    "body": {
+      "family": "Noto Sans",
+      "weights": "400",
+      "notes": "also covers other scripts (Thai, Cyrillic, CJK)"
+    }
+  },
+  "button": {
+    "label": "Start learning",
+    "bg": "#FF9900",
+    "fg": "#FFFFFF",
+    "radius": "16px (rounded rectangle, not pill)",
+    "shadow": "none",
+    "border": "1px solid #FF9900",
+    "weight": "700",
+    "size": "16px",
+    "case": "sentence",
+    "letterSpacing": "normal",
+    "height": "53px"
+  },
+  "captured": "2026-10-10",
+  "viewport": "1440x900 @2x (Chromium)"
+}

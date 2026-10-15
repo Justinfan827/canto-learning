@@ -1,0 +1,111 @@
+{
+  "app": "Praktika",
+  "url": "https://praktika.ai/",
+  "tagline": "Learn a new language with AI tutors",
+  "colors": [
+    {
+      "name": "Brand 600 violet",
+      "hex": "#7429FF",
+      "role": "Hero card, CTAs, logo, highlight chips",
+      "source": "css --brand-600"
+    },
+    {
+      "name": "Brand 700",
+      "hex": "#4E0DC7",
+      "role": "Gradient end, pressed state",
+      "source": "css --brand-700"
+    },
+    {
+      "name": "Brand 1000",
+      "hex": "#1F0060",
+      "role": "Deepest violet (dark mode, cover gradient)",
+      "source": "css --brand-1000"
+    },
+    {
+      "name": "Brand 200",
+      "hex": "#D9C5FF",
+      "role": "Tints, selected chips",
+      "source": "css --brand-200"
+    },
+    {
+      "name": "Brand 50",
+      "hex": "#F7F2FF",
+      "role": "Faint violet wash",
+      "source": "css --brand-50"
+    },
+    {
+      "name": "Grayscale 50",
+      "hex": "#F7F6FA",
+      "role": "Page canvas (cool lilac-grey)",
+      "source": "css --grayscale-50"
+    },
+    {
+      "name": "Ink",
+      "hex": "#0D0D0D",
+      "role": "Text, store buttons",
+      "source": "css --black-1000"
+    },
+    {
+      "name": "Grayscale 800",
+      "hex": "#4B4458",
+      "role": "Secondary text",
+      "source": "css --grayscale-800"
+    },
+    {
+      "name": "Soft green",
+      "hex": "#6DD688",
+      "role": "Tone face \"Soft\" (sampled)",
+      "source": "sampled svg"
+    },
+    {
+      "name": "Balanced blue",
+      "hex": "#6CC4EC",
+      "role": "Tone face \"Balanced\" (sampled)",
+      "source": "sampled svg"
+    },
+    {
+      "name": "Strict amber",
+      "hex": "#FEB248",
+      "role": "Tone face \"Strict\" (sampled)",
+      "source": "sampled svg"
+    },
+    {
+      "name": "Alert pink",
+      "hex": "#FF2D55",
+      "role": "Error / \"pain point\" crosses",
+      "source": "computed bg"
+    }
+  ],
+  "type": {
+    "display": {
+      "family": "Aeonik Pro",
+      "weights": "500",
+      "notes": "h1 60px/500, -1.2px (-0.02em) tracking, sentence case"
+    },
+    "body": {
+      "family": "Inter",
+      "weights": "400/700"
+    }
+  },
+  "button": {
+    "label": "Try Praktika now",
+    "bg": "#7429FF",
+    "fg": "#FFFFFF",
+    "radius": "50px (pill)",
+    "shadow": "none",
+    "border": "none",
+    "weight": "500",
+    "size": "14px",
+    "case": "sentence",
+    "letterSpacing": "normal",
+    "height": "~40px"
+  },
+  "secondary_button": {
+    "label": "App Store",
+    "bg": "#0D0D0D",
+    "fg": "#FFFFFF",
+    "radius": "16px"
+  },
+  "captured": "2026-10-10",
+  "viewport": "1440x900 @2x (Chromium)"
+}

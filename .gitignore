@@ -18,3 +18,6 @@ apps/extension/.cache
 apps/extension/e2e/*.png
 .amp/portals/*
 apps/extension/tailwind.css
+
+# Brand kits (pnpm design:kits)
+design/exports/

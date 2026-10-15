@@ -7,6 +7,7 @@ To add apps or continue one, use the `app-design-research` skill (`.claude/skill
 | App | Screens | Assets | How far we got |
 |---|---|---|---|
 | [duolingo](duolingo) | 42 | 14 | Onboarding, first Chinese lesson (every exercise type, right/wrong states), lesson end, streak, home path. Other tabs need an account. |
+| [duolingo-web](duolingo-web) | 10 | 23 + palette | duolingo.com homepage, original SVG illustrations, colour tokens from the site CSS, design-blog images (Duo poses, cast shape language, tab redesign). |
 | [drops](drops) | 19 | 7 | Onboarding (Cantonese), Roman Assist setting, first word lesson. Stops at "Create Account". |
 | [ling](ling) | 9 | 4 | Onboarding (Cantonese) up to the age question. |
 | [pleco](pleco) | 4 | 2 | Search, results, word entry, stroke order. Shows Mandarin readings by default. |
@@ -21,6 +22,14 @@ To add apps or continue one, use the `app-design-research` skill (`.claude/skill
 - **Feedback:** a bottom sheet slides up green ("Correct!", "Awesome!", "Nice catch!") or red ("Incorrect, correct answer: one"), with the button colour switching to match. Missed exercises come back at the end ("Let's correct the exercises you missed!", tagged PREVIOUS MISTAKE).
 - **Habit:** streak, XP, gems and hearts in the top bar; a streak is "born" with an animated flame; the home screen is a winding path of round lesson nodes.
 - **Chinese specifics:** pinyin sits small above each character inside word tiles and answer options, and dotted underlines mark words you can tap for a hint.
+
+### Duolingo on the web: the UI is the toy
+Full write-up and slide order in [duolingo-web/README.md](duolingo-web/README.md).
+- **Scenes of play:** every homepage illustration shows the cast riding, leaping on or tumbling out of the product's own UI (lesson cards, streak cards, a phone full of coins), drawn as tilted flat slabs.
+- **Shape language:** characters are built from circles, pills and rounded rectangles, flat colour with one shade, no outlines (Vikram redesign, `assets/blog/vikram-shape-language.png`).
+- **Animal palette:** ~60 CSS tokens named after animals; owl `#58CC02` for actions, tree-frog `#58A700` for the button lip, macaw `#1CB0F6` secondary, bee/fox rewards, cardinal errors, a separate purple-navy world for Super/Max.
+- **Pressable buttons:** 12px radius, a solid 4px lip (`box-shadow: 0 4px 0`), bold uppercase labels with 0.8px tracking.
+- **Two typefaces:** Feather (heavy, rounded, lowercase headlines) and duolingo-sans for UI.
 
 ### Drops: illustration and colour do the teaching
 - **No mascot;** instead, a single consistent illustration style: one-colour, flat, slightly abstract figures (a waving person, a dog, a bank, a person saying thank you) in white/tint on a solid background.
@@ -60,3 +69,5 @@ Canto today is calm and minimal: white or dark background, jade green (`--jade`)
 - Duolingo: Chinese course; the characters, leagues and profile tabs need a profile.
 - Pleco: switch readings to Jyutping in its settings to capture Cantonese entries; the stroke/words/sentence tabs are add-ons.
 - Ideas for next time: CantoneseClass101, and HelloTalk / Speak for conversation UI.
+
+**2026-10-10.** Duolingo on the web (duolingo.com, design blog), captured in a browser. design.duolingo.com now redirects to the blog, so colours and type were read from the site CSS.
